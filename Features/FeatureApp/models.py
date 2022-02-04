@@ -15,7 +15,7 @@ class Feature(models.Model):
     Feature_Id = models.BigAutoField(primary_key=True)
     Feature_Name = models.CharField(max_length=100, unique=True)
     Sequence = models.CharField(max_length=50)
-    Source_FeatureDescription = models.TextField()
+    Source_FeatureDescription = models.TextField(blank=True, null=True)
     Source_Code = models.TextField(blank=True, null=True)
     Conversion_Code = models.TextField(blank=True, null=True)
     Target_FeatureDescription = models.TextField(blank=True, null=True)

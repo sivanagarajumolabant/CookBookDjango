@@ -15,6 +15,7 @@ urlpatterns = [
     path('template/<str:file_name>', views.download_file,),
     path('predessors', views.predessors),
     path('autoconv', views.conversion),
-    path('miglevelobjects/<int:id>', views.miglevelobjects)
+    path('miglevelobjects/<int:id>', views.miglevelobjects),
+    path('fnlist',views.featuredropdownlist),
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

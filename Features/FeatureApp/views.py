@@ -30,6 +30,11 @@ def featurelist(request):
     serializer = FeatureSerializer(features, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+def featuredropdownlist(request):
+    features = Feature.objects.all()
+    serializer = FeaturedropdownSerializer(features, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 def featuredetail(request, pk):
@@ -38,7 +43,7 @@ def featuredetail(request, pk):
     return Response(serializer.data)
 
 
-@api_view(['POST'])
+@api_view(['PUT'])
 def featureupdate(request, pk):
     feature = Feature.objects.get(Feature_Id=pk)
     serializer = FeatureSerializer(instance=feature, data=request.data)
