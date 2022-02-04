@@ -30,9 +30,13 @@ def featurelist(request):
     serializer = FeatureSerializer(features, many=True)
     return Response(serializer.data)
 
-@api_view(['GET'])
+@api_view(['POST'])
 def featuredropdownlist(request):
-    features = Feature.objects.all()
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    migtype = body_data['Migration_TypeId']
+    obj_type = body_data['Object_Type']
+    features = Feature.objects.filter(Object_Type=obj_type, Migration_TypeId=migtype)
     serializer = FeaturedropdownSerializer(features, many=True)
     return Response(serializer.data)
 
