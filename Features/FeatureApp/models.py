@@ -41,6 +41,9 @@ class Attachments(models.Model):
         ('Sourcedescription', 'sourcedescription'),
         ('Targetdescription', 'targetdescription'),
         ('Conversion', 'conversion'),
+        ('Sourcecode', 'sourcecode'),
+        ('Actualtargetcode', 'actualtargetcode'),
+        ('Expectedconversion', 'expectedconversion'),
     ]
     Feature_Id = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True)
     AttachmentType = models.CharField(max_length=50, blank=True, null=True, choices=choices)

@@ -30,6 +30,7 @@ def featurelist(request):
     serializer = FeatureSerializer(features, many=True)
     return Response(serializer.data)
 
+
 @api_view(['POST'])
 def featuredropdownlist(request):
     body_unicode = request.body.decode('utf-8')
@@ -39,6 +40,7 @@ def featuredropdownlist(request):
     features = Feature.objects.filter(Object_Type=obj_type, Migration_TypeId=migtype)
     serializer = FeaturedropdownSerializer(features, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 def featuredetail(request, pk):
@@ -152,6 +154,6 @@ def miglevelobjects(request, id):
             lablename = i + 's'
         data_format['Label'] = lablename
         data_format['subMenu'] = data
-        data_format_main[index+1] = data_format
+        data_format_main[index + 1] = data_format
     datavalues = data_format_main.values()
     return Response(datavalues, status=status.HTTP_200_OK)
