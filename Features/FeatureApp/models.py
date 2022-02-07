@@ -28,8 +28,8 @@ class Feature(models.Model):
     def save(self, *args, **kwargs):
         # if self.Object_Type == 'Procedure':
         object_dict = {'Procedure': 'Proc', 'Function': 'Func', 'Package': 'Pack', 'Index': 'Inde',
-                       'Materialized views': 'Mate', 'Sequences': 'Sequ', 'Synonyms': 'Syno', 'Tabels': 'Tabe',
-                       'Triggers': 'Trig', 'Types': 'Type', 'Views': 'view'}
+                       'Materialized view': 'Mate', 'Sequence': 'Sequ', 'Synonym': 'Syno', 'Tabel': 'Tabe',
+                       'Trigger': 'Trig', 'Type': 'Type', 'View': 'view'}
         self.Feature_Name = object_dict[self.Object_Type] + '_' + self.Feature_Name
         self.Version_Id = self.Version_Id + 1
         self.Feature_Version = self.Feature_Version + 1
