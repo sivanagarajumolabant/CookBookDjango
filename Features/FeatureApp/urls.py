@@ -3,6 +3,7 @@ from . import views
 from rest_framework import routers
 from django.conf.urls.static import static
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 
 urlpatterns = [
@@ -19,9 +20,9 @@ urlpatterns = [
     path('miglevelobjects/<int:id>', views.miglevelobjects),
     path('fnlist',views.featuredropdownlist),
     path('attlist',views.att_list),
-    path('sourceattlist',views.source_atta_detail),
-    path('targetattlist',views.target_atta_detail),
-    path('convattlist',views.conv_atta_detail),
+    path('sourceattlist',csrf_exempt(views.source_atta_detail)),
+    path('targetattlist',csrf_exempt(views.target_atta_detail)),
+    path('convattlist',csrf_exempt(views.conv_atta_detail)),
     path('attdelete',views.attachment_delete),
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
