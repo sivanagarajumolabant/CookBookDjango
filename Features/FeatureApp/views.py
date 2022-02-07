@@ -59,6 +59,73 @@ def featureupdate(request, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
+def att_list(request):
+    att = Attachments.objects.all()
+    serializer = AttachementSerializer(att, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def source_atta_detail(request):
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    Sourcedescription = body_data['Sourcedescription']
+    Sourcecode = body_data['Sourcecode']
+    Feature_Id = body_data['Feature_Id']
+    features = Attachments.objects.filter(Feature_Id=Feature_Id,
+                                          AttachmentType=Sourcedescription) | Attachments.objects.filter(
+        Feature_Id=Feature_Id, AttachmentType=Sourcecode)
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def conv_atta_detail(request):
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    conv = body_data['Conversion']
+    Feature_Id = body_data['Feature_Id']
+    features = Attachments.objects.filter(Feature_Id=Feature_Id, AttachmentType=conv)
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['DELETE'])
+def attachment_delete(request):
+    # path = 'C:/projects/CookBookDjango/CookBookDjango/Features'
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    # Feature_Id = body_data['Feature_Id']
+    file_name = body_data['file_name']
+    migration_typeid = body_data['migration_typeid']
+    object_type = body_data['object_type']
+    AttachmentType = body_data['AttachmentType']
+    id = body_data['id']
+    attachment = Attachments.objects.get(id=id)
+    print(attachment)
+    attachment.delete()
+    fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/' + AttachmentType + '/'
+    filename = fl_path + file_name
+    os.remove(filename)
+    return Response('Deleted')
+
+@api_view(['POST'])
+def target_atta_detail(request):
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    act_des = body_data['Targetdescription']
+    act_tar = body_data['Actualtargetcode']
+    exp_tar = body_data['Expectedconversion']
+    Feature_Id = body_data['Feature_Id']
+    features = Attachments.objects.filter(Feature_Id=Feature_Id,
+                                          AttachmentType=act_des) | Attachments.objects.filter(
+        Feature_Id=Feature_Id, AttachmentType=act_tar) | Attachments.objects.filter(
+        Feature_Id=Feature_Id, AttachmentType=exp_tar)
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
+
+
 @api_view(['POST'])
 def Attcahmentupdate(request, pk):
     feature = Feature.objects.get(Feature_Id=pk)
@@ -99,7 +166,7 @@ def download_attachment(request):
     migration_typeid = body_data['migration_typeid']
     attach_type = body_data['AttachmentType']
     object_type = body_data['object_type']
-    fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/'+attach_type+'/'
+    fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/' + attach_type + '/'
     filename = fl_path + file_name
     filename1 = filename
     fl = open(filename1, 'rb')

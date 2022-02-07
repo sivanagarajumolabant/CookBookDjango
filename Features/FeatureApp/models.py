@@ -50,4 +50,4 @@ class Attachments(models.Model):
     Attachment = models.FileField(upload_to='media/', blank=True, null=True)
 
     def __int__(self):
-        return self.Feature_Id.id
+        return self.Feature_Id.Feature_Id
