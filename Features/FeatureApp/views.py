@@ -91,12 +91,18 @@ def predessors(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-def download_file(request, file_name):
-    fl_path = MEDIA_ROOT + '/media/'
+@api_view(['POST'])
+def download_attachment(request):
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    file_name = body_data['file_name']
+    migration_typeid = body_data['migration_typeid']
+    attach_type = body_data['AttachmentType']
+    object_type = body_data['object_type']
+    fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/'+attach_type+'/'
     filename = fl_path + file_name
     filename1 = filename
-    fl = open(filename, 'rb')
+    fl = open(filename1, 'rb')
     # print(fl_path)
     mime_type, _ = mimetypes.guess_type(fl_path)
     response = HttpResponse(fl, content_type=mime_type)
