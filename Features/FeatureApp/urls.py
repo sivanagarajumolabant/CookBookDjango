@@ -20,9 +20,11 @@ urlpatterns = [
     path('miglevelobjects/<int:id>', views.miglevelobjects),
     path('fnlist',views.featuredropdownlist),
     path('attlist',views.att_list),
-    path('sourceattlist',views.source_atta_detail),
-    path('targetattlist',views.target_atta_detail),
-    path('convattlist',views.conv_atta_detail),
-    path('attdelete',views.attachment_delete),
+    path('sourcedesc/<int:id>',views.Sourcedescription),
+    path('targetdesc/<int:id>',views.Targetdescription),
+    path('convatt/<int:id>',views.Conversion),
+    path('sourcecode/<int:id>',views.Sourcecode),
+    path('atargetcode/<int:id>',views.Actualtargetcode),
+    path('etargetcode/<int:id>',views.Expectedconversion),
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

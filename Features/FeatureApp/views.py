@@ -66,27 +66,39 @@ def att_list(request):
     return Response(serializer.data)
 
 
-@api_view(['POST'])
-def source_atta_detail(request):
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
-    Sourcedescription = body_data['Sourcedescription']
-    Sourcecode = body_data['Sourcecode']
-    Feature_Id = body_data['Feature_Id']
-    features = Attachments.objects.filter(Feature_Id=Feature_Id,
-                                          AttachmentType=Sourcedescription) | Attachments.objects.filter(
-        Feature_Id=Feature_Id, AttachmentType=Sourcecode)
+@api_view(['GET'])
+def Sourcedescription(request, id):
+    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Sourcedescription')
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+def Targetdescription(request, id):
+    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Targetdescription')
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
 
-@api_view(['POST'])
-def conv_atta_detail(request):
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
-    conv = body_data['Conversion']
-    Feature_Id = body_data['Feature_Id']
-    features = Attachments.objects.filter(Feature_Id=Feature_Id, AttachmentType=conv)
+@api_view(['GET'])
+def Conversion(request, id):
+    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Conversion')
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def Sourcecode(request, id):
+    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Sourcecode')
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def Actualtargetcode(request, id):
+    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Actualtargetcode')
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def Expectedconversion(request, id):
+    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Expectedconversion')
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
@@ -110,20 +122,6 @@ def attachment_delete(request):
     os.remove(filename)
     return Response('Deleted')
 
-@api_view(['POST'])
-def target_atta_detail(request):
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
-    act_des = body_data['Targetdescription']
-    act_tar = body_data['Actualtargetcode']
-    exp_tar = body_data['Expectedconversion']
-    Feature_Id = body_data['Feature_Id']
-    features = Attachments.objects.filter(Feature_Id=Feature_Id,
-                                          AttachmentType=act_des) | Attachments.objects.filter(
-        Feature_Id=Feature_Id, AttachmentType=act_tar) | Attachments.objects.filter(
-        Feature_Id=Feature_Id, AttachmentType=exp_tar)
-    serializer = AttachementSerializer(features, many=True)
-    return Response(serializer.data)
 
 
 @api_view(['POST'])
