@@ -23,8 +23,11 @@ urlpatterns = [
     path('sourcedesc/<int:id>',views.Sourcedescription),
     path('targetdesc/<int:id>',views.Targetdescription),
     path('convatt/<int:id>',views.Conversion),
-    path('sourcecode/<int:id>',views.Sourcecode),
-    path('atargetcode/<int:id>',views.Actualtargetcode),
-    path('etargetcode/<int:id>',views.Expectedconversion),
+    path('codefiles/<int:id>',views.attachentsqlcodefiles),
+    path('attdelete',views.attachment_delete),
+
+    # path('sourcecode/<int:id>',views.Sourcecode),
+    # path('atargetcode/<int:id>',views.Actualtargetcode),
+    # path('etargetcode/<int:id>',views.Expectedconversion),
 
 ]+static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

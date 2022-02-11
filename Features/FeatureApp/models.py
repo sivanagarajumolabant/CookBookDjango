@@ -36,6 +36,16 @@ class Feature(models.Model):
         super().save(*args, **kwargs)
 
 
+def user_directory_path(instance, filename):
+    print("instance ", instance)
+    o2p = ''
+    if instance.Feature_Id.Migration_TypeId == '1':
+        o2p = 'Oracle To Postgres'
+        print(o2p)
+    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+    return 'media/{0}/{1}/{2}/{3}'.format(o2p, instance.Feature_Id.Object_Type, instance.AttachmentType, filename)
+
+
 class Attachments(models.Model):
     choices = [
         ('Sourcedescription', 'sourcedescription'),
@@ -47,7 +57,8 @@ class Attachments(models.Model):
     ]
     Feature_Id = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True)
     AttachmentType = models.CharField(max_length=50, blank=True, null=True, choices=choices)
-    Attachment = models.FileField(upload_to='media/', blank=True, null=True)
+    filename = models.CharField(max_length=100, blank=True, null=True)
+    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True)
 
     def __int__(self):
         return self.Feature_Id.Feature_Id

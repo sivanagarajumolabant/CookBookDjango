@@ -14,6 +14,7 @@ class FeatureSerializer(serializers.ModelSerializer):
 
 
 class AttachementSerializer(serializers.ModelSerializer):
+    # Attachment = serializers.FileField()
     class Meta:
         model = Attachments
         fields = "__all__"

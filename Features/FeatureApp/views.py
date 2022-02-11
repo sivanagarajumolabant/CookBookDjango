@@ -84,40 +84,41 @@ def Conversion(request, id):
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
-@api_view(['GET'])
-def Sourcecode(request, id):
-    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Sourcecode')
-    serializer = AttachementSerializer(features, many=True)
-    return Response(serializer.data)
+# @api_view(['GET'])
+# def Sourcecode(request, id):
+#     features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Sourcecode')
+#     serializer = AttachementSerializer(features, many=True)
+#     return Response(serializer.data)
+#
+# @api_view(['GET'])
+# def Actualtargetcode(request, id):
+#     features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Actualtargetcode')
+#     serializer = AttachementSerializer(features, many=True)
+#     return Response(serializer.data)
+#
+# @api_view(['GET'])
+# def Expectedconversion(request, id):
+#     features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Expectedconversion')
+#     serializer = AttachementSerializer(features, many=True)
+#     return Response(serializer.data)
 
-@api_view(['GET'])
-def Actualtargetcode(request, id):
-    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Actualtargetcode')
-    serializer = AttachementSerializer(features, many=True)
-    return Response(serializer.data)
 
-@api_view(['GET'])
-def Expectedconversion(request, id):
-    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Expectedconversion')
-    serializer = AttachementSerializer(features, many=True)
-    return Response(serializer.data)
-
-
-@api_view(['DELETE'])
+@api_view(['POST'])
 def attachment_delete(request):
     # path = 'C:/projects/CookBookDjango/CookBookDjango/Features'
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
+    # body_unicode = request.body.decode('utf-8')
+    # body_data = json.loads(body_unicode)
     # Feature_Id = body_data['Feature_Id']
-    file_name = body_data['file_name']
-    migration_typeid = body_data['migration_typeid']
-    object_type = body_data['object_type']
-    AttachmentType = body_data['AttachmentType']
-    id = body_data['id']
+    file_name = request.data['file_name']
+    migration_typeid = request.data['migration_typeid']
+    object_type = request.data['object_type']
+    AttachmentType = request.data['AttachmentType']
+    id = request.data['id']
     attachment = Attachments.objects.get(id=id)
     print(attachment)
     attachment.delete()
     fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/' + AttachmentType + '/'
+    print(fl_path,'=========')
     filename = fl_path + file_name
     os.remove(filename)
     return Response('Deleted')
@@ -128,8 +129,9 @@ def attachment_delete(request):
 def Attcahmentupdate(request, pk):
     feature = Feature.objects.get(Feature_Id=pk)
     AttachmentType = request.data['AttachmentType']
-    Attachment = request.FILES.get('Attachment')
-    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, 'Attachment': Attachment}
+    Attachment = request.FILES['Attachment']
+    filename = request.data['filename']
+    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename":filename,"Attachment":Attachment}
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
         attachements.save()
@@ -228,3 +230,56 @@ def miglevelobjects(request, id):
         data_format_main[index + 1] = data_format
     datavalues = data_format_main.values()
     return Response(datavalues, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def attachentsqlcodefiles(request, id):
+    # data = Attachments.objects.filter(Feature_Id=Feature_Id,
+    #                                       AttachmentType='Sourcecode') | Attachments.objects.filter(
+    #     Feature_Id=Feature_Id, AttachmentType='Actualtargetcode') | Attachments.objects.filter(
+    #     Feature_Id=Feature_Id, AttachmentType='Expectedconversion')
+    data = Attachments.objects.all()
+    serializer = AttachementSerializer(data, many=True)
+    filenames = []
+    dict1 = {}
+    result = []
+    for x in serializer.data:
+        filenames.append(x['filename'])
+        # print(x['File_name'], x['AttachmentType'])
+    filenames = list(set(filenames))
+    # print(filenames)
+    for x in filenames:
+        temp= {}
+        temp['filename'] = x
+        data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Sourcecode')
+
+        a =list(data1.values_list())
+        print(a)
+        if len(a)== 0:
+              temp['Sourcecode'] = 'N'
+              # temp['sid'] = a[0]
+        else:
+             temp['Sourcecode'] = 'Y'
+             temp['sid'] =  a[0][0]
+        data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Actualtargetcode')
+        print(data1)
+        a = list(data1.values_list())
+        print(a)
+        if len(a) == 0:
+            temp['Actualtargetcode'] = 'N'
+            # temp['atid'] = a[0]
+        else:
+            temp['Actualtargetcode'] = 'Y'
+            temp['atid'] = a[0][0]
+        data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Expectedconversion')
+        a = list(data1.values_list())
+        if len(a) == 0:
+            temp['Expectedconversion'] = 'N'
+            # temp['etid'] = a[0]
+        else:
+            temp['Expectedconversion'] = 'Y'
+            temp['etid'] = a[0][0]
+
+        if temp['Sourcecode']=='Y' or temp['Expectedconversion']=='Y' or temp['Actualtargetcode']=='Y':
+            result.append(temp)
+    return Response(result)
