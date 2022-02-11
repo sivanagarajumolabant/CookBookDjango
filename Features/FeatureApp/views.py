@@ -118,7 +118,7 @@ def attachment_delete(request):
     print(attachment)
     attachment.delete()
     fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/' + AttachmentType + '/'
-    print(fl_path,'=========')
+    # print(fl_path,'=========')
     filename = fl_path + file_name
     os.remove(filename)
     return Response('Deleted')
