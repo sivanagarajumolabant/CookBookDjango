@@ -41,7 +41,13 @@ def user_directory_path(instance, filename):
     o2p = ''
     if instance.Feature_Id.Migration_TypeId == '1':
         o2p = 'Oracle To Postgres'
-        print(o2p)
+        # print(o2p)
+    elif instance.Feature_Id.Migration_TypeId == '2':
+        o2p = 'Oracle TO SQLServer'
+        # print(o2p)
+    elif instance.Feature_Id.Migration_TypeId == '3':
+        o2p = 'Oracle To MYSQL'
+        # print(o2p)
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
     return 'media/{0}/{1}/{2}/{3}'.format(o2p, instance.Feature_Id.Object_Type, instance.AttachmentType, filename)
 
