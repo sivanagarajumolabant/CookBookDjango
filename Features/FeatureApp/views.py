@@ -166,7 +166,7 @@ def download_attachment(request):
     migration_typeid = body_data['migration_typeid']
     attach_type = body_data['AttachmentType']
     object_type = body_data['object_type']
-    fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/' + attach_type + '/'
+    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + attach_type + '/'
     filename = fl_path + file_name
     filename1 = filename
     fl = open(filename1, 'rb')
