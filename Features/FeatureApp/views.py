@@ -37,6 +37,8 @@ def featuredropdownlist(request):
     body_data = json.loads(body_unicode)
     migtype = body_data['Migration_TypeId']
     obj_type = body_data['Object_Type']
+    # print("mig ",migtype)
+    # print("type",obj_type)
     features = Feature.objects.filter(Object_Type=obj_type, Migration_TypeId=migtype)
     serializer = FeaturedropdownSerializer(features, many=True)
     return Response(serializer.data)
