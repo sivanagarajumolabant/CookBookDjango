@@ -74,17 +74,20 @@ def Sourcedescription(request, id):
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 def Targetdescription(request, id):
     features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Targetdescription')
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 def Conversion(request, id):
     features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Conversion')
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
+
 
 # @api_view(['GET'])
 # def Sourcecode(request, id):
@@ -116,15 +119,15 @@ def attachment_delete(request):
     object_type = request.data['object_type']
     AttachmentType = request.data['AttachmentType']
     id = request.data['id']
+    featurename = request.data['fname']
     attachment = Attachments.objects.get(id=id)
-    print(attachment)
+    # print(attachment)
     attachment.delete()
-    fl_path = MEDIA_ROOT + '/media/' + '/' + migration_typeid + '/' + object_type + '/' + AttachmentType + '/'
+    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + AttachmentType + '/'
     # print(fl_path,'=========')
     filename = fl_path + file_name
     os.remove(filename)
     return Response('Deleted')
-
 
 
 @api_view(['POST'])
@@ -133,7 +136,8 @@ def Attcahmentupdate(request, pk):
     AttachmentType = request.data['AttachmentType']
     Attachment = request.FILES['Attachment']
     filename = request.data['filename']
-    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename":filename,"Attachment":Attachment}
+    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename": filename,
+                  "Attachment": Attachment}
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
         attachements.save()
@@ -168,7 +172,8 @@ def download_attachment(request):
     migration_typeid = body_data['migration_typeid']
     attach_type = body_data['AttachmentType']
     object_type = body_data['object_type']
-    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + attach_type + '/'
+    featurename = body_data['fname']
+    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + attach_type + '/'
     filename = fl_path + file_name
     filename1 = filename
     fl = open(filename1, 'rb')
@@ -251,18 +256,18 @@ def attachentsqlcodefiles(request, id):
     filenames = list(set(filenames))
     # print(filenames)
     for x in filenames:
-        temp= {}
+        temp = {}
         temp['filename'] = x
         data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Sourcecode')
 
-        a =list(data1.values_list())
+        a = list(data1.values_list())
         print(a)
-        if len(a)== 0:
-              temp['Sourcecode'] = 'N'
-              # temp['sid'] = a[0]
+        if len(a) == 0:
+            temp['Sourcecode'] = 'N'
+            # temp['sid'] = a[0]
         else:
-             temp['Sourcecode'] = 'Y'
-             temp['sid'] =  a[0][0]
+            temp['Sourcecode'] = 'Y'
+            temp['sid'] = a[0][0]
         data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Actualtargetcode')
         print(data1)
         a = list(data1.values_list())
@@ -282,6 +287,59 @@ def attachentsqlcodefiles(request, id):
             temp['Expectedconversion'] = 'Y'
             temp['etid'] = a[0][0]
 
-        if temp['Sourcecode']=='Y' or temp['Expectedconversion']=='Y' or temp['Actualtargetcode']=='Y':
+        if temp['Sourcecode'] == 'Y' or temp['Expectedconversion'] == 'Y' or temp['Actualtargetcode'] == 'Y':
             result.append(temp)
     return Response(result)
+
+
+def create_and_append_sqlfile_single(path_of_file_sql, data):
+    with open(path_of_file_sql, 'a') as f:
+        f.write("{}\n\n\n\n".format(data))
+
+
+@api_view(['POST'])
+def feature_conversion_files(request):
+    try:
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        feature_id = body_data['Feature_Id']
+        attach_type = body_data['AttachmentType']
+        feature = body_data['Feature_Name']
+        feature1 = str(feature)[5:]
+        migid = body_data['Migration_TypeId']
+        objtype = body_data['Object_Type']
+        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        output_path = path + '/' + 'media' + '/' + migid + '/' + objtype + '/' + feature + '/' + 'Actualtargetcode' + '/'
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        module_path = path + '/' + 'media' + '/' + migid + '/' + objtype + '/' + feature + '/' + 'Conversion' + '/'
+        sys.path.append(module_path)
+        if not os.path.exists(module_path):
+            return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        filter_files = Attachments.objects.filter(Feature_Id=feature_id, AttachmentType=attach_type)
+        filter_values = list(filter_files.values_list())
+        if filter_values:
+            for file in filter_values:
+                with open(file[4], 'r', encoding='utf-8') as f:
+                    read_text = f.read()
+                # print("check==========================", feature1)
+                a = import_module(feature1)
+                function_call = getattr(a, str(feature1).strip())
+                output = function_call(read_text, 'hrpay')
+                if os.path.isfile(output_path + file[3]):
+                    os.remove(output_path + file[3])
+                create_and_append_sqlfile_single(output_path + file[3], output)
+                target_filename = file[3]
+                target_filepath = output_path + file[3]
+                split_media  = 'media'+target_filepath.split('media')[1]
+                target_object = Attachments(AttachmentType='Actualtargetcode', filename=target_filename,
+                                            Attachment=split_media, Feature_Id_id=feature_id)
+                target_object.save()
+        for row in Attachments.objects.all().reverse():
+            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType).count() > 1:
+                row.delete()
+        serializer = ConversionfilesSerializer(filter_files, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as err:
+        return Response({"error":err}, status=status.HTTP_400_BAD_REQUEST)

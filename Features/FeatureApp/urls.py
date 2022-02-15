@@ -25,6 +25,7 @@ urlpatterns = [
     path('convatt/<int:id>',views.Conversion),
     path('codefiles/<int:id>',views.attachentsqlcodefiles),
     path('attdelete',views.attachment_delete),
+    path('convertfiles',views.feature_conversion_files),
 
     # path('sourcecode/<int:id>',views.Sourcecode),
     # path('atargetcode/<int:id>',views.Actualtargetcode),

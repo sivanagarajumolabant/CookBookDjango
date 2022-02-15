@@ -30,3 +30,8 @@ class migrationlevelfeatures(serializers.ModelSerializer):
     class Meta:
         model = Feature
         fields = ('Feature_Id', 'Feature_Name',)
+
+class ConversionfilesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attachments
+        fields = ('Attachment',)

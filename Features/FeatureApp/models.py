@@ -49,7 +49,7 @@ def user_directory_path(instance, filename):
         o2p = 'Oracle To MYSQL'
         # print(o2p)
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    return 'media/{0}/{1}/{2}/{3}'.format(o2p, instance.Feature_Id.Object_Type, instance.AttachmentType, filename)
+    return 'media/{0}/{1}/{2}/{3}/{4}'.format(o2p, instance.Feature_Id.Object_Type, instance.Feature_Id.Feature_Name,instance.AttachmentType, filename)
 
 
 class Attachments(models.Model):
