@@ -207,6 +207,7 @@ def conversion(request):
         python_code = python_code.replace("'@rawstringend", '')
         with open(file_path, 'w') as f:
             f.write(python_code)
+        # print(feature_name)
         module = import_module(feature_name)
         data = getattr(module, feature_name)
         executableoutput = data(source_code)
