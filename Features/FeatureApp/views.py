@@ -8,6 +8,7 @@ import mimetypes
 import json, os
 from django.http import HttpResponse
 from importlib import import_module
+from import_file import import_file
 import re
 import sys
 # from emailcontent import email_verification_data
@@ -218,7 +219,8 @@ def conversion(request):
     with open(file_path, 'w') as f:
         f.write(python_code)
     # print(feature_name)
-    module = import_module(feature_name)
+    # module = import_module(feature_name)
+    module = import_file(file_path)
     # print(feature_name, '=====', module)
     data = getattr(module, str(feature_name).strip())
     # print(data)
