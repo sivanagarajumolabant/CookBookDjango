@@ -10,8 +10,17 @@ from django.http import HttpResponse
 from importlib import import_module
 import re
 import sys
+# from emailcontent import email_verification_data
 
 from Features.settings import BASE_DIR, MEDIA_ROOT
+
+import jwt
+from django.urls import reverse
+from rest_framework import generics
+from django.conf import settings
+from django.contrib.sites.shortcuts import get_current_site
+from rest_framework_simplejwt.tokens import RefreshToken
+from .utils import Util
 
 
 # Create your views here.
@@ -333,7 +342,7 @@ def feature_conversion_files(request):
                 create_and_append_sqlfile_single(output_path + file[3], output)
                 target_filename = file[3]
                 target_filepath = output_path + file[3]
-                split_media  = 'media'+target_filepath.split('media')[1]
+                split_media = 'media' + target_filepath.split('media')[1]
                 target_object = Attachments(AttachmentType='Actualtargetcode', filename=target_filename,
                                             Attachment=split_media, Feature_Id_id=feature_id)
                 target_object.save()
@@ -343,4 +352,44 @@ def feature_conversion_files(request):
         serializer = ConversionfilesSerializer(filter_files, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as err:
-        return Response({"error":err}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class RegisterView(generics.GenericAPIView):
+    serializer_class = RegisterSerializer
+
+    def post(self, request):
+        user = request.data
+        serializer = self.serializer_class(data=user)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        user_data = serializer.data
+        user = Users.objects.get(email=user_data['email'])
+        token = RefreshToken.for_user(user)
+        # current_site = get_current_site(request).domain
+        # print(current_site,"current_site")
+        # relativeLink = reverse('email-verify')
+        # absurl = 'http://localhost:3000/' + current_site + relativeLink + "?token=" + str(token)
+        absurl = 'http://localhost:3000/' + "?token=" + str(token)
+        email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
+        data = {'email_body': email_body, 'to_email': user.email,
+                'email_subject': 'Verify your email'}
+        Util.send_email(data)
+        return Response(user_data, status=status.HTTP_201_CREATED)
+
+
+class VerifyEmail(generics.GenericAPIView):
+    def get(self, request):
+        token = request.GET.get('token')
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY)
+            user = Users.objects.get(id=payload['user_id'])
+            if not user.is_verified:
+                user.is_verified = True
+                user.is_active = True
+                user.save()
+            return Response({'email': 'Sucessfully Activated'}, status=status.HTTP_200_OK)
+        except jwt.ExpiredSignatureError as identifier:
+            return Response({'error': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
+        except jwt.exceptions.DecodeError as identifier:
+            return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
