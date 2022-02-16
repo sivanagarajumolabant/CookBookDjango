@@ -196,38 +196,40 @@ def download_attachment(request):
 @api_view(['POST'])
 def conversion(request):
     # try:
-        body_unicode = request.body.decode('utf-8')
-        body_data = json.loads(body_unicode)
-        feature_name = body_data['featurename']
-        python_code = body_data['convcode']
-        source_code = body_data['sourcecode']
-        migration_typeid = body_data['migration_typeid']
-        object_type = body_data['object_type']
-        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        module_folder_name = "Modules"
-        module_path = path + '/' + module_folder_name + '/' + migration_typeid + '/' + object_type
-        sys.path.append(module_path)
-        if not os.path.exists(module_path):
-            os.makedirs(module_path)
-        python_code = re.sub(r'def\s+main', 'def ' + feature_name, python_code)
-        file_path = module_path + '/' + str(feature_name).strip() + '.py'
-        sys.path.insert(0, file_path)
-        python_code = python_code.replace("r@rawstringstart'", '')
-        python_code = python_code.replace("'@rawstringend", '')
-        # print(file_path,"===========")
-        with open(file_path, 'w') as f:
-            f.write(python_code)
-        # print(feature_name)
-        module = import_module(feature_name)
-        # print(feature_name, '=====', module)
-        data = getattr(module, str(feature_name).strip())
-        # print(data)
-        executableoutput = data(source_code)
-        # print(executableoutput)
-        return Response(executableoutput, status=status.HTTP_200_OK)
-    # except Exception as err:
-    #     print(err)
-    #     return Response(err, status=status.HTTP_400_BAD_REQUEST)
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    feature_name = body_data['featurename']
+    python_code = body_data['convcode']
+    source_code = body_data['sourcecode']
+    migration_typeid = body_data['migration_typeid']
+    object_type = body_data['object_type']
+    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    module_folder_name = "Modules"
+    module_path = path + '/' + module_folder_name + '/' + migration_typeid + '/' + object_type
+    sys.path.append(module_path)
+    if not os.path.exists(module_path):
+        os.makedirs(module_path)
+    python_code = re.sub(r'def\s+main', 'def ' + feature_name, python_code)
+    file_path = module_path + '/' + str(feature_name).strip() + '.py'
+    sys.path.insert(0, file_path)
+    python_code = python_code.replace("r@rawstringstart'", '')
+    python_code = python_code.replace("'@rawstringend", '')
+    # print(file_path,"===========")
+    with open(file_path, 'w') as f:
+        f.write(python_code)
+    # print(feature_name)
+    module = import_module(feature_name)
+    # print(feature_name, '=====', module)
+    data = getattr(module, str(feature_name).strip())
+    # print(data)
+    executableoutput = data(source_code)
+    # print(executableoutput)
+    return Response(executableoutput, status=status.HTTP_200_OK)
+
+
+# except Exception as err:
+#     print(err)
+#     return Response(err, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -374,17 +376,19 @@ class RegisterView(generics.GenericAPIView):
         # relativeLink = reverse('email-verify')
         # absurl = 'http://localhost:3000/' + current_site + relativeLink + "?token=" + str(token)
 
-        # absurl = 'http://localhost:3000/' + "?token=" + str(token)
-        # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
-        # data = {'email_body': email_body, 'to_email': user.email,
-        #         'email_subject': 'Verify your email'}
-        # Util.send_email(data)
+        absurl = 'http://localhost:3000/?' + str(token)
+        email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
+        data = {'email_body': email_body, 'to_email': user.email,
+                'email_subject': 'Verify your email'}
+        Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
 
 
 class VerifyEmail(generics.GenericAPIView):
     def get(self, request):
         token = request.GET.get('token')
+        token = token.replace('?','').strip()
+        # token  = request.data['token']
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
             user = Users.objects.get(id=payload['user_id'])
@@ -392,8 +396,8 @@ class VerifyEmail(generics.GenericAPIView):
                 user.is_verified = True
                 user.is_active = True
                 user.save()
-            return Response({'email': 'Sucessfully Activated'}, status=status.HTTP_200_OK)
+            return Response({'msg': 'Sucessfully Activated'}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError as identifier:
-            return Response({'error': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError as identifier:
-            return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
