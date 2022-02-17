@@ -334,16 +334,17 @@ def feature_conversion_files(request):
         if not os.path.exists(module_path):
             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
                             status=status.HTTP_400_BAD_REQUEST)
+        file_path = module_path + '/' + feature1 + '.py'
+        sys.path.insert(0, file_path)
         filter_files = Attachments.objects.filter(Feature_Id=feature_id, AttachmentType=attach_type)
         filter_values = list(filter_files.values_list())
         if filter_values:
             for file in filter_values:
                 with open(file[4], 'r', encoding='utf-8') as f:
                     read_text = f.read()
-                # print("check==========================", feature1)
-                a = import_module(feature1)
+                a = import_file(file_path)
                 function_call = getattr(a, str(feature1).strip())
-                output = function_call(read_text, 'hrpay')
+                output = function_call(read_text)
                 if os.path.isfile(output_path + file[3]):
                     os.remove(output_path + file[3])
                 create_and_append_sqlfile_single(output_path + file[3], output)
@@ -360,7 +361,6 @@ def feature_conversion_files(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as err:
         return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
@@ -455,12 +455,11 @@ class VerifyEmail(generics.GenericAPIView):
 #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def create_tablepage_featuresdata(request):
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
-    Migration_TypeId = body_data['Migration_TypeId']
-    Object_Type = body_data['Object_Type']
+    print(request)
+    Migration_TypeId = request.data['Migration_TypeId']
+    Object_Type = request.data['Object_Type']
     data = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
     serializer=FeatureSerializer(data, many=True)
     return Response(serializer.data)
