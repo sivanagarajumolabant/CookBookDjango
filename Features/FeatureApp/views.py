@@ -405,38 +405,38 @@ class VerifyEmail(generics.GenericAPIView):
             return Response({'msg': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @api_view(['GET'])
-# def featurelistperuser(request):
-#     features = Users.objects.filter(username='msnr')
-#     serializer = viewlevelfeatures(features, many=True)
-#     data = serializer.data
-#     # print(type(data[0]))
-#     data1 = data[0]
-#     data2 = eval(data1['can_view'])
-#     return Response(data2)
-#
-# @api_view(['GET'])
-# def add_view(request,id):
-#     object_type='Index'
-#     # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
-#     dict1 = {'Procedures':0,'Function':1,'Package':2,'Index':3,'Materialized view':4}
-#     index_num = dict1[object_type]
-#     feature = 'xml1'
-#     # print(request.Users.username,"username")
-#     query1 = Users.objects.filter(username='pernisivasai').values('can_view')
-#     temp = list(query1)
-#     temp = list(temp[0].values())
-#     temp = temp[0]
-#     temp1 = eval(temp)
-#     temp2 = temp1[index_num]
-#     temp3 = temp2['subMenu']
-#     if feature not in temp3:
-#         temp3.append(feature)
-#     # print(temp1)
-#     a = Users.objects.get(username='pernisivasai')
-#     a.can_view = temp1
-#     a.save()
-#     return Response('testing')
+@api_view(['GET'])
+def featurelistperuser(request):
+    features = Users.objects.filter(username='quadrant')
+    serializer = viewlevelfeatures(features, many=True)
+    data = serializer.data
+    # print(type(data[0]))
+    data1 = data[0]
+    data2 = eval(data1['can_view'])
+    return Response(data2)
+
+@api_view(['GET'])
+def add_view(request):
+    object_type='Procedures'
+    # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
+    dict1 = {'Procedures':0,'Function':1,'Package':2,'Index':3,'Materialized view':4}
+    index_num = dict1[object_type]
+    feature = 'xml1'
+    # print(request.Users.username,"username")
+    query1 = Users.objects.filter(username='quadrant').values('can_view')
+    temp = list(query1)
+    temp = list(temp[0].values())
+    temp = temp[0]
+    temp1 = eval(temp)
+    temp2 = temp1[index_num]
+    temp3 = temp2['subMenu']
+    if feature not in temp3:
+        temp3.append(feature)
+    # print(temp1)
+    a = Users.objects.get(username='quadrant')
+    a.can_view = temp1
+    a.save()
+    return Response('testing')
 
 #
 # @api_view(['GET'])

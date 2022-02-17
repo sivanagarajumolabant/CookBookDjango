@@ -96,7 +96,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         # email.send()
         return user
 
-# class viewlevelfeatures(serializers.ModelSerializer):
-#     class Meta:
-#         model = Users
-#         fields = ('can_view',)
+class viewlevelfeatures(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ('can_view',)
