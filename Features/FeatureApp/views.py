@@ -378,7 +378,7 @@ class RegisterView(generics.GenericAPIView):
         # relativeLink = reverse('email-verify')
         # absurl = 'http://localhost:3000/' + current_site + relativeLink + "?token=" + str(token)
 
-        absurl = 'http://localhost:3000/?' + str(token)
+        absurl = 'http://localhost:3000/emailverification?' + str(token)
         email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
         data = {'email_body': email_body, 'to_email': user.email,
                 'email_subject': 'Verify your email'}
@@ -404,12 +404,16 @@ class VerifyEmail(generics.GenericAPIView):
         except jwt.exceptions.DecodeError as identifier:
             return Response({'msg': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
-#
+
 # @api_view(['GET'])
 # def featurelistperuser(request):
-#     features = Users.objects.filter(username='dilip')
+#     features = Users.objects.filter(username='msnr')
 #     serializer = viewlevelfeatures(features, many=True)
-#     return Response(serializer.data)
+#     data = serializer.data
+#     # print(type(data[0]))
+#     data1 = data[0]
+#     data2 = eval(data1['can_view'])
+#     return Response(data2)
 #
 # @api_view(['GET'])
 # def add_view(request,id):

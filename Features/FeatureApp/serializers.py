@@ -99,4 +99,4 @@ class RegisterSerializer(serializers.ModelSerializer):
 # class viewlevelfeatures(serializers.ModelSerializer):
 #     class Meta:
 #         model = Users
-#         fields = ('id','can_view')
+#         fields = ('can_view',)

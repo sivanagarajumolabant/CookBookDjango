@@ -4,12 +4,10 @@ import json
 
 
 class Users(AbstractUser):
-    # str1 = [{"Label": "Procedures", "subMenu": []}, {"Label": "Functions", "subMenu": []},
-    #         {"Label": "Packages", "subMenu": []}, {"Label": "Indexes", "subMenu": []},
-    #         {"Label": "Materialized views", "subMenu": []}]
+    # str1 = '{{"Label": "Procedures","subMenu": []},{"Label": "Functions","subMenu": []},{"Label": "Packages","subMenu": []},{"Label": "Indexes","subMenu": []},{"Label": "Materialized views", "subMenu": []}}'
     # obj = json.dumps(str1)
     is_verified = models.BooleanField(default=False)
-    # can_view = models.TextField(default=obj)
+    # can_view = models.TextField(default=str1)
 
 
 # Create your models here.

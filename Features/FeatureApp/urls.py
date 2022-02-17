@@ -28,7 +28,7 @@ urlpatterns = [
                   path('email-verify/', VerifyEmail.as_view(), name="email-verify"),
                   path('register/', RegisterView.as_view(), name='auth_register'),
                   path('tablesdata/', views.create_tablepage_featuresdata),
-                  path('requestfndata/', views.get_Featurenames)
+                  path('requestfndata/', views.get_Featurenames),
 
                   # path('testing/<int:id>', views.add_view),
                   # path('fvlist/', views.featurelistperuser)
