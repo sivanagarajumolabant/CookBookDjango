@@ -354,7 +354,7 @@ def feature_conversion_files(request):
                                             Attachment=split_media, Feature_Id_id=feature_id)
                 target_object.save()
         for row in Attachments.objects.all().reverse():
-            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType).count() > 1:
+            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType, Feature_Id_id=row.Feature_Id_id).count() > 1:
                 row.delete()
         serializer = ConversionfilesSerializer(filter_files, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -403,3 +403,77 @@ class VerifyEmail(generics.GenericAPIView):
             return Response({'msg': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError as identifier:
             return Response({'msg': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+
+#
+# @api_view(['GET'])
+# def featurelistperuser(request):
+#     features = Users.objects.filter(username='dilip')
+#     serializer = viewlevelfeatures(features, many=True)
+#     return Response(serializer.data)
+#
+# @api_view(['GET'])
+# def add_view(request,id):
+#     object_type='Index'
+#     # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
+#     dict1 = {'Procedures':0,'Function':1,'Package':2,'Index':3,'Materialized view':4}
+#     index_num = dict1[object_type]
+#     feature = 'xml1'
+#     # print(request.Users.username,"username")
+#     query1 = Users.objects.filter(username='pernisivasai').values('can_view')
+#     temp = list(query1)
+#     temp = list(temp[0].values())
+#     temp = temp[0]
+#     temp1 = eval(temp)
+#     temp2 = temp1[index_num]
+#     temp3 = temp2['subMenu']
+#     if feature not in temp3:
+#         temp3.append(feature)
+#     # print(temp1)
+#     a = Users.objects.get(username='pernisivasai')
+#     a.can_view = temp1
+#     a.save()
+#     return Response('testing')
+
+#
+# @api_view(['GET'])
+# # def sequence(request, Object_Type, Migration_TypeId):
+# def Featurenames(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     Object_Type = body_data['Object_Type']
+#     Sequence = body_data['']
+#     Keywords = body_data['Keywords']
+#     Estimations = body_data['Estimations']
+#     features = Feature.objects.filter(Object_Type=Object_Type, Sequence=Sequence, Keywords=Keywords, Estimations=Estimations)
+#     serializer = NameSerialixzer(features, many=True)
+#     return Response(serializer.data, status=status.HTTP_200_OK)
+#
+# @api_view(['GET'])
+# def Only_Featurenames(request):
+#     features = Feature.objects.all()
+#     serializer = NameSerialixzer(features, many=True)
+#     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def create_tablepage_featuresdata(request):
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    Migration_TypeId = body_data['Migration_TypeId']
+    Object_Type = body_data['Object_Type']
+    data = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+    serializer=FeatureSerializer(data, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_Featurenames(request):
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    Migration_TypeId = body_data['Migration_TypeId']
+    Object_Type = body_data['Object_Type']
+    if str(Object_Type).upper()=='ALL':
+        features = Feature.objects.all()
+    else:
+        features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+    serializer = migrationlevelfeatures(features, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

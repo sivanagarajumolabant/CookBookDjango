@@ -24,6 +24,7 @@ class AttachementSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+
 class SequenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
@@ -94,3 +95,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         # email = EmailMessage(mail_subject, message, to=[to_email])
         # email.send()
         return user
+
+# class viewlevelfeatures(serializers.ModelSerializer):
+#     class Meta:
+#         model = Users
+#         fields = ('id','can_view')

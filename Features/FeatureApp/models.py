@@ -1,9 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser
+import json
 
 
 class Users(AbstractUser):
+    # str1 = [{"Label": "Procedures", "subMenu": []}, {"Label": "Functions", "subMenu": []},
+    #         {"Label": "Packages", "subMenu": []}, {"Label": "Indexes", "subMenu": []},
+    #         {"Label": "Materialized views", "subMenu": []}]
+    # obj = json.dumps(str1)
     is_verified = models.BooleanField(default=False)
+    # can_view = models.TextField(default=obj)
 
 
 # Create your models here.
@@ -12,9 +18,12 @@ class Feature(models.Model):
         ('Programlevel', 'programlevel'),
         ('Statementlevel', 'statementlevel'),
     ]
+
     Migration_TypeId = models.CharField(max_length=50)
     Level = models.CharField(max_length=50, choices=choices, null=True, blank=True)
     Version_Id = models.SmallIntegerField(default=0)
+    Keywords = models.TextField(blank=True, null=True)
+    Estimations = models.TextField(blank=True, null=True)
     Feature_Version = models.SmallIntegerField(default=0)
     Object_Type = models.CharField(max_length=50)
     Feature_Id = models.BigAutoField(primary_key=True)

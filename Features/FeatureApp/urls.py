@@ -5,7 +5,6 @@ from django.conf.urls.static import static
 from django.conf import settings
 from .views import VerifyEmail, RegisterView
 
-
 urlpatterns = [
                   path('fcreate', views.featurecreate),
                   path('fdelete/<int:pk>', views.featuredelete),
@@ -28,6 +27,11 @@ urlpatterns = [
                   path('convertfiles', views.feature_conversion_files),
                   path('email-verify/', VerifyEmail.as_view(), name="email-verify"),
                   path('register/', RegisterView.as_view(), name='auth_register'),
+                  path('tablesdata/', views.create_tablepage_featuresdata),
+                  path('requestfndata/', views.get_Featurenames)
+
+                  # path('testing/<int:id>', views.add_view),
+                  # path('fvlist/', views.featurelistperuser)
 
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
