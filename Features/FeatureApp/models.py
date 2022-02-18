@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser
 import json
+from FeatureApp.storage import CleanFileNameStorage
 
 
 class Users(AbstractUser):
@@ -76,7 +77,11 @@ class Attachments(models.Model):
     Feature_Id = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True)
     AttachmentType = models.CharField(max_length=50, blank=True, null=True, choices=choices)
     filename = models.CharField(max_length=100, blank=True, null=True)
-    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True)
+    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True,storage=CleanFileNameStorage())
 
     def __int__(self):
         return self.Feature_Id.Feature_Id
+
+    def delete(self, using=None, keep_parents=False):
+        self.Attachment.delete()
+        return super(Attachments, self).delete()

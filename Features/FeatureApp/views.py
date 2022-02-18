@@ -12,7 +12,7 @@ from import_file import import_file
 import re
 import sys
 # from emailcontent import email_verification_data
-
+from django.contrib.auth.decorators import permission_required
 from Features.settings import BASE_DIR, MEDIA_ROOT
 
 import jwt
@@ -22,10 +22,14 @@ from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import Util
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 
 # Create your views here.
 @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# @permission_required('FeatureApp.add_feature', raise_exception=True)
 def featurecreate(request):
     serializer = FeatureSerializer(data=request.data)
     if serializer.is_valid():
@@ -33,8 +37,9 @@ def featurecreate(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# @permission_required('FeatureApp.view_feature', raise_exception=True)
 def featurelist(request):
     features = Feature.objects.all()
     serializer = FeatureSerializer(features, many=True)
@@ -133,10 +138,10 @@ def attachment_delete(request):
     attachment = Attachments.objects.get(id=id)
     # print(attachment)
     attachment.delete()
-    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + AttachmentType + '/'
-    # print(fl_path,'=========')
-    filename = fl_path + file_name
-    os.remove(filename)
+    # fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + AttachmentType + '/'
+    # # print(fl_path,'=========')
+    # filename = fl_path + file_name
+    # os.remove(filename)
     return Response('Deleted')
 
 
@@ -146,14 +151,15 @@ def Attcahmentupdate(request, pk):
     AttachmentType = request.data['AttachmentType']
     Attachment = request.FILES['Attachment']
     filename = request.data['filename']
-    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename": filename,
-                  "Attachment": Attachment}
+    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename":filename,"Attachment":Attachment}
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
         attachements.save()
+        for row in Attachments.objects.all().reverse():
+            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,Feature_Id_id=row.Feature_Id_id).count() > 1:
+                row.delete()
         return Response(attachements.data, status=status.HTTP_200_OK)
     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['DELETE'])
 def featuredelete(request, pk):
@@ -173,6 +179,10 @@ def predessors(request):
     serializer = SequenceSerializer(features, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+def get_valid_filename(s):
+    s = force_str(s).strip()
+    return re.sub(r'(?u)[^-\w. ]', '', s)
 
 @api_view(['POST'])
 def download_attachment(request):
@@ -407,7 +417,7 @@ class VerifyEmail(generics.GenericAPIView):
 
 @api_view(['GET'])
 def featurelistperuser(request):
-    features = Users.objects.filter(username='quadrant')
+    features = Users.objects.filter(username='naga')
     serializer = viewlevelfeatures(features, many=True)
     data = serializer.data
     # print(type(data[0]))
@@ -421,23 +431,31 @@ def add_view(request):
     # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
     dict1 = {'Procedures':0,'Function':1,'Package':2,'Index':3,'Materialized view':4}
     index_num = dict1[object_type]
-    feature = 'xml1'
+    feature = 'xml4'
     # print(request.Users.username,"username")
-    query1 = Users.objects.filter(username='quadrant').values('can_view')
+    query1 = Users.objects.filter(username='naga').values('can_view')
     temp = list(query1)
     temp = list(temp[0].values())
     temp = temp[0]
     temp1 = eval(temp)
     temp2 = temp1[index_num]
     temp3 = temp2['subMenu']
-    if feature not in temp3:
-        temp3.append(feature)
+    feature_already = []
+    for k in temp3:
+        # print(k)
+        a = list(k.values())
+        feature_already.append(a[0])
+    # print(feature_already)
+    if feature not in feature_already:
+        temp_dict =  {
+                "Feature_Name": feature
+            }
+        temp3.append(temp_dict)
     # print(temp1)
-    a = Users.objects.get(username='quadrant')
+    a = Users.objects.get(username='naga')
     a.can_view = temp1
     a.save()
-    return Response('testing')
-
+    return Response(temp1)
 #
 # @api_view(['GET'])
 # # def sequence(request, Object_Type, Migration_TypeId):
