@@ -180,9 +180,6 @@ def predessors(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def get_valid_filename(s):
-    s = force_str(s).strip()
-    return re.sub(r'(?u)[^-\w. ]', '', s)
 
 @api_view(['POST'])
 def download_attachment(request):
@@ -193,14 +190,15 @@ def download_attachment(request):
     attach_type = body_data['AttachmentType']
     object_type = body_data['object_type']
     featurename = body_data['fname']
-    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + attach_type + '/'
-    filename = fl_path + file_name
-    filename1 = filename
-    fl = open(filename1, 'rb')
+    fid = body_data['feature_id']
+    filter_files = Attachments.objects.filter(Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
+    filter_values = list(filter_files.values_list())
+    file_path = filter_values[0]
+    fl = open(file_path[4], 'rb')
     # print(fl_path)
-    mime_type, _ = mimetypes.guess_type(fl_path)
+    mime_type, _ = mimetypes.guess_type(file_path[4])
     response = HttpResponse(fl, content_type=mime_type)
-    response['Content-Disposition'] = "attachment; filename=%s" % filename1
+    response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
 
 
@@ -425,15 +423,16 @@ def featurelistperuser(request):
     data2 = eval(data1['can_view'])
     return Response(data2)
 
+
 @api_view(['GET'])
 def add_view(request):
-    object_type='Procedures'
+    object_type = 'Function'
     # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
-    dict1 = {'Procedures':0,'Function':1,'Package':2,'Index':3,'Materialized view':4}
+    dict1 = {'Procedures': 0, 'Function': 1, 'Package': 2, 'Index': 3, 'Materialized view': 4}
     index_num = dict1[object_type]
-    feature = 'xml4'
+    feature = 'xml5'
     # print(request.Users.username,"username")
-    query1 = Users.objects.filter(username='naga').values('can_view')
+    query1 = Users.objects.filter(username='tejaaaa').values('can_view')
     temp = list(query1)
     temp = list(temp[0].values())
     temp = temp[0]
@@ -446,17 +445,22 @@ def add_view(request):
         a = list(k.values())
         feature_already.append(a[0])
     # print(feature_already)
+    object_dict = {'Procedure': 'Proc', 'Function': 'Func', 'Package': 'Pack', 'Index': 'Inde',
+                   'Materialized view': 'Mate', 'Sequence': 'Sequ', 'Synonym': 'Syno', 'Tabel': 'Tabe',
+                   'Trigger': 'Trig', 'Type': 'Type', 'View': 'view'}
+    Feature_Name = object_dict[object_type] + '_' + feature
     if feature not in feature_already:
-        temp_dict =  {
-                "Feature_Name": feature
-            }
+        temp_dict = {
+            "Feature_Name": Feature_Name
+        }
         temp3.append(temp_dict)
     # print(temp1)
-    a = Users.objects.get(username='naga')
+    a = Users.objects.get(username='tejaaaa')
     a.can_view = temp1
     a.save()
     return Response(temp1)
-#
+
+
 # @api_view(['GET'])
 # # def sequence(request, Object_Type, Migration_TypeId):
 # def Featurenames(request):
