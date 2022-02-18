@@ -461,19 +461,19 @@ def add_view(request):
 
 @api_view(['POST'])
 def create_tablepage_featuresdata(request):
-    print(request)
+    # print(request)
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
     data = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
     serializer=FeatureSerializer(data, many=True)
     return Response(serializer.data)
 
-@api_view(['GET'])
+@api_view(['POST'])
 def get_Featurenames(request):
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
-    Migration_TypeId = body_data['Migration_TypeId']
-    Object_Type = body_data['Object_Type']
+    # body_unicode = request.body.decode('utf-8')
+    # body_data = json.loads(body_unicode)
+    Migration_TypeId = request.data['Migration_TypeId']
+    Object_Type = request.data['Object_Type']
     if str(Object_Type).upper()=='ALL':
         features = Feature.objects.all()
     else:
