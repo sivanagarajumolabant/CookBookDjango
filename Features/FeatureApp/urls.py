@@ -31,8 +31,9 @@ urlpatterns = [
                   path('requestfndata/', views.get_Featurenames),
 
                   path('testing/', views.add_view),
-                  path('fvlist/', views.featurelistperuser)
-
+                  path('editpermissions/', views.can_edit),
+                  path('fvlist/', views.featurelistperuser),
+                  path('featuredetail/<int:pk>/', views.featureperuserdetail)
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
                   # path('etargetcode/<int:id>',views.Expectedconversion),

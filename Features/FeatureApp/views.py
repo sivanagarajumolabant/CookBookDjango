@@ -415,13 +415,46 @@ class VerifyEmail(generics.GenericAPIView):
 
 @api_view(['GET'])
 def featurelistperuser(request):
-    features = Users.objects.filter(username='naga')
+    features = Users.objects.filter(username='msnr')
     serializer = viewlevelfeatures(features, many=True)
     data = serializer.data
     # print(type(data[0]))
     data1 = data[0]
     data2 = eval(data1['can_view'])
     return Response(data2)
+
+@api_view(['GET'])
+def featureperuserdetail(request, pk):
+    object_type = 'Procedures'
+    # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
+    dict1 = {'Procedures': 0, 'Function': 1, 'Package': 2, 'Index': 3, 'Materialized view': 4}
+    index_num = dict1[object_type]
+    query1 = Users.objects.filter(username='msnr').values('can_edit')
+    temp = list(query1)
+    temp = list(temp[0].values())
+    temp = temp[0]
+    temp1 = eval(temp)
+    temp2 = temp1[index_num]
+    temp3 = temp2['subMenu']
+    feature_already = []
+    edit = 0
+    for k in temp3:
+        # print(k)
+        a = list(k.values())
+        feature_already.append(a[0])
+    # tempee = pk
+    # print(feature_already,'feature-already')
+    # feature_name = Feature.objects.get()
+    # print(feature_name)
+    feature = Feature.objects.filter(Feature_Id=pk).values('Feature_Name')[0].values()
+    feature_name = list(feature)[0]
+    # print(feature_name,'feature-name')
+    if feature_name in feature_already:
+        edit = 1
+    features = Feature.objects.get(Feature_Id=pk)
+    serializer = FeatureSerializer(features, many=False)
+    response = {'edit':edit,'serializer':serializer.data}
+    return Response(response)
 
 
 @api_view(['GET'])
@@ -430,9 +463,9 @@ def add_view(request):
     # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
     dict1 = {'Procedures': 0, 'Function': 1, 'Package': 2, 'Index': 3, 'Materialized view': 4}
     index_num = dict1[object_type]
-    feature = 'xml5'
+    feature = 'xml'
     # print(request.Users.username,"username")
-    query1 = Users.objects.filter(username='tejaaaa').values('can_view')
+    query1 = Users.objects.filter(username='msnr').values('can_view')
     temp = list(query1)
     temp = list(temp[0].values())
     temp = temp[0]
@@ -455,8 +488,46 @@ def add_view(request):
         }
         temp3.append(temp_dict)
     # print(temp1)
-    a = Users.objects.get(username='tejaaaa')
+    a = Users.objects.get(username='msnr')
     a.can_view = temp1
+    a.save()
+    return Response(temp1)
+
+
+
+@api_view(['GET'])
+def can_edit(request):
+    object_type='Procedure'
+    # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
+    dict1 = {'Procedure':0,'Function':1,'Package':2,'Index':3,'Materialized view':4}
+    index_num = dict1[object_type]
+    feature = 'xml'
+    # print(request.Users.username,"username")
+    query1 = Users.objects.filter(username='msnr').values('can_edit')
+    temp = list(query1)
+    temp = list(temp[0].values())
+    temp = temp[0]
+    temp1 = eval(temp)
+    temp2 = temp1[index_num]
+    temp3 = temp2['subMenu']
+    feature_already = []
+    for k in temp3:
+        # print(k)
+        a = list(k.values())
+        feature_already.append(a[0])
+    print(feature_already)
+    object_dict = {'Procedure': 'Proc', 'Function': 'Func', 'Package': 'Pack', 'Index': 'Inde',
+                   'Materialized view': 'Mate', 'Sequence': 'Sequ', 'Synonym': 'Syno', 'Tabel': 'Tabe',
+                   'Trigger': 'Trig', 'Type': 'Type', 'View': 'view'}
+    Feature_Name = object_dict[object_type] + '_' + feature
+    if Feature_Name not in feature_already:
+        temp_dict =  {
+                "Feature_Name": Feature_Name
+            }
+        temp3.append(temp_dict)
+    # print(temp1)
+    a = Users.objects.get(username='msnr')
+    a.can_edit = temp1
     a.save()
     return Response(temp1)
 
