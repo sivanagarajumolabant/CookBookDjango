@@ -415,7 +415,7 @@ class VerifyEmail(generics.GenericAPIView):
 
 @api_view(['GET'])
 def featurelistperuser(request):
-    features = Users.objects.filter(username='msnr')
+    features = Users.objects.filter(username='raj')
     serializer = viewlevelfeatures(features, many=True)
     data = serializer.data
     # print(type(data[0]))
@@ -429,7 +429,7 @@ def featureperuserdetail(request, pk):
     # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
     dict1 = {'Procedures': 0, 'Function': 1, 'Package': 2, 'Index': 3, 'Materialized view': 4}
     index_num = dict1[object_type]
-    query1 = Users.objects.filter(username='msnr').values('can_edit')
+    query1 = Users.objects.filter(username='raj').values('can_edit')
     temp = list(query1)
     temp = list(temp[0].values())
     temp = temp[0]
@@ -459,40 +459,86 @@ def featureperuserdetail(request, pk):
 
 @api_view(['GET'])
 def add_view(request):
-    object_type = 'Function'
-    # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
-    dict1 = {'Procedures': 0, 'Function': 1, 'Package': 2, 'Index': 3, 'Materialized view': 4}
-    index_num = dict1[object_type]
-    feature = 'xml'
-    # print(request.Users.username,"username")
-    query1 = Users.objects.filter(username='msnr').values('can_view')
-    temp = list(query1)
-    temp = list(temp[0].values())
-    temp = temp[0]
-    temp1 = eval(temp)
-    temp2 = temp1[index_num]
-    temp3 = temp2['subMenu']
-    feature_already = []
-    for k in temp3:
-        # print(k)
-        a = list(k.values())
-        feature_already.append(a[0])
-    # print(feature_already)
+    object_type='Procedure'
+    feature_name = 'All'
+    dict1 = {'Procedure': 0, 'Function': 1, 'Package': 2, 'Index': 3, 'Materialized view': 4}
     object_dict = {'Procedure': 'Proc', 'Function': 'Func', 'Package': 'Pack', 'Index': 'Inde',
                    'Materialized view': 'Mate', 'Sequence': 'Sequ', 'Synonym': 'Syno', 'Tabel': 'Tabe',
                    'Trigger': 'Trig', 'Type': 'Type', 'View': 'view'}
-    Feature_Name = object_dict[object_type] + '_' + feature
-    if feature not in feature_already:
-        temp_dict = {
-            "Feature_Name": Feature_Name
-        }
-        temp3.append(temp_dict)
-    # print(temp1)
-    a = Users.objects.get(username='msnr')
-    a.can_view = temp1
-    a.save()
-    return Response(temp1)
+    index_num = dict1[object_type]
+    if feature_name == 'All':
+        query1 = Feature.objects.all().values('Feature_Name')
+        temp = list(query1)
+        all_features = []
+        for i in temp:
+            a  = list(i.values())
+            all_features.append(a[0])
+        print(all_features,"allfeatures")
+        query1 = Users.objects.filter(username='raj').values('can_view')
+        temp = list(query1)
+        temp = list(temp[0].values())
+        temp = temp[0]
+        temp1 = eval(temp)
+        temp2 = temp1[index_num]
+        temp3 = temp2['subMenu']
 
+
+        # print(Feature_Name,"feature_name")
+        for i in all_features:
+            print(i,"each")
+            if 'Proc' not in i:
+                Feature_Name = object_dict[object_type] + '_' + i
+            else:
+                Feature_Name =i
+            # Feature_Name = object_dict[object_type] + '_' + i
+            print(Feature_Name,"featurenameeeeeeeee")
+            id_query = Feature.objects.filter(Feature_Name=Feature_Name).values('Feature_Id')
+            id_query1 = list(id_query)[0]
+            id_query1 = list(id_query1.values())
+            id_query1 = id_query1[0]
+            temp_dict =  {
+                    "Feature_Id": id_query1,
+                    "Feature_Name": Feature_Name
+                }
+            temp3.append(temp_dict)
+        a = Users.objects.get(username='raj')
+        a.can_view = temp1
+        a.save()
+    else:
+        index_num = dict1[object_type]
+        query1 = Users.objects.filter(username='raj').values('can_view')
+        temp = list(query1)
+        temp = list(temp[0].values())
+        temp = temp[0]
+        temp1 = eval(temp)
+        temp2 = temp1[index_num]
+        temp3 = temp2['subMenu']
+        feature_already = []
+        for k in temp3:
+            # print(k,"kkk")
+            a = list(k.values())
+            feature_already.append(a[1])
+        # print(feature_already)
+        if 'Proc' not in feature_name:
+            Feature_Name = object_dict[object_type] + '_' +feature_name
+        else:
+            Feature_Name = feature_name
+        # print(Feature_Name,"feature_name")
+        id_query = Feature.objects.filter(Feature_Name=Feature_Name).values('Feature_Id')
+        id_query1 = list(id_query)[0]
+        id_query1 = list(id_query1.values())
+        id_query1 = id_query1[0]
+        if Feature_Name not in feature_already:
+            temp_dict =  {
+                    "Feature_Id": id_query1,
+                    "Feature_Name": Feature_Name
+                }
+            temp3.append(temp_dict)
+        # print(temp1)
+        a = Users.objects.get(username='raj')
+        a.can_view = temp1
+        a.save()
+    return Response(temp3)
 
 
 @api_view(['GET'])
@@ -503,7 +549,7 @@ def can_edit(request):
     index_num = dict1[object_type]
     feature = 'xml'
     # print(request.Users.username,"username")
-    query1 = Users.objects.filter(username='msnr').values('can_edit')
+    query1 = Users.objects.filter(username='raj').values('can_edit')
     temp = list(query1)
     temp = list(temp[0].values())
     temp = temp[0]
@@ -526,7 +572,7 @@ def can_edit(request):
             }
         temp3.append(temp_dict)
     # print(temp1)
-    a = Users.objects.get(username='msnr')
+    a = Users.objects.get(username='raj')
     a.can_edit = temp1
     a.save()
     return Response(temp1)

@@ -30,7 +30,7 @@ urlpatterns = [
                   path('tablesdata/', views.create_tablepage_featuresdata),
                   path('requestfndata/', views.get_Featurenames),
 
-                  path('testing/', views.add_view),
+                  path('viewpermissions/', views.add_view),
                   path('editpermissions/', views.can_edit),
                   path('fvlist/', views.featurelistperuser),
                   path('featuredetail/<int:pk>/', views.featureperuserdetail)
