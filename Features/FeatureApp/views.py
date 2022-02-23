@@ -3,6 +3,8 @@ from rest_framework import viewsets, status
 from .serializers import *
 from .models import *
 from rest_framework.decorators import api_view
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 import mimetypes
 import json, os
@@ -406,12 +408,16 @@ class VerifyEmail(generics.GenericAPIView):
                 user.is_verified = True
                 user.is_active = True
                 user.save()
-            return Response({'msg': 'Sucessfully Activated'}, status=status.HTTP_200_OK)
+            return Response({'msg': 'Sucessfully Email Confirmed! Please Login'}, status=status.HTTP_200_OK)
         except jwt.ExpiredSignatureError as identifier:
-            return Response({'msg': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'msg': 'Expired Please Resend Email'}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError as identifier:
             return Response({'msg': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class MyObtainTokenPairView(TokenObtainPairView):
+    permission_classes = (AllowAny,)
+    serializer_class = MyTokenObtainPairSerializer
 
 @api_view(['GET'])
 def featurelistperuser(request):
