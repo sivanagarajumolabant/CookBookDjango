@@ -13,6 +13,10 @@ from importlib import import_module
 from import_file import import_file
 import re
 import sys
+from django.core import mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from Features.settings import EMAIL_HOST_USER
 # from emailcontent import email_verification_data
 from django.contrib.auth.decorators import permission_required
 from Features.settings import BASE_DIR, MEDIA_ROOT
@@ -394,10 +398,17 @@ class RegisterView(generics.GenericAPIView):
         # absurl = 'http://localhost:3000/' + current_site + relativeLink + "?token=" + str(token)
 
         absurl = 'http://localhost:3000/emailverification?' + str(token)
-        email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
-        data = {'email_body': email_body, 'to_email': user.email,
-                'email_subject': 'Verify your email'}
-        Util.send_email(data)
+        # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
+        # data = {'email_body': email_body, 'to_email': user.email,
+        #         'email_subject': 'Verify your email'}
+
+        subject = 'Verify your email'
+        html_message = render_to_string('verifys.html', {'url': absurl})
+        plain_message = strip_tags(html_message)
+        from_email = EMAIL_HOST_USER
+        to = user.email
+        mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
+        # Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
 
 class ResendVerifyEmail(generics.GenericAPIView):
@@ -410,7 +421,7 @@ class ResendVerifyEmail(generics.GenericAPIView):
             if user.is_verified:
                 return Response({'msg':'user is already verified'})
             token = RefreshToken.for_user(user)
-            current_site = get_current_site(request).domain
+            # current_site = get_current_site(request).domain
             # print(current_site,"current_site")
             # relativeLink = reverse('email-verify')
 
@@ -419,10 +430,18 @@ class ResendVerifyEmail(generics.GenericAPIView):
             # data = {'email_body': email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
 
             absurl = 'http://localhost:3000/emailverification?' + str(token)
-            email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
-            data = {'email_body': email_body, 'to_email': user.email,
-                    'email_subject': 'Verify your email'}
-            Util.send_email(data)
+
+            # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
+            # data = {'email_body': email_body, 'to_email': user.email,
+            #         'email_subject': 'Verify your email'}
+            # Util.send_email(data)
+
+            subject = 'Verify your email'
+            html_message = render_to_string('verifys.html', {'url': absurl})
+            plain_message = strip_tags(html_message)
+            from_email = EMAIL_HOST_USER
+            to = user.email
+            mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
             return Response({'msg':'The Verification email has been sent Please Confirm'},status= status.HTTP_201_CREATED)
         except:
             return Response({'msg':'No Such user Please Register'})
