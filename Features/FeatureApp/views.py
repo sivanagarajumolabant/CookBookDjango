@@ -39,6 +39,7 @@ def featurecreate(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
 # @permission_required('FeatureApp.view_feature', raise_exception=True)
@@ -153,15 +154,18 @@ def Attcahmentupdate(request, pk):
     AttachmentType = request.data['AttachmentType']
     Attachment = request.FILES['Attachment']
     filename = request.data['filename']
-    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename":filename,"Attachment":Attachment}
+    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename": filename,
+                  "Attachment": Attachment}
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
         attachements.save()
         for row in Attachments.objects.all().reverse():
-            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,Feature_Id_id=row.Feature_Id_id).count() > 1:
+            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+                                          Feature_Id_id=row.Feature_Id_id).count() > 1:
                 row.delete()
         return Response(attachements.data, status=status.HTTP_200_OK)
     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['DELETE'])
 def featuredelete(request, pk):
@@ -180,7 +184,6 @@ def predessors(request):
     features = Feature.objects.filter(Object_Type=Object_Type, Migration_TypeId=Migration_TypeId)
     serializer = SequenceSerializer(features, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 @api_view(['POST'])
@@ -365,12 +368,14 @@ def feature_conversion_files(request):
                                             Attachment=split_media, Feature_Id_id=feature_id)
                 target_object.save()
         for row in Attachments.objects.all().reverse():
-            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType, Feature_Id_id=row.Feature_Id_id).count() > 1:
+            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+                                          Feature_Id_id=row.Feature_Id_id).count() > 1:
                 row.delete()
         serializer = ConversionfilesSerializer(filter_files, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as err:
         return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
@@ -395,11 +400,38 @@ class RegisterView(generics.GenericAPIView):
         Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
 
+class ResendVerifyEmail(generics.GenericAPIView):
+    serializer_class = resendemailserializer
+    def post(self,request):
+        user = request.data
+        email = user['email']
+        try:
+            user = Users.objects.get(email=email)
+            if user.is_verified:
+                return Response({'msg':'user is already verified'})
+            token = RefreshToken.for_user(user)
+            current_site = get_current_site(request).domain
+            # print(current_site,"current_site")
+            # relativeLink = reverse('email-verify')
+
+            # absurl = 'http://' + current_site + relativeLink + "?token=" + str(token)
+            # email_body = 'Hi ' + user.username + 'Use below link to verify your account \n' + absurl
+            # data = {'email_body': email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
+
+            absurl = 'http://localhost:3000/emailverification?' + str(token)
+            email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
+            data = {'email_body': email_body, 'to_email': user.email,
+                    'email_subject': 'Verify your email'}
+            Util.send_email(data)
+            return Response({'msg':'The Verification email has been sent Please Confirm'},status= status.HTTP_201_CREATED)
+        except:
+            return Response({'msg':'No Such user Please Register'})
+
 
 class VerifyEmail(generics.GenericAPIView):
     def get(self, request):
         token = request.GET.get('token')
-        token = token.replace('?','').strip()
+        token = token.replace('?', '').strip()
         # token  = request.data['token']
         try:
             payload = jwt.decode(token, settings.SECRET_KEY)
@@ -418,6 +450,7 @@ class VerifyEmail(generics.GenericAPIView):
 class MyObtainTokenPairView(TokenObtainPairView):
     permission_classes = (AllowAny,)
     serializer_class = MyTokenObtainPairSerializer
+
 
 @api_view(['GET'])
 def featurelistperuser(request):
@@ -493,8 +526,9 @@ def create_tablepage_featuresdata(request):
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
     data = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
-    serializer=FeatureSerializer(data, many=True)
+    serializer = FeatureSerializer(data, many=True)
     return Response(serializer.data)
+
 
 @api_view(['POST'])
 def get_Featurenames(request):
@@ -502,7 +536,7 @@ def get_Featurenames(request):
     # body_data = json.loads(body_unicode)
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
-    if str(Object_Type).upper()=='ALL':
+    if str(Object_Type).upper() == 'ALL':
         features = Feature.objects.all()
     else:
         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)

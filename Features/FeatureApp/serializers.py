@@ -128,3 +128,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data['admin'] = self.user.is_superuser
         # data['groups'] = self.user.groups.values_list('name', flat=True)
         return data
+
+
+class resendemailserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ('email',)
