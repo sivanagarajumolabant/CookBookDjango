@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser
-import json
+import os
 from FeatureApp.storage import CleanFileNameStorage
 
 
@@ -10,7 +10,6 @@ class Users(AbstractUser):
     can_view = models.TextField(default=str1)
 
 
-# Create your models here.
 class Feature(models.Model):
     choices = [
         ('Programlevel', 'programlevel'),
@@ -38,7 +37,6 @@ class Feature(models.Model):
         return self.Feature_Id
 
     def save(self, *args, **kwargs):
-        # if self.Object_Type == 'Procedure':
         object_dict = {'Procedure': 'Proc', 'Function': 'Func', 'Package': 'Pack', 'Index': 'Inde',
                        'Materialized view': 'Mate', 'Sequence': 'Sequ', 'Synonym': 'Syno', 'Tabel': 'Tabe',
                        'Trigger': 'Trig', 'Type': 'Type', 'View': 'view'}
@@ -49,18 +47,21 @@ class Feature(models.Model):
 
 
 def user_directory_path(instance, filename):
-    print("instance ", instance)
     o2p = ''
     if instance.Feature_Id.Migration_TypeId == '1':
         o2p = 'Oracle To Postgres'
-        # print(o2p)
     elif instance.Feature_Id.Migration_TypeId == '2':
         o2p = 'Oracle TO SQLServer'
-        # print(o2p)
     elif instance.Feature_Id.Migration_TypeId == '3':
         o2p = 'Oracle To MYSQL'
-        # print(o2p)
-    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
+
+    path_file = 'media/'+ o2p + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + instance.AttachmentType + '/' + filename
+    if os.path.exists(path_file):
+        os.remove(path_file)
+    for row in Attachments.objects.all().reverse():
+        if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+                                      Feature_Id_id=row.Feature_Id_id).count() > 1:
+            row.delete()
     return 'media/{0}/{1}/{2}/{3}/{4}'.format(o2p, instance.Feature_Id.Object_Type, instance.Feature_Id.Feature_Name,
                                               instance.AttachmentType, filename)
 
@@ -82,6 +83,6 @@ class Attachments(models.Model):
     def __int__(self):
         return self.Feature_Id.Feature_Id
 
-    def delete(self, using=None, keep_parents=False):
-        self.Attachment.delete()
-        return super(Attachments, self).delete()
+    # def delete(self, using=None, keep_parents=False):
+    #     self.Attachment.delete()
+    #     return super(Attachments, self).delete()

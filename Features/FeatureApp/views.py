@@ -132,10 +132,6 @@ def Conversion(request, id):
 
 @api_view(['POST'])
 def attachment_delete(request):
-    # path = 'C:/projects/CookBookDjango/CookBookDjango/Features'
-    # body_unicode = request.body.decode('utf-8')
-    # body_data = json.loads(body_unicode)
-    # Feature_Id = body_data['Feature_Id']
     file_name = request.data['file_name']
     migration_typeid = request.data['migration_typeid']
     object_type = request.data['object_type']
@@ -143,12 +139,10 @@ def attachment_delete(request):
     id = request.data['id']
     featurename = request.data['fname']
     attachment = Attachments.objects.get(id=id)
-    # print(attachment)
     attachment.delete()
-    # fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + AttachmentType + '/'
-    # # print(fl_path,'=========')
-    # filename = fl_path + file_name
-    # os.remove(filename)
+    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + AttachmentType + '/'
+    filename = fl_path + file_name
+    os.remove(filename)
     return Response('Deleted')
 
 
@@ -204,7 +198,6 @@ def download_attachment(request):
     filter_values = list(filter_files.values_list())
     file_path = filter_values[0]
     fl = open(file_path[4], 'rb')
-    # print(fl_path)
     mime_type, _ = mimetypes.guess_type(file_path[4])
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
@@ -351,7 +344,9 @@ def feature_conversion_files(request):
         if not os.path.exists(module_path):
             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
                             status=status.HTTP_400_BAD_REQUEST)
-        file_path = module_path + '/' + feature1 + '.py'
+        module_file = os.listdir(module_path)[0]
+        #file_path = module_path + '/' + feature1 + '.py'
+        file_path = module_path + '/' + module_file
         sys.path.insert(0, file_path)
         filter_files = Attachments.objects.filter(Feature_Id=feature_id, AttachmentType=attach_type)
         filter_values = list(filter_files.values_list())
@@ -379,7 +374,6 @@ def feature_conversion_files(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as err:
         return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
-
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
