@@ -391,7 +391,7 @@ class RegisterView(generics.GenericAPIView):
         # relativeLink = reverse('email-verify')
         # absurl = 'http://localhost:3000/' + current_site + relativeLink + "?token=" + str(token)
 
-        absurl = 'http://localhost:3000/emailverification?' + str(token)
+        absurl = 'https://qcookook.web.app/emailverification?' + str(token)
         # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
         # data = {'email_body': email_body, 'to_email': user.email,
         #         'email_subject': 'Verify your email'}
@@ -423,7 +423,7 @@ class ResendVerifyEmail(generics.GenericAPIView):
             # email_body = 'Hi ' + user.username + 'Use below link to verify your account \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
 
-            absurl = 'http://localhost:3000/emailverification?' + str(token)
+            absurl = 'https://qcookook.web.app/emailverification?' + str(token)
 
             # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email,
