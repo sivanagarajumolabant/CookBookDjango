@@ -345,7 +345,7 @@ def feature_conversion_files(request):
             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
                             status=status.HTTP_400_BAD_REQUEST)
         module_file = os.listdir(module_path)[0]
-        #file_path = module_path + '/' + feature1 + '.py'
+        # file_path = module_path + '/' + feature1 + '.py'
         file_path = module_path + '/' + module_file
         sys.path.insert(0, file_path)
         filter_files = Attachments.objects.filter(Feature_Id=feature_id, AttachmentType=attach_type)
@@ -374,6 +374,7 @@ def feature_conversion_files(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as err:
         return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
@@ -405,15 +406,17 @@ class RegisterView(generics.GenericAPIView):
         # Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
 
+
 class ResendVerifyEmail(generics.GenericAPIView):
     serializer_class = resendemailserializer
-    def post(self,request):
+
+    def post(self, request):
         user = request.data
         email = user['email']
         try:
             user = Users.objects.get(email=email)
             if user.is_verified:
-                return Response({'msg':'user is already verified'})
+                return Response({'msg': 'user is already verified'})
             token = RefreshToken.for_user(user)
             # current_site = get_current_site(request).domain
             # print(current_site,"current_site")
@@ -436,9 +439,64 @@ class ResendVerifyEmail(generics.GenericAPIView):
             from_email = EMAIL_HOST_USER
             to = user.email
             mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
-            return Response({'msg':'The Verification email has been sent Please Confirm'},status= status.HTTP_201_CREATED)
+            return Response({'msg': 'The Verification email has been sent Please Confirm'},
+                            status=status.HTTP_201_CREATED)
         except:
-            return Response({'msg':'No Such user Please Register'})
+            return Response({'msg': 'No Such user Please Register'})
+
+
+class RequestPasswordResetEmail(generics.GenericAPIView):
+    serializer_class = Resetpasswordemailserializer
+
+    def post(self, request):
+        # data = {'request' : request, 'data' : request.data}
+        serializer = self.serializer_class(data=request.data)
+        email = request.data['email']
+        if Users.objects.filter(email=email).exists():
+            user = Users.objects.get(email=email)
+            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
+            token = PasswordResetTokenGenerator().make_token(user)
+            # current_site = get_current_site(request=request).domain
+            # relativeLink = reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
+            # relativeLink = reverse('new_password')
+
+            # absurl = 'http://' + current_site + relativeLink
+
+            absurl = 'https://localhost:3000/forgotpassword?token=' + str(token)+"?uid="+uidb64
+            email_body = 'Hello,  \n Use below link to reset your password \n' + absurl
+            data = {'email_body': email_body, 'to_email': user.email,
+                    'email_subject': 'Reset your password'}
+            Util.send_email(data)
+
+        return Response({'success': 'we have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+
+
+class PasswordTokenCheckAPI(generics.GenericAPIView):
+    def get(self, request, uidb64, token):
+
+        try:
+            id = smart_str(urlsafe_base64_decode(uidb64))
+            user = Users.objects.get(id=id)
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response({'error': 'Token is not valid, please request a new one'},
+                                status=status.HTTP_401_UNAUTHORIZED)
+
+            return Response({'success': True, 'message': 'credentials valid', 'uidb64': uidb64, 'token': token},
+                            status=status.HTTP_200_OK)
+
+
+        except DjangoUnicodeDecodeError as identifier:
+            return Response({'error': 'Token is not valid, please request a new one'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+
+class SetNewPasswordAPIView(generics.GenericAPIView):
+    serializer_class = SetNewPasswordSerializer
+
+    def patch(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response({'success': True, 'message': 'password reset success'}, status=status.HTTP_200_OK)
 
 
 class VerifyEmail(generics.GenericAPIView):

@@ -4,8 +4,31 @@ import os
 from FeatureApp.storage import CleanFileNameStorage
 
 
+class migrations(models.Model):
+    Migration_TypeId = models.CharField(max_length=50, null=True)
+    Object_Type = models.CharField(max_length=50, null=True)
+
+
+class Approvals(models.Model):
+    # choices = [
+    #     ('Approve', 'approve'),
+    #     ('Deny', 'deny'),
+    # ]
+    User_Email = models.CharField(max_length=100)
+    Object_Type = models.CharField(max_length=100)
+    Feature_Name = models.CharField(max_length=100)
+    Approval_Status = models.CharField(max_length=100)
+    Access_Type = models.CharField(max_length=100)
+    Start_Date = models.DateTimeField(null=True)
+    End_Date = models.DateTimeField(null=True)
+
+
 class Users(AbstractUser):
-    str1 = [{'Label': 'Procedures', 'subMenu': []}, {'Label': 'Functions', 'subMenu': []}, {'Label': 'Packages', 'subMenu': []}, {'Label': 'Indexes', 'subMenu': []}, {'Label': 'Materialized views', 'subMenu': []}, {'Label': 'Sequences', 'subMenu': []}, {'Label': 'Synonyms', 'subMenu': []}, {'Label': 'Tabels', 'subMenu': []}, {'Label': 'Triggers', 'subMenu': []}, {'Label': 'Types', 'subMenu': []}, {'Label': 'Views', 'subMenu': []}]
+    str1 = [{'Label': 'Procedures', 'subMenu': []}, {'Label': 'Functions', 'subMenu': []},
+            {'Label': 'Packages', 'subMenu': []}, {'Label': 'Indexes', 'subMenu': []},
+            {'Label': 'Materialized views', 'subMenu': []}, {'Label': 'Sequences', 'subMenu': []},
+            {'Label': 'Synonyms', 'subMenu': []}, {'Label': 'Tabels', 'subMenu': []},
+            {'Label': 'Triggers', 'subMenu': []}, {'Label': 'Types', 'subMenu': []}, {'Label': 'Views', 'subMenu': []}]
     is_verified = models.BooleanField(default=False)
     can_view = models.TextField(default=str1)
 
@@ -55,7 +78,7 @@ def user_directory_path(instance, filename):
     elif instance.Feature_Id.Migration_TypeId == '3':
         o2p = 'Oracle To MYSQL'
 
-    path_file = 'media/'+ o2p + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + instance.AttachmentType + '/' + filename
+    path_file = 'media/' + o2p + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + instance.AttachmentType + '/' + filename
     if os.path.exists(path_file):
         os.remove(path_file)
     for row in Attachments.objects.all().reverse():
@@ -78,7 +101,7 @@ class Attachments(models.Model):
     Feature_Id = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True)
     AttachmentType = models.CharField(max_length=50, blank=True, null=True, choices=choices)
     filename = models.CharField(max_length=100, blank=True, null=True)
-    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True,storage=CleanFileNameStorage())
+    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True, storage=CleanFileNameStorage())
 
     def __int__(self):
         return self.Feature_Id.Feature_Id

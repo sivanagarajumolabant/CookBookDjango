@@ -4,6 +4,76 @@ from .models import *
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
+from rest_framework.exceptions import AuthenticationFailed
+
+
+class SetNewPasswordSerializer(serializers.Serializer):
+    # password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password = serializers.CharField(min_length=6, max_length=68, write_only=True)
+    token = serializers.CharField(min_length=1, write_only=True)
+    uidb64 = serializers.CharField(min_length=1, write_only=True)
+
+    # password2 = serializers.CharField(write_only=True, required=True)
+    class Meta:
+        model = Users
+        fields = ['password', 'token', 'uidb64']
+
+    def validate(self, attrs):
+        # if attrs['password'] != attrs['password2']:
+        #     raise serializers.ValidationError({"password": "Password fields didn't match."})
+        # return attrs
+        try:
+            password = attrs.get('password')
+            token = attrs.get('token')
+            uidb64 = attrs.get('uidb64')
+
+            id = force_str(urlsafe_base64_decode(uidb64))
+            user = Users.objects.get(id=id)
+
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                raise AuthenticationFailed('The reset link is invalid', 401)
+
+            user.set_password(password)
+            user.save()
+        except Exception as e:
+            raise AuthenticationFailed('The reset link is invalid', 401)
+        return super().validate(attrs)
+
+
+class Resetpasswordemailserializer(serializers.Serializer):
+    email = serializers.EmailField(min_length=2)
+
+    class Meta:
+        fields = ['email']
+
+
+class ApprovalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Approvals
+        fields = "__all__"
+
+
+class migrationcreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = migrations
+        fields = '__all__'
+
+
+class migrationviewserializer(serializers.ModelSerializer):
+    class Meta:
+        model = migrations
+        fields = ('Migration_TypeId',)
+
+
+class objectviewserializer(serializers.ModelSerializer):
+    class Meta:
+        model = migrations
+        fields = ('Object_Type',)
 
 
 class FeaturedropdownSerializer(serializers.ModelSerializer):
@@ -23,7 +93,6 @@ class AttachementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attachments
         fields = "__all__"
-
 
 
 class SequenceSerializer(serializers.ModelSerializer):
@@ -96,6 +165,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         # email = EmailMessage(mail_subject, message, to=[to_email])
         # email.send()
         return user
+
 
 class viewlevelfeatures(serializers.ModelSerializer):
     class Meta:

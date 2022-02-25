@@ -3,7 +3,8 @@ from . import views
 from rest_framework import routers
 from django.conf.urls.static import static
 from django.conf import settings
-from .views import VerifyEmail, RegisterView, ResendVerifyEmail
+from .views import VerifyEmail, RegisterView, ResendVerifyEmail, PasswordTokenCheckAPI, RequestPasswordResetEmail, \
+    SetNewPasswordAPIView
 
 urlpatterns = [
                   path('fcreate', views.featurecreate),
@@ -26,6 +27,11 @@ urlpatterns = [
                   path('attdelete', views.attachment_delete),
                   path('convertfiles', views.feature_conversion_files),
                   path('email-verify/', VerifyEmail.as_view(), name="email-verify"),
+
+                  path('password-reset/<uidb64>/<token>/', PasswordTokenCheckAPI.as_view(),
+                       name='password-reset-confirm'),
+                  path('request-reset-email/', RequestPasswordResetEmail.as_view(), name='request-reset-email'),
+                  path('password-reset-complete', SetNewPasswordAPIView.as_view(), name='password-reset-complete'),
                   path('register/', RegisterView.as_view(), name='auth_register'),
                   path('tablesdata/', views.create_tablepage_featuresdata),
                   path('requestfndata/', views.get_Featurenames),
