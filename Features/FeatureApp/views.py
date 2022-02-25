@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from .serializers import *
+from config.config import frontend_url
 from .models import *
 from rest_framework.decorators import api_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -392,7 +393,7 @@ class RegisterView(generics.GenericAPIView):
         # relativeLink = reverse('email-verify')
         # absurl = 'http://localhost:3000/' + current_site + relativeLink + "?token=" + str(token)
 
-        absurl = 'https://qcookook.web.app/emailverification?' + str(token)
+        absurl = frontend_url+'emailverification?' + str(token)
         # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
         # data = {'email_body': email_body, 'to_email': user.email,
         #         'email_subject': 'Verify your email'}
@@ -426,7 +427,7 @@ class ResendVerifyEmail(generics.GenericAPIView):
             # email_body = 'Hi ' + user.username + 'Use below link to verify your account \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
 
-            absurl = 'https://qcookook.web.app/emailverification?' + str(token)
+            absurl = frontend_url+'emailverification?' + str(token)
 
             # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email,
@@ -462,13 +463,24 @@ class RequestPasswordResetEmail(generics.GenericAPIView):
 
             # absurl = 'http://' + current_site + relativeLink
 
-            absurl = 'https://localhost:3000/forgotpassword?token=' + str(token)+"?uid="+uidb64
-            email_body = 'Hello,  \n Use below link to reset your password \n' + absurl
-            data = {'email_body': email_body, 'to_email': user.email,
-                    'email_subject': 'Reset your password'}
-            Util.send_email(data)
+            absurl = frontend_url+'resetpassword?token=' + str(token) + "?uid=" + uidb64
+            # email_body = 'Hello,  \n Use below link to reset your password \n' + absurl
+            # data = {'email_body': email_body, 'to_email': user.email,
+            #         'email_subject': 'Reset your password'}
+            # Util.send_email(data)
 
-        return Response({'success': 'we have sent you a link to reset your password'}, status=status.HTTP_200_OK)
+            subject = 'Forgot Password'
+            html_message = render_to_string('forgotpassword.html', {'url': absurl})
+            plain_message = strip_tags(html_message)
+            from_email = EMAIL_HOST_USER
+            to = user.email
+            mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
+            return Response({'msg': 'we have sent you a link to reset your password'},
+                            status=status.HTTP_201_CREATED)
+        else:
+            return Response({'msg': 'No Such user Please Register'})
+
+        return Response({'msg': 'we have sent you a link to reset your password'}, status=status.HTTP_200_OK)
 
 
 class PasswordTokenCheckAPI(generics.GenericAPIView):
@@ -478,15 +490,15 @@ class PasswordTokenCheckAPI(generics.GenericAPIView):
             id = smart_str(urlsafe_base64_decode(uidb64))
             user = Users.objects.get(id=id)
             if not PasswordResetTokenGenerator().check_token(user, token):
-                return Response({'error': 'Token is not valid, please request a new one'},
+                return Response({'msg': 'Token is not valid, please request a new one'},
                                 status=status.HTTP_401_UNAUTHORIZED)
 
-            return Response({'success': True, 'message': 'credentials valid', 'uidb64': uidb64, 'token': token},
+            return Response({'success': True, 'msg': 'credentials valid', 'uidb64': uidb64, 'token': token},
                             status=status.HTTP_200_OK)
 
 
         except DjangoUnicodeDecodeError as identifier:
-            return Response({'error': 'Token is not valid, please request a new one'},
+            return Response({'msg': 'Token is not valid, please request a new one'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -496,7 +508,7 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
     def patch(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response({'success': True, 'message': 'password reset success'}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'msg': 'Password Reset Success'}, status=status.HTTP_200_OK)
 
 
 class VerifyEmail(generics.GenericAPIView):
@@ -613,3 +625,44 @@ def get_Featurenames(request):
         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
     serializer = migrationlevelfeatures(features, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def migrationsscreate(request):
+    serializer = migrationcreateserializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def migrationviewlist(request):
+    features = migrations.objects.values('Migration_TypeId').distinct()
+    # features = migrations.objects.values_list('Migration_TypeId', flat=True).distinct()
+    serializer = migrationviewserializer(features, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def objectviewtlist(request, Migration_TypeId):
+    # features = migrations.objects.all()
+    features = migrations.objects.filter(Object_Type__isnull=False, Migration_TypeId=Migration_TypeId)
+    serializer = objectviewserializer(features, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def approvalscreate(request):
+    serializer = ApprovalSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def approvalslist(request):
+    features = Approvals.objects.all()
+    serializer = ApprovalSerializer(features, many=True)
+    return Response(serializer.data)

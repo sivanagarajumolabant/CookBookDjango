@@ -3,8 +3,7 @@ from . import views
 from rest_framework import routers
 from django.conf.urls.static import static
 from django.conf import settings
-from .views import VerifyEmail, RegisterView, ResendVerifyEmail, PasswordTokenCheckAPI, RequestPasswordResetEmail, \
-    SetNewPasswordAPIView
+from .views import *
 
 urlpatterns = [
                   path('fcreate', views.featurecreate),
@@ -31,13 +30,19 @@ urlpatterns = [
                   path('password-reset/<uidb64>/<token>/', PasswordTokenCheckAPI.as_view(),
                        name='password-reset-confirm'),
                   path('request-reset-email/', RequestPasswordResetEmail.as_view(), name='request-reset-email'),
-                  path('password-reset-complete', SetNewPasswordAPIView.as_view(), name='password-reset-complete'),
+                  path('password-reset-complete/', SetNewPasswordAPIView.as_view(), name='password-reset-complete'),
                   path('register/', RegisterView.as_view(), name='auth_register'),
                   path('tablesdata/', views.create_tablepage_featuresdata),
                   path('requestfndata/', views.get_Featurenames),
                   path('resendemail/', ResendVerifyEmail.as_view()),
                   path('testing/', views.add_view),
-                  path('fvlist/', views.featurelistperuser)
+                  path('fvlist/', views.featurelistperuser),
+
+                  path('migrationsscreate/', views.migrationsscreate, name='migrationsscreate'),
+                  path('migrationviewlist/', views.migrationviewlist, name='migrationviewlist'),
+                  path('objectviewtlist/<Migration_TypeId>', views.objectviewtlist, name='objectviewtlist'),
+                  path('approvalscreate', views.approvalscreate),
+                  path('approvalslist', views.approvalslist),
 
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
