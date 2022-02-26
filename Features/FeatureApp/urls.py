@@ -41,6 +41,7 @@ urlpatterns = [
                   path('migrationsscreate/', views.migrationsscreate, name='migrationsscreate'),
                   path('migrationviewlist/', views.migrationviewlist, name='migrationviewlist'),
                   path('objectviewtlist/<Migration_TypeId>', views.objectviewtlist, name='objectviewtlist'),
+
                   path('approvalscreate', views.approvalscreate),
                   path('approvalslist', views.approvalslist),
 
