@@ -44,6 +44,7 @@ urlpatterns = [
 
                   path('approvalscreate', views.approvalscreate),
                   path('approvalslist', views.approvalslist),
+                  path('userslist/', userslist, name='userslist'),
 
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),

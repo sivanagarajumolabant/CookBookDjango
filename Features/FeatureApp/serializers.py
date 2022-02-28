@@ -204,3 +204,10 @@ class resendemailserializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = ('email',)
+
+class usersserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ('email',)
+
+

@@ -15,6 +15,7 @@ class Approvals(models.Model):
     #     ('Deny', 'deny'),
     # ]
     User_Email = models.CharField(max_length=100)
+    Migration_TypeId = models.CharField(max_length=50, null=True)
     Object_Type = models.CharField(max_length=100)
     Feature_Name = models.CharField(max_length=100)
     Approval_Status = models.CharField(max_length=100)

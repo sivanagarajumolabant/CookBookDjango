@@ -666,3 +666,10 @@ def approvalslist(request):
     features = Approvals.objects.all()
     serializer = ApprovalSerializer(features, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def userslist(request):
+    features = Users.objects.all()
+    serializer = usersserializer(features, many=True)
+    return Response(serializer.data)
