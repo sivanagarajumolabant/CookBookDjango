@@ -629,23 +629,25 @@ def get_Featurenames(request):
 
 @api_view(['POST'])
 def migrationsscreate(request):
+    migration_type = request.data['Migration_TypeId']
     serializer = migrationcreateserializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.save(Code = migration_type.replace(' ','_'))
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
 def migrationviewlist(request):
-    features = migrations.objects.values('Migration_TypeId').distinct()
-    # features = migrations.objects.values_list('Migration_TypeId', flat=True).distinct()
+    features = migrations.objects.values('Migration_TypeId','Code').distinct()
     serializer = migrationviewserializer(features, many=True)
+    print(serializer.data[0])
     return Response(serializer.data)
 
 
 @api_view(['GET'])
 def objectviewtlist(request, Migration_TypeId):
+    Migration_TypeId  =str(Migration_TypeId).strip()
+    print(Migration_TypeId)
     # features = migrations.objects.all()
     features = migrations.objects.filter(Object_Type__isnull=False, Migration_TypeId=Migration_TypeId)
     serializer = objectviewserializer(features, many=True)

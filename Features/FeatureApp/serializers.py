@@ -65,10 +65,11 @@ class migrationcreateserializer(serializers.ModelSerializer):
 
 
 class migrationviewserializer(serializers.ModelSerializer):
+    title = serializers.CharField(source='Migration_TypeId')
+    code = serializers.CharField(source='Code')
     class Meta:
         model = migrations
-        fields = ('Migration_TypeId',)
-
+        fields = ('title', 'code',)
 
 class objectviewserializer(serializers.ModelSerializer):
     class Meta:
@@ -196,6 +197,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add extra responses here
         # data['username'] = self.user.username
         data['admin'] = self.user.is_superuser
+        data['email']= self.user.email
         # data['groups'] = self.user.groups.values_list('name', flat=True)
         return data
 

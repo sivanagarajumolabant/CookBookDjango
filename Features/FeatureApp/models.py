@@ -21,8 +21,9 @@ class Approvals(models.Model):
     Feature_Name = models.CharField(max_length=100)
     Approval_Status = models.CharField(max_length=100)
     Access_Type = models.CharField(max_length=100)
-    Start_Date = models.DateTimeField(null=True)
-    End_Date = models.DateTimeField(null=True)
+    Start_Date = models.DateTimeField(auto_now_add=True)
+    End_Date = models.DateTimeField(auto_now=True)
+
 
 
 class Users(AbstractUser):
