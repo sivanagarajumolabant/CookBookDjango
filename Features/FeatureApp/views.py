@@ -246,14 +246,14 @@ def conversion(request):
 
 
 @api_view(['GET'])
-def miglevelobjects(request, id):
+def miglevelobjects(request, migtypeid):
     objecttypes = ['Procedure', 'Function', 'Package', 'Index', 'Materialized view', 'Sequence', 'Synonym', 'Tabel',
                    'Trigger', 'Type', 'View']
     data_format_main = {}
 
     for index, i in enumerate(objecttypes):
         data_format = {}
-        features = Feature.objects.filter(Object_Type=i, Migration_TypeId=id)
+        features = Feature.objects.filter(Object_Type=i, Migration_TypeId=migtypeid)
         serializer = migrationlevelfeatures(features, many=True)
         data = serializer.data
         if i == 'Index':

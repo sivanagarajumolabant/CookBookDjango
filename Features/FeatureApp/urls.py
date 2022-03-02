@@ -16,7 +16,7 @@ urlpatterns = [
                   path('download_att', views.download_attachment),
                   path('predessors', views.predessors),
                   path('autoconv', views.conversion),
-                  path('miglevelobjects/<int:id>', views.miglevelobjects),
+                  path('miglevelobjects/<migtypeid>', views.miglevelobjects),
                   path('fnlist', views.featuredropdownlist),
                   path('attlist', views.att_list),
                   path('sourcedesc/<int:id>', views.Sourcedescription),

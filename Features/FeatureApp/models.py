@@ -7,6 +7,7 @@ from FeatureApp.storage import CleanFileNameStorage
 class migrations(models.Model):
     Migration_TypeId = models.CharField(max_length=50, null=True)
     Object_Type = models.CharField(max_length=50, null=True)
+    Code = models.CharField(max_length=50, null=True)
 
 
 class Approvals(models.Model):
@@ -71,22 +72,15 @@ class Feature(models.Model):
 
 
 def user_directory_path(instance, filename):
-    o2p = ''
-    if instance.Feature_Id.Migration_TypeId == '1':
-        o2p = 'Oracle To Postgres'
-    elif instance.Feature_Id.Migration_TypeId == '2':
-        o2p = 'Oracle TO SQLServer'
-    elif instance.Feature_Id.Migration_TypeId == '3':
-        o2p = 'Oracle To MYSQL'
 
-    path_file = 'media/' + o2p + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + instance.AttachmentType + '/' + filename
+    path_file = 'media/' + instance.Feature_Id.Migration_TypeId + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + instance.AttachmentType + '/' + filename
     if os.path.exists(path_file):
         os.remove(path_file)
     for row in Attachments.objects.all().reverse():
         if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
                                       Feature_Id_id=row.Feature_Id_id).count() > 1:
             row.delete()
-    return 'media/{0}/{1}/{2}/{3}/{4}'.format(o2p, instance.Feature_Id.Object_Type, instance.Feature_Id.Feature_Name,
+    return 'media/{0}/{1}/{2}/{3}/{4}'.format(instance.Feature_Id.Migration_TypeId, instance.Feature_Id.Object_Type, instance.Feature_Id.Feature_Name,
                                               instance.AttachmentType, filename)
 
 
