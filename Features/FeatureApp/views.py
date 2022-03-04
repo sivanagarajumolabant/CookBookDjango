@@ -654,13 +654,31 @@ def objectviewtlist(request, Migration_TypeId):
     return Response(serializer.data)
 
 
+# @api_view(['POST'])
+# def approvalscreate(request):
+#     serializer = ApprovalSerializer(data=request.data)
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['POST'])
 def approvalscreate(request):
-    serializer = ApprovalSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # print(request.data)
+    User_Email = request.data['User_Email']
+    Object_Type = request.data['Object_Type']
+    Feature_Name = request.data['Feature_Name']
+    Access_Type = request.data['Access_Type']
+
+    if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name, Access_Type=Access_Type).exists():
+        return Response("Request Already Sent")
+
+    else:
+        serializer = ApprovalSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
