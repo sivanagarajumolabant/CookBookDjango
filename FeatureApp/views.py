@@ -640,7 +640,6 @@ def migrationsscreate(request):
 def migrationviewlist(request):
     features = migrations.objects.values('Migration_TypeId','Code').distinct()
     serializer = migrationviewserializer(features, many=True)
-    print(serializer.data[0])
     return Response(serializer.data)
 
 
