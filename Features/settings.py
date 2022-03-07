@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-p355nc(zc1hm!$$p&eeoc6w1a^t=mj0uu^c%mhad2&#h8b)wp=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['cookbookapi.azurewebsites.net','localhost']
 
 # Application definition
 CORS_ORIGIN_ALLOW_ALL = True

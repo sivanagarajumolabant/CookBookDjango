@@ -10,7 +10,7 @@ from rest_framework.response import Response
 import mimetypes
 import json, os
 from django.http import HttpResponse
-from importlib import import_module
+# from importlib import import_module
 from import_file import import_file
 import re
 import sys
