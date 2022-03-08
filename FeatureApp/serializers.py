@@ -217,4 +217,9 @@ class PermissionSerializer(serializers.ModelSerializer):
         model = Permissions
         fields = "__all__"
 
+class migrationformatserializer(serializers.ModelSerializer):
+    class Meta:
+        model = migrations
+        fields = '__all__'
+
 

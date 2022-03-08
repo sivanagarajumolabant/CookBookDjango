@@ -646,8 +646,6 @@ def migrationviewlist(request):
 @api_view(['GET'])
 def objectviewtlist(request, Migration_TypeId):
     Migration_TypeId  =str(Migration_TypeId).strip()
-    print(Migration_TypeId)
-    # features = migrations.objects.all()
     features = migrations.objects.filter(Object_Type__isnull=False, Migration_TypeId=Migration_TypeId)
     serializer = objectviewserializer(features, many=True)
     return Response(serializer.data)
@@ -701,9 +699,9 @@ def permissionscreate(request):
         serializer.save()
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 def migration_user_view(request):
-    email = request.data['User_Email']
+    email = request.data['uemail']
     mig_type = request.data['Migration_TypeId']
 
     user = Users.objects.get(email=email)
