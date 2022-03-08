@@ -25,15 +25,19 @@ class Approvals(models.Model):
     End_Date = models.DateTimeField(auto_now=True)
 
 
+class Permissions(models.Model):
+    User_Email = models.CharField(max_length=100)
+    Migration_TypeId = models.CharField(max_length=100, null=True)
+    Object_Type = models.CharField(max_length=100)
+    Feature_Name = models.CharField(max_length=100)
+    Access_Type = models.CharField(max_length=100)
+    Start_Date = models.DateTimeField(auto_now_add=True)
+    End_Date = models.DateTimeField(auto_now=True)
+
 
 class Users(AbstractUser):
-    str1 = [{'Label': 'Procedures', 'subMenu': []}, {'Label': 'Functions', 'subMenu': []},
-            {'Label': 'Packages', 'subMenu': []}, {'Label': 'Indexes', 'subMenu': []},
-            {'Label': 'Materialized views', 'subMenu': []}, {'Label': 'Sequences', 'subMenu': []},
-            {'Label': 'Synonyms', 'subMenu': []}, {'Label': 'Tabels', 'subMenu': []},
-            {'Label': 'Triggers', 'subMenu': []}, {'Label': 'Types', 'subMenu': []}, {'Label': 'Views', 'subMenu': []}]
     is_verified = models.BooleanField(default=False)
-    can_view = models.TextField(default=str1)
+    
 
 
 class Feature(models.Model):

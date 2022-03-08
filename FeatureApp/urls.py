@@ -45,7 +45,8 @@ urlpatterns = [
                   path('approvalscreate', views.approvalscreate),
                   path('approvalslist', views.approvalslist),
                   path('userslist/', userslist, name='userslist'),
-
+                  path('permissionscreate/', permissionscreate, name='permissionscreate'),
+                  path('usersfeaturelist/', migration_user_view, name='usersfeaturelist'),
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
                   # path('etargetcode/<int:id>',views.Expectedconversion),

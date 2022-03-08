@@ -212,4 +212,9 @@ class usersserializer(serializers.ModelSerializer):
         model = Users
         fields = ('email',)
 
+class PermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permissions
+        fields = "__all__"
+
 

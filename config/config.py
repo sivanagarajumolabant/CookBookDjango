@@ -1,1 +1,1 @@
-frontend_url = "https://cookbookui.azurewebsites.net/"
+frontend_url = "http://localhost:3000/"

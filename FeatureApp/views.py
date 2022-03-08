@@ -692,3 +692,49 @@ def userslist(request):
     features = Users.objects.all()
     serializer = usersserializer(features, many=True)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def permissionscreate(request):
+    serializer = PermissionSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+
+
+@api_view(['POST'])
+def migration_user_view(request):
+    email = request.data['uemail']
+    migtype = request.data['Migration_TypeId']
+    label_dict = {}
+    final_list = []
+    object_names = []
+    object_type_list = migrations.objects.filter(Object_Type__isnull=False,Migration_TypeId=migtype)
+    object_type_list = list(object_type_list.values('Object_Type'))
+    for obj in object_type_list:
+        object_names.append(obj['Object_Type'])
+    # del object_names[0]
+    for object_name in object_names:
+        if object_name is 'null':
+            continue
+        # print('=========',object_name,'========' )
+        inter_list = []
+        label_dict['Label'] = object_name
+        perm_data = Permissions.objects.filter(User_Email=email,Object_Type=object_name,Access_Type='view')
+        features_objects = list(perm_data.values('Feature_Name'))
+        # print(features_objects, '==============================')
+        for obj_feature in features_objects:
+            feature_name = obj_feature['Feature_Name']
+            # print('======', feature_name,'===========')
+            data_features = Feature.objects.filter(Feature_Name=feature_name)
+            # print("=========", data_features,'================')
+            feature_object_list = list(data_features.values('Feature_Id'))
+            # print('============',feature_object_list,'==============')
+            feature_id = feature_object_list[0]['Feature_Id']
+
+            inter_dict ={}
+            inter_dict["Feature_Id"] = feature_id
+            inter_dict["Feature_Name"] = feature_name
+            inter_list.append(inter_dict)
+        label_dict['SubMenu'] = inter_list
+        final_list.append(label_dict.copy())
+    return Response(final_list)
