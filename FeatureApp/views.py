@@ -701,40 +701,88 @@ def permissionscreate(request):
         serializer.save()
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 def migration_user_view(request):
-    email = request.data['uemail']
-    migtype = request.data['Migration_TypeId']
+    email = request.data['User_Email']
+    mig_type = request.data['Migration_TypeId']
+
+    user = Users.objects.get(email=email)
+
+    mig_data = migrations.objects.filter(Migration_TypeId=mig_type)
+    serializer = migrationformatserializer(mig_data, many=True)
+    object_names = [obj['Object_Type'] for obj in serializer.data]
+
     label_dict = {}
     final_list = []
-    object_names = []
-    object_type_list = migrations.objects.filter(Object_Type__isnull=False,Migration_TypeId=migtype)
-    object_type_list = list(object_type_list.values('Object_Type'))
-    for obj in object_type_list:
-        object_names.append(obj['Object_Type'])
-    # del object_names[0]
-    for object_name in object_names:
-        if object_name is 'null':
-            continue
-        # print('=========',object_name,'========' )
-        inter_list = []
-        label_dict['Label'] = object_name
-        perm_data = Permissions.objects.filter(User_Email=email,Object_Type=object_name,Access_Type='view')
-        features_objects = list(perm_data.values('Feature_Name'))
-        # print(features_objects, '==============================')
-        for obj_feature in features_objects:
-            feature_name = obj_feature['Feature_Name']
-            # print('======', feature_name,'===========')
-            data_features = Feature.objects.filter(Feature_Name=feature_name)
-            # print("=========", data_features,'================')
-            feature_object_list = list(data_features.values('Feature_Id'))
-            # print('============',feature_object_list,'==============')
-            feature_id = feature_object_list[0]['Feature_Id']
 
-            inter_dict ={}
-            inter_dict["Feature_Id"] = feature_id
-            inter_dict["Feature_Name"] = feature_name
-            inter_list.append(inter_dict)
-        label_dict['SubMenu'] = inter_list
-        final_list.append(label_dict.copy())
+    perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Access_Type='View')
+    type_objects = list(perm_data.values('Object_Type').distinct())
+    feature_value_object = list(perm_data.values('Feature_Name'))
+    object_values_list = [value for elem in type_objects for value in elem.values()]
+    feature_value_list = [value for elem in feature_value_object for value in elem.values()]
+
+    if 'All' in object_values_list or user.is_superuser:
+        for object_name in object_names:
+            inter_list = []
+            label_dict['Label'] = object_name
+            features_data = Feature.objects.filter(Migration_TypeId=mig_type,Object_Type=object_name)
+            features_objects = list(features_data.values('Feature_Name'))
+            for obj_feature in features_objects:
+                feature_name = obj_feature['Feature_Name']
+                data_features = Feature.objects.filter(Feature_Name=feature_name)
+                feature_object_list = list(data_features.values('Feature_Id'))
+                feature_id = feature_object_list[0]['Feature_Id']
+
+                inter_dict = {}
+                inter_dict["Feature_Id"] = feature_id
+                inter_dict["Feature_Name"] = feature_name
+                inter_list.append(inter_dict)
+            label_dict['SubMenu'] = inter_list
+            final_list.append(label_dict.copy())
+    else:
+        if 'All' in feature_value_list:
+            perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Access_Type='View',Feature_Name = 'All')
+            all_type_objects = list(perm_data1.values('Object_Type').distinct())
+            all_type_objects_list = [value for elem in all_type_objects for value in elem.values()]
+            for object_name in object_names:
+                inter_list = []
+                label_dict['Label'] = object_name
+                if object_name in all_type_objects_list:
+                    features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_objects = list(features_data.values('Feature_Name'))
+                    for obj_feature in features_objects:
+                        feature_name = obj_feature['Feature_Name']
+                        data_features = Feature.objects.filter(Feature_Name=feature_name)
+                        feature_object_list = list(data_features.values('Feature_Id'))
+                        feature_id = feature_object_list[0]['Feature_Id']
+
+                        inter_dict = {}
+                        inter_dict["Feature_Id"] = feature_id
+                        inter_dict["Feature_Name"] = feature_name
+                        inter_list.append(inter_dict)
+                    label_dict['SubMenu'] = inter_list
+                    final_list.append(label_dict.copy())
+                else:
+                    label_dict['SubMenu'] = []
+                    final_list.append(label_dict.copy())
+        else:
+            for object_name in object_names:
+                inter_list = []
+                label_dict['Label'] = object_name
+                for feature_name in feature_value_list:
+                    perm_data2 = Permissions.objects.filter(User_Email=email,Migration_TypeId=mig_type, Object_Type=object_name, Access_Type='View',Feature_Name = feature_name)
+                    features_objects = list(perm_data2.values('Feature_Name'))
+                    for obj_feature in features_objects:
+                        feature_name = obj_feature['Feature_Name']
+                        data_features = Feature.objects.filter(Feature_Name=feature_name)
+                        feature_object_list = list(data_features.values('Feature_Id'))
+                        feature_id = feature_object_list[0]['Feature_Id']
+
+                        inter_dict = {}
+                        inter_dict["Feature_Id"] = feature_id
+                        inter_dict["Feature_Name"] = feature_name
+                        inter_list.append(inter_dict)
+                label_dict['SubMenu'] = inter_list
+                final_list.append(label_dict.copy())
+
     return Response(final_list)
