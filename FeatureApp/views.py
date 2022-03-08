@@ -689,7 +689,7 @@ def approvalslist(request):
 
 @api_view(['GET'])
 def userslist(request):
-    features = Users.objects.all()
+    features = Users.objects.filter(is_verified=True)
     serializer = usersserializer(features, many=True)
     return Response(serializer.data)
 
