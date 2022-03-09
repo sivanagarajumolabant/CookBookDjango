@@ -867,8 +867,9 @@ def migration_user_view(request):
 
 
 @api_view(['PUT'])
-def approvalsupdate(request, User_Email):
-    feature = Approvals.objects.get(User_Email=User_Email)
+def approvalsupdate(request, id):
+    # User_Email = request.data['User_Email']
+    feature = Approvals.objects.get(id=id)
     serializer = ApprovalSerializer(instance=feature, data=request.data)
     if serializer.is_valid():
         serializer.save()

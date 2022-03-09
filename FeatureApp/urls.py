@@ -44,10 +44,10 @@ urlpatterns = [
 
                   path('approvalscreate', views.approvalscreate),
                   path('approvalslist', views.approvalslist),
-                  path('userslist/', userslist, name='userslist'),
-                  path('permissionscreate/', permissionscreate, name='permissionscreate'),
-                  path('usersfeaturelist/', migration_user_view, name='usersfeaturelist'),
-                  path('approvalsupdate/<User_Email>', approvalsupdate, name='approvalsupdate')
+                  path('userslist/', views.userslist, name='userslist'),
+                  path('permissionscreate/', views.permissionscreate, name='permissionscreate'),
+                  path('usersfeaturelist/', views.migration_user_view, name='usersfeaturelist'),
+                  path('approvalsupdate/<int:id>', views.approvalsupdate, name='approvalsupdate')
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
                   # path('etargetcode/<int:id>',views.Expectedconversion),
