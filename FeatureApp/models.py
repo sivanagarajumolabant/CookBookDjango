@@ -5,9 +5,9 @@ from FeatureApp.storage import CleanFileNameStorage
 
 
 class migrations(models.Model):
-    Migration_TypeId = models.CharField(max_length=50, null=True)
-    Object_Type = models.CharField(max_length=50, null=True)
-    Code = models.CharField(max_length=50, null=True)
+    Migration_TypeId = models.CharField(max_length=100)
+    Code = models.CharField(max_length=100, blank=True)
+    Object_Type = models.CharField(max_length=100, blank=True)
 
 
 class Approvals(models.Model):

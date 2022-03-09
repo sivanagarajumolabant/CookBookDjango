@@ -643,10 +643,12 @@ def migrationviewlist(request):
     return Response(serializer.data)
 
 
-@api_view(['GET'])
-def objectviewtlist(request, Migration_TypeId):
-    Migration_TypeId  =str(Migration_TypeId).strip()
-    features = migrations.objects.filter(Object_Type__isnull=False, Migration_TypeId=Migration_TypeId)
+@api_view(['POST'])
+def objectviewtlist(request):
+    Migration_TypeId = request.data['Migration_TypeId']
+    # print(Migration_TypeId)
+    features = migrations.objects.filter(Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
+    # print(features)
     serializer = objectviewserializer(features, many=True)
     return Response(serializer.data)
 
@@ -706,7 +708,7 @@ def migration_user_view(request):
 
     user = Users.objects.get(email=email)
 
-    mig_data = migrations.objects.filter(Migration_TypeId=mig_type)
+    mig_data = migrations.objects.filter(Migration_TypeId=mig_type).exclude(Object_Type='')
     serializer = migrationformatserializer(mig_data, many=True)
     object_names = [obj['Object_Type'] for obj in serializer.data]
 
