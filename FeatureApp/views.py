@@ -8,7 +8,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 import mimetypes
-import json, os
+import json
+import os
 from django.http import HttpResponse
 # from importlib import import_module
 from import_file import import_file
@@ -62,16 +63,42 @@ def featuredropdownlist(request):
     obj_type = body_data['Object_Type']
     # print("mig ",migtype)
     # print("type",obj_type)
-    features = Feature.objects.filter(Object_Type=obj_type, Migration_TypeId=migtype)
+    features = Feature.objects.filter(
+        Object_Type=obj_type, Migration_TypeId=migtype)
     serializer = FeaturedropdownSerializer(features, many=True)
     return Response(serializer.data)
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
+# def featuredetail(request, pk):
+#     features = Feature.objects.get(Feature_Id=pk)
+#     serializer = FeatureSerializer(features, many=False)
+#     return Response(serializer.data)
+
+@api_view(['POST'])
 def featuredetail(request, pk):
+    email = request.data['User_Email']
+    user = Users.objects.get(email=email)
+    if user.is_superuser:
+        EDIT = 1
+    else:
+        feature_name = Feature.objects.filter(Feature_Id=pk)
+        feature_name = list(feature_name.values('Feature_Name'))
+        feature_name = feature_name[0]
+        feature_name = feature_name['Feature_Name']
+        perm_data = Permissions.objects.filter(User_Email=email,
+                                               Access_Type='Edit')
+        features_objects = list(perm_data.values('Feature_Name'))
+        list_of_feature_values = [
+            value for elem in features_objects for value in elem.values()]
+        if feature_name not in list_of_feature_values:
+            EDIT = 0
+        else:
+            EDIT = 1
     features = Feature.objects.get(Feature_Id=pk)
     serializer = FeatureSerializer(features, many=False)
-    return Response(serializer.data)
+    response = {'edit': EDIT, 'serializer': serializer.data}
+    return Response(response)
 
 
 @api_view(['PUT'])
@@ -93,21 +120,24 @@ def att_list(request):
 
 @api_view(['GET'])
 def Sourcedescription(request, id):
-    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Sourcedescription')
+    features = Attachments.objects.filter(
+        Feature_Id=id, AttachmentType='Sourcedescription')
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
 def Targetdescription(request, id):
-    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Targetdescription')
+    features = Attachments.objects.filter(
+        Feature_Id=id, AttachmentType='Targetdescription')
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
 
 @api_view(['GET'])
 def Conversion(request, id):
-    features = Attachments.objects.filter(Feature_Id=id, AttachmentType='Conversion')
+    features = Attachments.objects.filter(
+        Feature_Id=id, AttachmentType='Conversion')
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
@@ -141,7 +171,8 @@ def attachment_delete(request):
     featurename = request.data['fname']
     attachment = Attachments.objects.get(id=id)
     attachment.delete()
-    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + AttachmentType + '/'
+    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + \
+        object_type + '/' + featurename + '/' + AttachmentType + '/'
     filename = fl_path + file_name
     os.remove(filename)
     return Response('Deleted')
@@ -166,9 +197,20 @@ def Attcahmentupdate(request, pk):
     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['DELETE'])
+# def featuredelete(request, pk):
+#     features = Feature.objects.get(Feature_Id=pk)
+#     features.delete()
+#     return Response('Deleted')
+
 @api_view(['DELETE'])
 def featuredelete(request, pk):
-    features = Feature.objects.get(Feature_Id=pk)
+    features = Feature.objects.filter(Feature_Id=pk)
+    feature_name = features.values('Feature_Name')[0]['Feature_Name']
+    appr_data = Approvals.objects.filter(Feature_Name=feature_name)
+    perm_data = Permissions.objects.filter(Feature_Name=feature_name)
+    appr_data.delete()
+    perm_data.delete()
     features.delete()
     return Response('Deleted')
 
@@ -180,7 +222,8 @@ def predessors(request):
     body_data = json.loads(body_unicode)
     Object_Type = body_data['Object_Type']
     Migration_TypeId = body_data['Migration_TypeId']
-    features = Feature.objects.filter(Object_Type=Object_Type, Migration_TypeId=Migration_TypeId)
+    features = Feature.objects.filter(
+        Object_Type=Object_Type, Migration_TypeId=Migration_TypeId)
     serializer = SequenceSerializer(features, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -195,7 +238,8 @@ def download_attachment(request):
     object_type = body_data['object_type']
     featurename = body_data['fname']
     fid = body_data['feature_id']
-    filter_files = Attachments.objects.filter(Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
+    filter_files = Attachments.objects.filter(
+        Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
     filter_values = list(filter_files.values_list())
     file_path = filter_values[0]
     fl = open(file_path[4], 'rb')
@@ -217,7 +261,8 @@ def conversion(request):
     object_type = body_data['object_type']
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     module_folder_name = "Modules"
-    module_path = path + '/' + module_folder_name + '/' + migration_typeid + '/' + object_type
+    module_path = path + '/' + module_folder_name + \
+        '/' + migration_typeid + '/' + object_type
     sys.path.append(module_path)
     if not os.path.exists(module_path):
         os.makedirs(module_path)
@@ -253,7 +298,8 @@ def miglevelobjects(request, migtypeid):
 
     for index, i in enumerate(objecttypes):
         data_format = {}
-        features = Feature.objects.filter(Object_Type=i, Migration_TypeId=migtypeid)
+        features = Feature.objects.filter(
+            Object_Type=i, Migration_TypeId=migtypeid)
         serializer = migrationlevelfeatures(features, many=True)
         data = serializer.data
         if i == 'Index':
@@ -286,7 +332,8 @@ def attachentsqlcodefiles(request, id):
     for x in filenames:
         temp = {}
         temp['filename'] = x
-        data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Sourcecode')
+        data1 = Attachments.objects.filter(
+            Feature_Id=id, filename=x, AttachmentType='Sourcecode')
 
         a = list(data1.values_list())
         print(a)
@@ -296,7 +343,8 @@ def attachentsqlcodefiles(request, id):
         else:
             temp['Sourcecode'] = 'Y'
             temp['sid'] = a[0][0]
-        data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Actualtargetcode')
+        data1 = Attachments.objects.filter(
+            Feature_Id=id, filename=x, AttachmentType='Actualtargetcode')
         print(data1)
         a = list(data1.values_list())
         print(a)
@@ -306,7 +354,8 @@ def attachentsqlcodefiles(request, id):
         else:
             temp['Actualtargetcode'] = 'Y'
             temp['atid'] = a[0][0]
-        data1 = Attachments.objects.filter(Feature_Id=id, filename=x, AttachmentType='Expectedconversion')
+        data1 = Attachments.objects.filter(
+            Feature_Id=id, filename=x, AttachmentType='Expectedconversion')
         a = list(data1.values_list())
         if len(a) == 0:
             temp['Expectedconversion'] = 'N'
@@ -337,10 +386,12 @@ def feature_conversion_files(request):
         migid = body_data['Migration_TypeId']
         objtype = body_data['Object_Type']
         path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        output_path = path + '/' + 'media' + '/' + migid + '/' + objtype + '/' + feature + '/' + 'Actualtargetcode' + '/'
+        output_path = path + '/' + 'media' + '/' + migid + '/' + \
+            objtype + '/' + feature + '/' + 'Actualtargetcode' + '/'
         if not os.path.exists(output_path):
             os.makedirs(output_path)
-        module_path = path + '/' + 'media' + '/' + migid + '/' + objtype + '/' + feature + '/' + 'Conversion' + '/'
+        module_path = path + '/' + 'media' + '/' + migid + '/' + \
+            objtype + '/' + feature + '/' + 'Conversion' + '/'
         sys.path.append(module_path)
         if not os.path.exists(module_path):
             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
@@ -349,7 +400,8 @@ def feature_conversion_files(request):
         # file_path = module_path + '/' + feature1 + '.py'
         file_path = module_path + '/' + module_file
         sys.path.insert(0, file_path)
-        filter_files = Attachments.objects.filter(Feature_Id=feature_id, AttachmentType=attach_type)
+        filter_files = Attachments.objects.filter(
+            Feature_Id=feature_id, AttachmentType=attach_type)
         filter_values = list(filter_files.values_list())
         if filter_values:
             for file in filter_values:
@@ -403,7 +455,8 @@ class RegisterView(generics.GenericAPIView):
         plain_message = strip_tags(html_message)
         from_email = EMAIL_HOST_USER
         to = user.email
-        mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
+        mail.send_mail(subject, plain_message, from_email,
+                       [to], html_message=html_message)
         # Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
 
@@ -439,7 +492,8 @@ class ResendVerifyEmail(generics.GenericAPIView):
             plain_message = strip_tags(html_message)
             from_email = EMAIL_HOST_USER
             to = user.email
-            mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
+            mail.send_mail(subject, plain_message, from_email,
+                           [to], html_message=html_message)
             return Response({'msg': 'The Verification email has been sent Please Confirm'},
                             status=status.HTTP_201_CREATED)
         except:
@@ -463,18 +517,21 @@ class RequestPasswordResetEmail(generics.GenericAPIView):
 
             # absurl = 'http://' + current_site + relativeLink
 
-            absurl = frontend_url+'resetpassword?token=' + str(token) + "?uid=" + uidb64
+            absurl = frontend_url+'resetpassword?token=' + \
+                str(token) + "?uid=" + uidb64
             # email_body = 'Hello,  \n Use below link to reset your password \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email,
             #         'email_subject': 'Reset your password'}
             # Util.send_email(data)
 
             subject = 'Forgot Password'
-            html_message = render_to_string('forgotpassword.html', {'url': absurl})
+            html_message = render_to_string(
+                'forgotpassword.html', {'url': absurl})
             plain_message = strip_tags(html_message)
             from_email = EMAIL_HOST_USER
             to = user.email
-            mail.send_mail(subject, plain_message, from_email, [to], html_message=html_message)
+            mail.send_mail(subject, plain_message, from_email,
+                           [to], html_message=html_message)
             return Response({'msg': 'we have sent you a link to reset your password'},
                             status=status.HTTP_201_CREATED)
         else:
@@ -496,7 +553,6 @@ class PasswordTokenCheckAPI(generics.GenericAPIView):
             return Response({'success': True, 'msg': 'credentials valid', 'uidb64': uidb64, 'token': token},
                             status=status.HTTP_200_OK)
 
-
         except DjangoUnicodeDecodeError as identifier:
             return Response({'msg': 'Token is not valid, please request a new one'},
                             status=status.HTTP_401_UNAUTHORIZED)
@@ -517,7 +573,8 @@ class VerifyEmail(generics.GenericAPIView):
         token = token.replace('?', '').strip()
         # token  = request.data['token']
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY)
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=['HS256'])
             user = Users.objects.get(id=payload['user_id'])
             if not user.is_verified:
                 user.is_verified = True
@@ -550,7 +607,8 @@ def featurelistperuser(request):
 def add_view(request):
     object_type = 'Function'
     # , '', 'Sequence', 'Synonym', 'Tabel','Trigger', 'Type', 'View'
-    dict1 = {'Procedures': 0, 'Function': 1, 'Package': 2, 'Index': 3, 'Materialized view': 4}
+    dict1 = {'Procedures': 0, 'Function': 1,
+             'Package': 2, 'Index': 3, 'Materialized view': 4}
     index_num = dict1[object_type]
     feature = 'xml5'
     # print(request.Users.username,"username")
@@ -608,7 +666,8 @@ def create_tablepage_featuresdata(request):
     # print(request)
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
-    data = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+    data = Feature.objects.filter(
+        Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
     serializer = FeatureSerializer(data, many=True)
     return Response(serializer.data)
 
@@ -622,7 +681,8 @@ def get_Featurenames(request):
     if str(Object_Type).upper() == 'ALL':
         features = Feature.objects.all()
     else:
-        features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+        features = Feature.objects.filter(
+            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
     serializer = migrationlevelfeatures(features, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -632,13 +692,14 @@ def migrationsscreate(request):
     migration_type = request.data['Migration_TypeId']
     serializer = migrationcreateserializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(Code = migration_type.replace(' ','_'))
+        serializer.save(Code=migration_type.replace(' ', '_'))
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
 def migrationviewlist(request):
-    features = migrations.objects.values('Migration_TypeId','Code').distinct()
+    features = migrations.objects.values('Migration_TypeId', 'Code').distinct()
     serializer = migrationviewserializer(features, many=True)
     return Response(serializer.data)
 
@@ -647,7 +708,8 @@ def migrationviewlist(request):
 def objectviewtlist(request):
     Migration_TypeId = request.data['Migration_TypeId']
     # print(Migration_TypeId)
-    features = migrations.objects.filter(Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
+    features = migrations.objects.filter(
+        Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
     # print(features)
     serializer = objectviewserializer(features, many=True)
     return Response(serializer.data)
@@ -707,31 +769,35 @@ def permissionscreate(request):
 def migration_user_view(request):
     email = request.data['uemail']
     mig_type = request.data['Migration_TypeId']
-
     user = Users.objects.get(email=email)
-
-    mig_data = migrations.objects.filter(Migration_TypeId=mig_type).exclude(Object_Type='')
+    mig_data = migrations.objects.filter(
+        Migration_TypeId=mig_type).exclude(Object_Type='')
     serializer = migrationformatserializer(mig_data, many=True)
     object_names = [obj['Object_Type'] for obj in serializer.data]
 
     label_dict = {}
     final_list = []
 
-    perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Access_Type='View')
+    perm_data = Permissions.objects.filter(
+        User_Email=email, Migration_TypeId=mig_type, Access_Type='View')
     type_objects = list(perm_data.values('Object_Type').distinct())
     feature_value_object = list(perm_data.values('Feature_Name'))
-    object_values_list = [value for elem in type_objects for value in elem.values()]
-    feature_value_list = [value for elem in feature_value_object for value in elem.values()]
+    object_values_list = [
+        value for elem in type_objects for value in elem.values()]
+    feature_value_list = [
+        value for elem in feature_value_object for value in elem.values()]
 
     if 'All' in object_values_list or user.is_superuser:
         for object_name in object_names:
             inter_list = []
             label_dict['Label'] = object_name
-            features_data = Feature.objects.filter(Migration_TypeId=mig_type,Object_Type=object_name)
+            features_data = Feature.objects.filter(
+                Migration_TypeId=mig_type, Object_Type=object_name)
             features_objects = list(features_data.values('Feature_Name'))
             for obj_feature in features_objects:
                 feature_name = obj_feature['Feature_Name']
-                data_features = Feature.objects.filter(Feature_Name=feature_name)
+                data_features = Feature.objects.filter(
+                    Feature_Name=feature_name)
                 feature_object_list = list(data_features.values('Feature_Id'))
                 feature_id = feature_object_list[0]['Feature_Id']
 
@@ -743,19 +809,26 @@ def migration_user_view(request):
             final_list.append(label_dict.copy())
     else:
         if 'All' in feature_value_list:
-            perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Access_Type='View',Feature_Name = 'All')
-            all_type_objects = list(perm_data1.values('Object_Type').distinct())
-            all_type_objects_list = [value for elem in all_type_objects for value in elem.values()]
+            perm_data1 = Permissions.objects.filter(
+                User_Email=email, Migration_TypeId=mig_type, Access_Type='View', Feature_Name='All')
+            all_type_objects = list(
+                perm_data1.values('Object_Type').distinct())
+            all_type_objects_list = [
+                value for elem in all_type_objects for value in elem.values()]
             for object_name in object_names:
                 inter_list = []
                 label_dict['Label'] = object_name
                 if object_name in all_type_objects_list:
-                    features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-                    features_objects = list(features_data.values('Feature_Name'))
+                    features_data = Feature.objects.filter(
+                        Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_objects = list(
+                        features_data.values('Feature_Name'))
                     for obj_feature in features_objects:
                         feature_name = obj_feature['Feature_Name']
-                        data_features = Feature.objects.filter(Feature_Name=feature_name)
-                        feature_object_list = list(data_features.values('Feature_Id'))
+                        data_features = Feature.objects.filter(
+                            Feature_Name=feature_name)
+                        feature_object_list = list(
+                            data_features.values('Feature_Id'))
                         feature_id = feature_object_list[0]['Feature_Id']
 
                         inter_dict = {}
@@ -772,12 +845,15 @@ def migration_user_view(request):
                 inter_list = []
                 label_dict['Label'] = object_name
                 for feature_name in feature_value_list:
-                    perm_data2 = Permissions.objects.filter(User_Email=email,Migration_TypeId=mig_type, Object_Type=object_name, Access_Type='View',Feature_Name = feature_name)
+                    perm_data2 = Permissions.objects.filter(
+                        User_Email=email, Migration_TypeId=mig_type, Object_Type=object_name, Access_Type='View', Feature_Name=feature_name)
                     features_objects = list(perm_data2.values('Feature_Name'))
                     for obj_feature in features_objects:
                         feature_name = obj_feature['Feature_Name']
-                        data_features = Feature.objects.filter(Feature_Name=feature_name)
-                        feature_object_list = list(data_features.values('Feature_Id'))
+                        data_features = Feature.objects.filter(
+                            Feature_Name=feature_name)
+                        feature_object_list = list(
+                            data_features.values('Feature_Id'))
                         feature_id = feature_object_list[0]['Feature_Id']
 
                         inter_dict = {}

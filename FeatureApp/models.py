@@ -21,8 +21,8 @@ class Approvals(models.Model):
     Feature_Name = models.CharField(max_length=100)
     Approval_Status = models.CharField(max_length=100)
     Access_Type = models.CharField(max_length=100)
-    Start_Date = models.DateTimeField(auto_now_add=True)
-    End_Date = models.DateTimeField(auto_now=True)
+    Start_Date = models.DateField(auto_now_add=True)
+    modified_date = models.DateField(auto_now=True)
 
 
 class Permissions(models.Model):
@@ -31,14 +31,14 @@ class Permissions(models.Model):
     Object_Type = models.CharField(max_length=100)
     Feature_Name = models.CharField(max_length=100)
     Access_Type = models.CharField(max_length=100)
-    Start_Date = models.DateTimeField(auto_now_add=True)
-    End_Date = models.DateTimeField(auto_now=True)
+    Approved_by = models.CharField(max_length=100)
+    Start_Date = models.DateField(auto_now_add=True)
+    End_Date = models.DateField()
 
 
 class Users(AbstractUser):
     is_verified = models.BooleanField(default=False)
     
-
 
 class Feature(models.Model):
     choices = [
