@@ -784,3 +784,13 @@ def migration_user_view(request):
                 final_list.append(label_dict.copy())
 
     return Response(final_list)
+
+
+@api_view(['PUT'])
+def approvalsupdate(request, User_Email):
+    feature = Approvals.objects.get(User_Email=User_Email)
+    serializer = ApprovalSerializer(instance=feature, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
