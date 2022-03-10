@@ -175,37 +175,8 @@ class viewlevelfeatures(serializers.ModelSerializer):
         fields = ('can_view',)
 
 
-# class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
-#     # @classmethod
-#     # def get_token(cls, user):
-#     #     token = super(MyTokenObtainPairSerializer, cls).get_token(user)
-#     #
-#     #     # admin_role =0
-#     #     # if user.is_admin:
-#     #     #     print("entering")
-#     #     #     admin_role =1
-#     #     # print(admin_role,"admin_role")
-#     #     # Add custom claims
-#     #     token['username'] = user.username
-#     #     return token
-#     def validate(self, attrs):
-#         data = super().validate(attrs)
-#         refresh = self.get_token(self.user)
-#         data['refresh'] = str(refresh)
-#         data['access'] = str(refresh.access_token)
-
-#         # Add extra responses here
-#         # data['username'] = self.user.username
-#         data['admin'] = self.user.is_superuser
-#         data['email']= self.user.email
-#         # data['groups'] = self.user.groups.values_list('name', flat=True)
-#         return data
-
-
-
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    
+
     # @classmethod
     # def get_token(cls, user):
     #     token = super(MyTokenObtainPairSerializer, cls).get_token(user)
@@ -228,26 +199,55 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # data['username'] = self.user.username
         data['admin'] = self.user.is_superuser
         data['email']= self.user.email
-        user_email = data['email']
-
-        today_datetime = date.today()
-        permission_data = Permissions.objects.filter(User_Email=user_email).values()
-        for dict in permission_data:
-            end_date = dict['End_Date']
-            if end_date.strftime('%Y-%m-%d') < today_datetime.strftime('%Y-%m-%d'):
-                record = Permissions.objects.get(User_Email=dict['User_Email'], End_Date=end_date,
-                                                 Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
-                                                 Object_Type=dict['Object_Type'])
-                print(record)
-                record.delete()
-                approval_record = Approvals.objects.get(User_Email=dict['User_Email'],
-                                               Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
-                                               Object_Type=dict['Object_Type'])
-                approval_record.delete()
-                print("Expired")
-            else:
-                print("not expired")
+        # data['groups'] = self.user.groups.values_list('name', flat=True)
         return data
+
+
+
+# class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    
+#     # @classmethod
+#     # def get_token(cls, user):
+#     #     token = super(MyTokenObtainPairSerializer, cls).get_token(user)
+#     #
+#     #     # admin_role =0
+#     #     # if user.is_admin:
+#     #     #     print("entering")
+#     #     #     admin_role =1
+#     #     # print(admin_role,"admin_role")
+#     #     # Add custom claims
+#     #     token['username'] = user.username
+#     #     return token
+#     def validate(self, attrs):
+#         data = super().validate(attrs)
+#         refresh = self.get_token(self.user)
+#         data['refresh'] = str(refresh)
+#         data['access'] = str(refresh.access_token)
+
+#         # Add extra responses here
+#         # data['username'] = self.user.username
+#         data['admin'] = self.user.is_superuser
+#         data['email']= self.user.email
+#         user_email = data['email']
+
+#         today_datetime = date.today()
+#         permission_data = Permissions.objects.filter(User_Email=user_email).values()
+#         for dict in permission_data:
+#             end_date = dict['End_Date']
+#             if end_date.strftime('%Y-%m-%d') < today_datetime.strftime('%Y-%m-%d'):
+#                 record = Permissions.objects.get(User_Email=dict['User_Email'], End_Date=end_date,
+#                                                  Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
+#                                                  Object_Type=dict['Object_Type'])
+#                 print(record)
+#                 record.delete()
+#                 approval_record = Approvals.objects.get(User_Email=dict['User_Email'],
+#                                                Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
+#                                                Object_Type=dict['Object_Type'])
+#                 approval_record.delete()
+#                 print("Expired")
+#             else:
+#                 print("not expired")
+#         return data
 
 class resendemailserializer(serializers.ModelSerializer):
     class Meta:
