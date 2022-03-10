@@ -33,7 +33,7 @@ class Permissions(models.Model):
     Access_Type = models.CharField(max_length=100)
     Approved_by = models.CharField(max_length=100)
     Created_at = models.DateField(auto_now_add=True)
-    Expiry_date = models.DateField(null=True)
+    Expiry_date = models.DateField(null=True, blank=True)
 
 
 class Users(AbstractUser):
