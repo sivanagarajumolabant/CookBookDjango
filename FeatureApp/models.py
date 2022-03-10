@@ -38,14 +38,13 @@ class Permissions(models.Model):
 
 class Users(AbstractUser):
     is_verified = models.BooleanField(default=False)
-    
+    admin_migrations = models.TextField(null=True)
 
 class Feature(models.Model):
     choices = [
         ('Programlevel', 'programlevel'),
         ('Statementlevel', 'statementlevel'),
     ]
-
     Migration_TypeId = models.CharField(max_length=50)
     Level = models.CharField(max_length=50, choices=choices, null=True, blank=True)
     Version_Id = models.SmallIntegerField(default=0)
@@ -69,7 +68,7 @@ class Feature(models.Model):
     def save(self, *args, **kwargs):
         object_dict = {'Procedure': 'Proc', 'Function': 'Func', 'Package': 'Pack', 'Index': 'Inde',
                        'Materialized view': 'Mate', 'Sequence': 'Sequ', 'Synonym': 'Syno', 'Tabel': 'Tabe',
-                       'Trigger': 'Trig', 'Type': 'Type', 'View': 'view'}
+                       'Trigger': 'Trig', 'Type': 'Type', 'View': 'view','All': 'All'}
         self.Feature_Name = object_dict[self.Object_Type] + '_' + self.Feature_Name
         self.Version_Id = self.Version_Id + 1
         self.Feature_Version = self.Feature_Version + 1

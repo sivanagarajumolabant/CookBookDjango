@@ -672,20 +672,45 @@ def create_tablepage_featuresdata(request):
     return Response(serializer.data)
 
 
+# @api_view(['POST'])
+# def get_Featurenames(request):
+#     # body_unicode = request.body.decode('utf-8')
+#     # body_data = json.loads(body_unicode)
+#     Migration_TypeId = request.data['Migration_TypeId']
+#     Object_Type = request.data['Object_Type']
+#     if str(Object_Type).upper() == 'ALL':
+#         features = Feature.objects.all()
+#     else:
+#         features = Feature.objects.filter(
+#             Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+#     serializer = migrationlevelfeatures(features, many=True)
+#     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
 def get_Featurenames(request):
     # body_unicode = request.body.decode('utf-8')
     # body_data = json.loads(body_unicode)
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
-    if str(Object_Type).upper() == 'ALL':
-        features = Feature.objects.all()
-    else:
-        features = Feature.objects.filter(
-            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+    # if str(Object_Type).upper() == 'ALL':
+    #     features = Feature.objects.all()
+    # else:
+    features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+    a = features.values()
+    # print(a)
+    new = []
+    for i in a:
+        new.append(i['Feature_Name'])
+    # print(new)
+    # print(str(Object_Type[0:4]) + "_" + "All")
+    # if str(Object_Type[0:4]) + "_" + "All" not in new:
+    #     query = Feature.objects.create(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name="All")
+    # #     query.save()
+    # # else:
+    # #     print("record With All is present")
     serializer = migrationlevelfeatures(features, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 @api_view(['POST'])
 def migrationsscreate(request):
@@ -704,13 +729,27 @@ def migrationviewlist(request):
     return Response(serializer.data)
 
 
+# @api_view(['POST'])
+# def objectviewtlist(request):
+#     Migration_TypeId = request.data['Migration_TypeId']
+#     # print(Migration_TypeId)
+#     features = migrations.objects.filter(
+#         Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
+#     # print(features)
+#     serializer = objectviewserializer(features, many=True)
+#     return Response(serializer.data)
+
 @api_view(['POST'])
 def objectviewtlist(request):
     Migration_TypeId = request.data['Migration_TypeId']
-    # print(Migration_TypeId)
-    features = migrations.objects.filter(
-        Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
-    # print(features)
+    features = migrations.objects.filter(Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
+    # a = features.values()
+    # new = []
+    # for i in a:
+    #     new.append(i['Object_Type'])
+    # if "All" not in new:
+    #     query = migrations.objects.create(Migration_TypeId=Migration_TypeId, Code = Migration_TypeId.replace(' ', '_'), Object_Type="All")
+    #     query.save()
     serializer = objectviewserializer(features, many=True)
     return Response(serializer.data)
 
@@ -723,6 +762,25 @@ def objectviewtlist(request):
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# @api_view(['POST'])
+# def approvalscreate(request):
+#     # print(request.data)
+#     User_Email = request.data['User_Email']
+#     Object_Type = request.data['Object_Type']
+#     Feature_Name = request.data['Feature_Name']
+#     Access_Type = request.data['Access_Type']
+
+#     if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name, Access_Type=Access_Type).exists():
+#         return Response("Request Already Sent")
+
+#     else:
+#         serializer = ApprovalSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['POST'])
 def approvalscreate(request):
     # print(request.data)
@@ -730,9 +788,9 @@ def approvalscreate(request):
     Object_Type = request.data['Object_Type']
     Feature_Name = request.data['Feature_Name']
     Access_Type = request.data['Access_Type']
-
-    if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name, Access_Type=Access_Type).exists():
-        return Response("Request Already Sent")
+    Approval_Status = "Pending"
+    if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name, Access_Type=Access_Type, Approval_Status=Approval_Status).exists():
+        return Response("Approval Request Already Sent")
 
     else:
         serializer = ApprovalSerializer(data=request.data)
@@ -875,3 +933,43 @@ def approvalsupdate(request, id):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET','POST'])
+def admin_permissions(request):
+    email = request.data['email']
+    migtype =request.data['mig_type']
+    temp = Users.objects.filter(email=email)
+    temp = list(temp.values())
+    temp = temp[0]['admin_migrations']
+    temp1 = temp.split('.')
+    if migtype not in temp1:
+        temp = temp + migtype + '.'
+        a = Users.objects.get(email=email)
+        a.admin_migrations = temp
+        a.save()
+        return Response("Admin Access created the Migration")
+    else:
+        return Response("User Already Have Permission with Admin Access")
+
+
+@api_view(['PUT'])
+def permissionsupdate(request, User_Email):
+    feature = Permissions.objects.get(User_Email=User_Email)
+    serializer = PermissionSerializer(instance=feature, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def permissionslist(request):
+    features = Permissions.objects.all()
+    serializer = PermissionSerializer(features, many=True)
+    return Response(serializer.data)
+
+
+
+
+
