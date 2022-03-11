@@ -23,6 +23,7 @@ class Approvals(models.Model):
     Access_Type = models.CharField(max_length=100)
     Created_at = models.DateField(auto_now_add=True)
     Expiry_date = models.DateField(null=True)
+    Approved_by = models.CharField(max_length=100, null=True, blank=True)
 
 
 class Permissions(models.Model):

@@ -197,7 +197,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Add extra responses here
         # data['username'] = self.user.username
-        data['admin'] = self.user.is_superuser
+        data['superadmin'] = self.user.is_superuser
         data['email']= self.user.email
         # data['groups'] = self.user.groups.values_list('name', flat=True)
         return data
