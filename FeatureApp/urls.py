@@ -48,10 +48,13 @@ urlpatterns = [
                   path('permissionscreate/', views.permissionscreate, name='permissionscreate'),
                   path('usersfeaturelist/', views.migration_user_view, name='usersfeaturelist'),
                   path('approvalsupdate/<int:id>', views.approvalsupdate, name='approvalsupdate'),
-                  path('permissionslist/', permissionslist, name='permissionslist'),
+                  path('permissionslist/', views.permissionslist, name='permissionslist'),
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
                   # path('etargetcode/<int:id>',views.Expectedconversion),
-                  path('adminpermission/', admin_permissions, name='adminpermission'),
+                  path('adminpermission/', views.admin_permissions, name='adminpermission'),
+                  path('adminlist/', views.admin_users_list, name='admin_users_list'),
+                  path('superuserlist/', views.super_users_list, name='super_users_list'),
+                  path('grantaccess/', views.grant_access_approve, name='grant_access_approve'),
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

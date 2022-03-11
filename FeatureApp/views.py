@@ -835,15 +835,12 @@ def objectviewtlist(request):
 
 @api_view(['POST'])
 def approvalscreate(request):
-    # print(request.data)
     User_Email = request.data['User_Email']
     Object_Type = request.data['Object_Type']
     Feature_Name = request.data['Feature_Name']
     Access_Type = request.data['Access_Type']
-    Approval_Status = "Pending"
-    if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name, Access_Type=Access_Type, Approval_Status=Approval_Status).exists():
-        return Response("Approval Request Already Sent")
-
+    if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name, Access_Type=Access_Type).exists():
+        return Response("Approval request already Present")
     else:
         serializer = ApprovalSerializer(data=request.data)
         if serializer.is_valid():
@@ -877,7 +874,6 @@ def userslist(request):
 
 @api_view(['POST'])
 def permissionscreate(request):
-    # print(request.data)
     email = request.data['User_Email']
     ad_email = request.data['Approved_by']
     mig_type = request.data['Migration_TypeId']
@@ -885,17 +881,17 @@ def permissionscreate(request):
     feature_name = request.data['Feature_Name']
     created_date = request.data['Created_at']
     expiry_date = request.data['Expiry_date']
-
-    perm_data = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View' )
-    if not perm_data.values():
-        perm_view_data = Permissions.objects.create(User_Email = email,Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View',Approved_by = ad_email,Created_at = created_date,Expiry_date = expiry_date )
-        perm_view_data.save()
+    request_access = request.data['Access_Type']
+    if request_access == 'Edit':
+        perm_data = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View' )
+        if not perm_data.values():
+            perm_view_data = Permissions.objects.create(User_Email = email,Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View',Approved_by = ad_email,Created_at = created_date,Expiry_date = expiry_date )
+            perm_view_data.save()
     serializer = PermissionSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # @api_view(['POST'])
 # def migration_user_view(request):
@@ -1157,6 +1153,62 @@ def permissionslist(request):
     return Response(serializer.data)
 
 
+@api_view(['GET'])
+def admin_users_list(request):
+    users = Users.objects.all()
+    admin_list =[]
+    admin_dict = {}
+    for user_i in users.values():
+        admin_mig_value = user_i['admin_migrations']
+        if admin_mig_value != None and user_i['is_superuser'] == False and admin_mig_value != '':
+            admin_dict['Email'] =user_i['email']
+            admin_mig_value = admin_mig_value.replace('.',',')
+            admin_dict['Migration_Types'] = admin_mig_value
+            admin_list.append(admin_dict.copy())
+    return Response(admin_list)
+
+@api_view(['GET'])
+def super_users_list(request):
+    users = Users.objects.all()
+    superuser_list =[]
+    superuser_dict = {}
+    for user_i in users.values():
+        #admin_mig_value = user_i['admin_migrations']
+        if user_i['is_superuser'] == True:
+            superuser_dict['User_Name'] = user_i['username']
+            superuser_dict['Email'] = user_i['email']
+            superuser_list.append(superuser_dict.copy())
+    return Response(superuser_list)
+
+
+@api_view(['POST'])
+def grant_access_approve(request):
+    User_Email = request.data['User_Email']
+    Object_Type = request.data['Object_Type']
+    Feature_Name = request.data['Feature_Name']
+    Access_Type = request.data['Access_Type']
+
+    appr_data = Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name,
+                                Access_Type=Access_Type)
+    if appr_data:
+        appr_status = appr_data.values()[0]['Approval_Status']
+        if appr_status == 'Approved':
+            serializer = ApprovalSerializer(appr_data,many=True)
+            return Response(serializer.data[0])
+        elif appr_status == 'Pending':
+            approval_record = Approvals.objects.get(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name,
+                                Access_Type=Access_Type)
+            serializer = ApprovalSerializer(instance=approval_record, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        serializer = ApprovalSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
