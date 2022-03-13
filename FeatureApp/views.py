@@ -849,11 +849,16 @@ def approvalscreate(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(['GET','POST'])
 def approvalslist(request):
-    features = Approvals.objects.all()
+    User_Email = request.data['User_Email']
+    Migration_TypeId = request.data['Migration_TypeId']
+    features = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
+    # features = Approvals.objects.all()
     serializer = ApprovalSerializer(features, many=True)
     return Response(serializer.data)
+
+
 
 
 @api_view(['GET'])
@@ -1174,10 +1179,11 @@ def permissionsupdate(request, User_Email):
 
 @api_view(['GET'])
 def permissionslist(request):
-    features = Permissions.objects.all()
+    User_Email = request.data['User_Email']
+    Migration_TypeId = request.data['Migration_TypeId']
+    features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
     serializer = PermissionSerializer(features, many=True)
     return Response(serializer.data)
-
 
 @api_view(['GET'])
 def admin_users_list(request):
