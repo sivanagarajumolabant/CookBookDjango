@@ -852,9 +852,10 @@ def approvalscreate(request):
 @api_view(['GET','POST'])
 def approvalslist(request):
     # User_Email = request.data['User_Email']
-    # Migration_TypeId = request.data['Migration_TypeId']
+    Migration_TypeId = request.data['Migration_TypeId']
     # features = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
-    features = Approvals.objects.all()
+    features = Approvals.objects.filter(Migration_TypeId=Migration_TypeId)
+    # features = Approvals.objects.all()
     # features = Approvals.objects.all()
     serializer = ApprovalSerializer(features, many=True)
     return Response(serializer.data)
