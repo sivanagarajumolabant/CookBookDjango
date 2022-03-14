@@ -1214,14 +1214,18 @@ def permissionsupdate(request, User_Email):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(['GET','POST'])
 def permissionslist(request):
-    User_Email = request.data['User_Email']
-    Migration_TypeId = request.data['Migration_TypeId']
-    features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
+    if len(request.data)>1:
+        User_Email = request.data['User_Email']
+        Migration_TypeId = request.data['Migration_TypeId']
+        features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
+    else:
+        Migration_TypeId = request.data['Migration_TypeId']
+        features = Permissions.objects.filter(Migration_TypeId=Migration_TypeId)
     serializer = PermissionSerializer(features, many=True)
     return Response(serializer.data)
-
+    
 @api_view(['GET'])
 def admin_users_list(request):
     users = Users.objects.all()
@@ -1304,14 +1308,19 @@ def removesuperadmin(request):
 #     return Response(serializer.data)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET','POST'])
 def migrationlistperuser(request):
-    email = request.data['email']    
+    email = request.data['email']
     temp = Users.objects.filter(email=email)
     temp = list(temp.values())[0]
     temp = temp['admin_migrations']
-    temp = temp.split('.')
-    res = [ele for ele in temp if ele.strip()]
+    if temp:
+        # print("entering")
+        temp = temp.split('.')
+        res = [ele for ele in temp if ele.strip()]
+    else:
+        print("not entering")
+        res = []
     migrations_list = migrations.objects.values('Migration_TypeId')
     migrations_list= list(migrations_list.values('Migration_TypeId'))
     migrations_final_list = []
