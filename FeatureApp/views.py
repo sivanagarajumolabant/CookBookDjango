@@ -851,9 +851,10 @@ def approvalscreate(request):
 
 @api_view(['GET','POST'])
 def approvalslist(request):
-    User_Email = request.data['User_Email']
-    Migration_TypeId = request.data['Migration_TypeId']
-    features = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
+    # User_Email = request.data['User_Email']
+    # Migration_TypeId = request.data['Migration_TypeId']
+    # features = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
+    features = Approvals.objects.all()
     # features = Approvals.objects.all()
     serializer = ApprovalSerializer(features, many=True)
     return Response(serializer.data)
@@ -899,6 +900,31 @@ def userslist(request):
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['POST'])
+# def permissionscreate(request):
+#     email = request.data['User_Email']
+#     ad_email = request.data['Approved_by']
+#     mig_type = request.data['Migration_TypeId']
+#     obj_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#     created_date = request.data['Created_at']
+#     expiry_date = request.data['Expiry_date']
+#     request_access = request.data['Access_Type']
+#     if request_access == 'Edit':
+#         perm_data = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View' )
+#         if not perm_data.values():
+#             perm_view_data = Permissions.objects.create(User_Email = email,Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View',Approved_by = ad_email,Created_at = created_date,Expiry_date = expiry_date )
+#             perm_view_data.save()
+#     perm_record = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type =request_access)
+#     if not perm_record:
+#         serializer = PermissionSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         return Response("User already has permission")
+
 @api_view(['POST'])
 def permissionscreate(request):
     email = request.data['User_Email']
@@ -909,11 +935,17 @@ def permissionscreate(request):
     created_date = request.data['Created_at']
     expiry_date = request.data['Expiry_date']
     request_access = request.data['Access_Type']
+    # if request_access == 'Edit':
+    #     perm_data = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View' )
+    #     if not perm_data.values():
+    #         perm_view_data = Permissions.objects.create(User_Email = email,Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View',Approved_by = ad_email,Created_at = created_date,Expiry_date = expiry_date )
+    #         perm_view_data.save()
     if request_access == 'Edit':
-        perm_data = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View' )
-        if not perm_data.values():
-            perm_view_data = Permissions.objects.create(User_Email = email,Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View',Approved_by = ad_email,Created_at = created_date,Expiry_date = expiry_date )
-            perm_view_data.save()
+        feature = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                             Object_Type=obj_type, Feature_Name=feature_name,
+                                             Access_Type='View')
+        if feature:
+            feature.delete()
     perm_record = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type =request_access)
     if not perm_record:
         serializer = PermissionSerializer(data=request.data)
@@ -923,6 +955,8 @@ def permissionscreate(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response("User already has permission")
+
+
 
 # @api_view(['POST'])
 # def migration_user_view(request):
@@ -1037,9 +1071,11 @@ def migration_user_view(request):
 
     label_dict = {}
     final_list = []
-
+    #commented by saiteja
+    # perm_data = Permissions.objects.filter(
+    #     User_Email=email, Migration_TypeId=mig_type, Access_Type='View')
     perm_data = Permissions.objects.filter(
-        User_Email=email, Migration_TypeId=mig_type, Access_Type='View')
+        User_Email=email, Migration_TypeId=mig_type)
     type_objects = list(perm_data.values('Object_Type').distinct())
     feature_value_object = list(perm_data.values('Feature_Name'))
     object_values_list = [
@@ -1079,7 +1115,7 @@ def migration_user_view(request):
     else:
         if 'All' in feature_value_list:
             perm_data1 = Permissions.objects.filter(
-                User_Email=email, Migration_TypeId=mig_type, Access_Type='View', Feature_Name='All')
+                User_Email=email, Migration_TypeId=mig_type, Feature_Name='All')
             all_type_objects = list(
                 perm_data1.values('Object_Type').distinct())
             all_type_objects_list = [
@@ -1115,7 +1151,7 @@ def migration_user_view(request):
                 label_dict['Label'] = object_name
                 for feature_name in feature_value_list:
                     perm_data2 = Permissions.objects.filter(
-                        User_Email=email, Migration_TypeId=mig_type, Object_Type=object_name, Access_Type='View', Feature_Name=feature_name)
+                        User_Email=email, Migration_TypeId=mig_type, Object_Type=object_name,  Feature_Name=feature_name)
                     features_objects = list(perm_data2.values('Feature_Name'))
                     for obj_feature in features_objects:
                         feature_name = obj_feature['Feature_Name']
@@ -1272,23 +1308,26 @@ def migrationlistperuser(request):
     email = request.data['email']    
     temp = Users.objects.filter(email=email)
     temp = list(temp.values())[0]
-    if temp['is_superuser'] or temp['admin_migrations']:
-        temp = temp['admin_migrations']
-        temp = temp.split('.')
-        res = [ele for ele in temp if ele.strip()]
-        final_res = []
-        for i in res:
-            dict1= {}
-            features = migrations.objects.filter(Migration_TypeId = i).distinct()
-            features = list(features.values())[0]
-            # print(features)
-            code = features['Code']
-            dict1["title"] = i
-            dict1["code"] = code
-            final_res.append(dict1)
-        return Response(final_res)
-    else:
-        features = migrations.objects.values('Migration_TypeId', 'Code').distinct()
-        # features = migrations.objects.values_list('Migration_TypeId', flat=True).distinct()
-        serializer = migrationviewserializer(features, many=True)
-        return Response(serializer.data)
+    temp = temp['admin_migrations']
+    temp = temp.split('.')
+    res = [ele for ele in temp if ele.strip()]
+    migrations_list = migrations.objects.values('Migration_TypeId')
+    migrations_list= list(migrations_list.values('Migration_TypeId'))
+    migrations_final_list = []
+    for i in migrations_list:
+        migrations_final_list.append(i['Migration_TypeId'])
+    migrations_final_list = list(set(migrations_final_list))
+    final_res = []
+    for i in migrations_final_list:
+        dict1= {}
+        features = migrations.objects.filter(Migration_TypeId = i).distinct()
+        features = list(features.values())[0]
+        ADMIN = 0
+        if i in res:
+            ADMIN = 1
+        code = features['Code']
+        dict1["title"] = i
+        dict1["code"] = code
+        dict1["admin"] = ADMIN
+        final_res.append(dict1)
+    return Response(final_res)
