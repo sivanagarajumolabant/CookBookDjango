@@ -1,6 +1,8 @@
+import imp
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from .serializers import *
+from datetime import *
 from config.config import frontend_url
 from .models import *
 from rest_framework.decorators import api_view
@@ -851,13 +853,16 @@ def approvalscreate(request):
 
 @api_view(['GET','POST'])
 def approvalslist(request):
-    # User_Email = request.data['User_Email']
     Migration_TypeId = request.data['Migration_TypeId']
-    # features = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
-    features = Approvals.objects.filter(Migration_TypeId=Migration_TypeId)
-    # features = Approvals.objects.all()
-    # features = Approvals.objects.all()
-    serializer = ApprovalSerializer(features, many=True)
+    today = date.today()
+    week_ago = today - timedelta(days=7)
+    final_list = []
+    appr_data = Approvals.objects.filter(Migration_TypeId=Migration_TypeId)
+    for dict in appr_data.values():
+        created_date = dict['Created_at']
+        if created_date > week_ago:
+            final_list.append(dict)
+    serializer = ApprovalSerializer(final_list, many=True)
     return Response(serializer.data)
 
 
