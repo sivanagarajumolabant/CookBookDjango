@@ -1248,6 +1248,7 @@ def createsuperadmin(request):
     email = request.data['email']
     features = Users.objects.get(email=email)
     features.is_superuser = True
+    features.is_verified = True
     features.save()
     return Response('super admin created successfully')
 
