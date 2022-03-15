@@ -1221,13 +1221,9 @@ def permissionsupdate(request, User_Email):
 
 @api_view(['GET','POST'])
 def permissionslist(request):
-    if len(request.data)>1:
-        User_Email = request.data['User_Email']
-        Migration_TypeId = request.data['Migration_TypeId']
-        features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
-    else:
-        Migration_TypeId = request.data['Migration_TypeId']
-        features = Permissions.objects.filter(Migration_TypeId=Migration_TypeId)
+    User_Email = request.data['User_Email']
+    Migration_TypeId = request.data['Migration_TypeId']
+    features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
     serializer = PermissionSerializer(features, many=True)
     return Response(serializer.data)
     
