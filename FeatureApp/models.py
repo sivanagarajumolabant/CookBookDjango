@@ -67,10 +67,10 @@ class Feature(models.Model):
         return self.Feature_Id
 
     def save(self, *args, **kwargs):
-        object_dict = {'Procedure': 'Proc', 'Function': 'Func', 'Package': 'Pack', 'Index': 'Inde',
-                       'Materialized view': 'Mate', 'Sequence': 'Sequ', 'Synonym': 'Syno', 'Tabel': 'Tabe',
-                       'Trigger': 'Trig', 'Type': 'Type', 'View': 'view','All': 'All'}
-        self.Feature_Name = object_dict[self.Object_Type] + '_' + self.Feature_Name
+        object_dict = {'PROCEDURE': 'Proc', 'FUNCTION': 'Func', 'PACKAGE': 'Pack', 'INDEX': 'Inde',
+                       'MATERIALIZED VIEW': 'Mate', 'SEQUENCE': 'Sequ', 'SYNONYM': 'Syno', 'TABLE': 'Tabl',
+                       'TRIGGER': 'Trig', 'TYPE': 'Type', 'VIEW': 'view','JOB':'jobs','PROGRAM':'prog',"SCHEDULE":'Sche'}
+        self.Feature_Name = object_dict[self.Object_Type].upper() + '_' + self.Feature_Name
         self.Version_Id = self.Version_Id + 1
         self.Feature_Version = self.Feature_Version + 1
         super().save(*args, **kwargs)

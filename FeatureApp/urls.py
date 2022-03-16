@@ -11,6 +11,7 @@ urlpatterns = [
                   path('fupdate/<int:pk>', views.featureupdate),
                   path('flist', views.featurelist),
                   path('fdetail/<int:pk>', views.featuredetail),
+                  path('fdetailcatlog/', views.feature_catalog_access_check),
                   path('attachmentsupdate/<int:pk>', views.Attcahmentupdate),
                   # path('template/<str:file_name>', views.download_file),
                   path('download_att', views.download_attachment),
