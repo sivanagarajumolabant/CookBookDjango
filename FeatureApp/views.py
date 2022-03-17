@@ -103,6 +103,58 @@ def featuredropdownlist(request):
 #     return Response(response)
 
 
+# @api_view(['POST'])
+# def featuredetail(request, pk):
+#     email = request.data['User_Email']
+#     user = Users.objects.filter(email=email)
+#
+#     user_values = list(user.values())
+#     user_is_superuser = user_values[0]['is_superuser']
+#     user_admin_list = user_values[0]['admin_migrations']
+#     if user_admin_list != None:
+#         user_admin_list = user_admin_list.split('.')
+#         user_admin_list = [x for x in user_admin_list if x]
+#     else :
+#         user_admin_list = []
+#
+#     feature = Feature.objects.filter(Feature_Id=pk)
+#     mig_type = feature.values()[0]['Migration_TypeId']
+#
+#     if user_is_superuser == True or mig_type in user_admin_list :
+#         EDIT = 1
+#         # Flag = 3
+#     else:
+#         feature_name = Feature.objects.filter(Feature_Id=pk)
+#         feature_name = list(feature_name.values('Feature_Name'))
+#         feature_name = feature_name[0]
+#         feature_name = feature_name['Feature_Name']
+#         perm_data = Permissions.objects.filter(User_Email=email,
+#                                                Access_Type='Edit')
+#         perm_data_view = Permissions.objects.filter(User_Email=email,
+#                                                Access_Type='View')
+#         features_objects = list(perm_data.values('Feature_Name'))
+#         list_of_feature_values = [
+#             value for elem in features_objects for value in elem.values()]
+#
+#         features_objects_view = list(perm_data_view.values('Feature_Name'))
+#         list_of_feature_values_view = [
+#             value for elem in features_objects_view for value in elem.values()]
+#
+#         if feature_name not in list_of_feature_values:
+#             EDIT = 0
+#             # if feature_name in list_of_feature_values_view:
+#             #     Flag =2
+#             # else:
+#             #     Flag = 1
+#         else:
+#             EDIT = 1
+#             # Flag = 3
+#     features = Feature.objects.get(Feature_Id=pk)
+#     serializer = FeatureSerializer(features, many=False)
+#     response = {'edit': EDIT, 'serializer': serializer.data}#,'flag': Flag}
+#     return Response(response)
+
+
 @api_view(['POST'])
 def featuredetail(request, pk):
     email = request.data['User_Email']
@@ -119,41 +171,37 @@ def featuredetail(request, pk):
 
     feature = Feature.objects.filter(Feature_Id=pk)
     mig_type = feature.values()[0]['Migration_TypeId']
+    obj_type = feature.values()[0]['Object_Type']
+    feature_name = feature.values()[0]['Feature_Name']
+
+    EDIT = 0
 
     if user_is_superuser == True or mig_type in user_admin_list :
         EDIT = 1
-        # Flag = 3
     else:
-        feature_name = Feature.objects.filter(Feature_Id=pk)
-        feature_name = list(feature_name.values('Feature_Name'))
-        feature_name = feature_name[0]
-        feature_name = feature_name['Feature_Name']
-        perm_data = Permissions.objects.filter(User_Email=email,
-                                               Access_Type='Edit')
-        perm_data_view = Permissions.objects.filter(User_Email=email,
-                                               Access_Type='View')
-        features_objects = list(perm_data.values('Feature_Name'))
-        list_of_feature_values = [
-            value for elem in features_objects for value in elem.values()]
+        perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,Feature_Name=feature_name)
+        if perm_data1:
+            data1_access = perm_data1.values()[0]['Access_Type']
+            if data1_access in ('Edit', 'ALL'):
+                EDIT = 1
 
-        features_objects_view = list(perm_data_view.values('Feature_Name'))
-        list_of_feature_values_view = [
-            value for elem in features_objects_view for value in elem.values()]
+        perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,Feature_Name='ALL')
+        if perm_data2:
+            data2_access = perm_data2.values()[0]['Access_Type']
+            if data2_access in ('Edit', 'ALL'):
+                EDIT = 1
 
-        if feature_name not in list_of_feature_values:
-            EDIT = 0
-            # if feature_name in list_of_feature_values_view:
-            #     Flag =2
-            # else:
-            #     Flag = 1
-        else:
-            EDIT = 1
-            # Flag = 3
+        perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
+        if perm_data3:
+            data3_access = perm_data3.values()[0]['Access_Type']
+            if data3_access in ('Edit', 'ALL'):
+                EDIT = 1
+
     features = Feature.objects.get(Feature_Id=pk)
     serializer = FeatureSerializer(features, many=False)
-    response = {'edit': EDIT, 'serializer': serializer.data}#,'flag': Flag}
+    response = {'edit': EDIT, 'serializer': serializer.data}
+    # print(response)
     return Response(response)
-
 
 
 # @api_view(['GET','POST'])
@@ -181,44 +229,110 @@ def featuredetail(request, pk):
 #     return Response(response)
 
 
+# @api_view(['GET','POST'])
+# def feature_catalog_access_check(request):
+#     user_email = request.data['User_Email']
+#     mig_type = request.data['Migration_Type']
+#     obj_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#     # print(user_email,mig_type,obj_type,feature_name)
+#
+#     perm_data = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                            Feature_Name=feature_name)
+#     if perm_data:
+#         access_data = perm_data.values('Access_Type')[0]['Access_Type']
+#
+#         if obj_type == 'ALL':
+#             if access_data == 'ALL' or access_data == 'Edit':
+#                 flag = 3
+#             elif access_data == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         elif feature_name == 'ALL':
+#             if access_data == 'ALL' or access_data == 'Edit':
+#                 flag = 3
+#             elif access_data == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         else:
+#             if access_data == 'ALL' or access_data == 'Edit':
+#                 flag = 3
+#             elif access_data == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#     else:
+#         flag = 1
+#     # serializer = PermissionSerializer(perm_data, many=True)
+#     if feature_name!='ALL':
+#         features = Feature.objects.get(Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                         Feature_Name=feature_name)
+#         serializer = FeatureSerializer(features, many=False)
+#         response = {'serializer': serializer.data, 'flag': flag}
+#     else:
+#         response = {'serializer': 'No Data', 'flag': flag}
+#     return Response(response)
+
+
 @api_view(['GET','POST'])
 def feature_catalog_access_check(request):
     user_email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
     obj_type = request.data['Object_Type']
     feature_name = request.data['Feature_Name']
-    # print(user_email,mig_type,obj_type,feature_name)
 
-    perm_data = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
-                                           Feature_Name=feature_name)
-    if perm_data:
-        access_data = perm_data.values('Access_Type')[0]['Access_Type']
+    user = Users.objects.filter(email=user_email)
 
-        if obj_type == 'ALL':
-            if access_data == 'ALL' or access_data == 'Edit':
-                flag = 3
-            elif access_data == 'View':
-                flag = 2
-            else:
-                flag = 1
-        elif feature_name == 'ALL':
-            if access_data == 'ALL' or access_data == 'Edit':
-                flag = 3
-            elif access_data == 'View':
-                flag = 2
-            else:
-                flag = 1
-        else:
-            if access_data == 'ALL' or access_data == 'Edit':
-                flag = 3
-            elif access_data == 'View':
-                flag = 2
-            else:
-                flag = 1
+    user_values = list(user.values())
+    user_is_superuser = user_values[0]['is_superuser']
+    user_admin_list = user_values[0]['admin_migrations']
+    if user_admin_list != None:
+        user_admin_list = user_admin_list.split('.')
+        user_admin_list = [x for x in user_admin_list if x]
     else:
-        flag = 1
-    # serializer = PermissionSerializer(perm_data, many=True)
-    if feature_name!='ALL':
+        user_admin_list = []
+
+    flag = 1
+
+    if user_is_superuser == True or mig_type in user_admin_list:
+        flag = 3
+    else:
+        if obj_type != 'ALL' and feature_name != 'ALL':
+            perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                    Feature_Name=feature_name)
+            if perm_data1:
+                data1_access = perm_data1.values()[0]['Access_Type']
+                if data1_access in ('Edit', 'ALL'):
+                    flag = 3
+                elif data1_access == 'View':
+                    flag = 2
+                else:
+                    flag = 1
+        elif feature_name == 'ALL' and obj_type != 'ALL':
+            perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                    Feature_Name='ALL')
+            if perm_data2:
+                data1_access = perm_data2.values()[0]['Access_Type']
+                if data1_access in ('Edit', 'ALL'):
+                    flag = 3
+                elif data1_access == 'View':
+                    flag = 2
+                else:
+                    flag = 1
+        elif obj_type == 'ALL':
+            perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type='ALL')
+            if perm_data3:
+                data3_access = perm_data3.values()[0]['Access_Type']
+                if data3_access in ('Edit', 'ALL'):
+                    flag = 3
+                elif data3_access == 'View':
+                    flag = 2
+                else:
+                    flag = 1
+
+    if feature_name!='ALL' and obj_type != 'ALL':
         features = Feature.objects.get(Migration_TypeId=mig_type, Object_Type=obj_type,
                                         Feature_Name=feature_name)
         serializer = FeatureSerializer(features, many=False)
@@ -1038,54 +1152,143 @@ def userslist(request):
 #     else:
 #         return Response("User already has permission")
 
+# @api_view(['POST','GET'])
+# def permissionscreate(request):
+#     email = request.data['User_Email']
+#     ad_email = request.data['Approved_by']
+#     mig_type = request.data['Migration_TypeId']
+#     obj_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#     created_date = request.data['Created_at']
+#     expiry_date = request.data['Expiry_date']
+#     request_access = request.data['Access_Type']
+#     if request_access == 'ALL':
+#         feature = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                              Object_Type=obj_type, Feature_Name=feature_name,
+#                                              Access_Type='View')
+#         feature1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                               Object_Type=obj_type, Feature_Name=feature_name,
+#                                               Access_Type='Edit')
+#         feature.delete()
+#         feature1.delete()
+#         if obj_type == 'ALL':
+#             perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                       Access_Type='View')
+#             perm_data_edit = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                       Access_Type='Edit')
+#             perm_data_view.delete()
+#             perm_data_edit.delete()
+#         elif feature_name == 'ALL' and obj_type != 'ALL':
+#             perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Object_Type = obj_type,
+#                                                         Access_Type='View')
+#             perm_data_edit = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Object_Type = obj_type,
+#                                                         Access_Type='Edit')
+#             perm_data_view.delete()
+#             perm_data_edit.delete()
+#     if request_access == 'Edit':
+#         feature = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                              Object_Type=obj_type, Feature_Name=feature_name,
+#                                              Access_Type='View')
+#         if feature:
+#             feature.delete()
+#         if obj_type == 'ALL':
+#             perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                       Access_Type='View')
+#             perm_data_view.delete()
+#         elif feature_name == 'ALL' and obj_type != 'ALL':
+#             perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Object_Type = obj_type,
+#                                                         Access_Type='View')
+#             perm_data_view.delete()
+#     perm_record = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type =request_access)
+#     if not perm_record:
+#         serializer = PermissionSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         return Response("User already has permission")
+
+
 @api_view(['POST','GET'])
 def permissionscreate(request):
-    email = request.data['User_Email']
-    ad_email = request.data['Approved_by']
+    user_Email = request.data['User_Email']
     mig_type = request.data['Migration_TypeId']
     obj_type = request.data['Object_Type']
     feature_name = request.data['Feature_Name']
-    created_date = request.data['Created_at']
-    expiry_date = request.data['Expiry_date']
-    request_access = request.data['Access_Type']
-    if request_access == 'ALL':
-        feature = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-                                             Object_Type=obj_type, Feature_Name=feature_name,
-                                             Access_Type='View')
-        feature1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-                                              Object_Type=obj_type, Feature_Name=feature_name,
-                                              Access_Type='Edit')
-        feature.delete()
-        feature1.delete()
-        if obj_type == 'ALL':
-            perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-                                                      Access_Type='View')
-            perm_data_edit = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-                                                      Access_Type='Edit')
-            perm_data_view.delete()
-            perm_data_edit.delete()
-        elif feature_name == 'ALL' and obj_type != 'ALL':
-            perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Object_Type = obj_type,
-                                                        Access_Type='View')
-            perm_data_edit = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Object_Type = obj_type,
-                                                        Access_Type='Edit')
-            perm_data_view.delete()
-            perm_data_edit.delete()
-    if request_access == 'Edit':
-        feature = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-                                             Object_Type=obj_type, Feature_Name=feature_name,
-                                             Access_Type='View')
-        if feature:
-            feature.delete()
-        if obj_type == 'ALL':
-            perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-                                                      Access_Type='View')
-            perm_data_view.delete()
-        elif feature_name == 'ALL' and obj_type != 'ALL':
-            perm_data_view = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,Object_Type = obj_type,
-                                                        Access_Type='View')
-            perm_data_view.delete()
-    perm_record = Permissions.objects.filter(User_Email = email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type =request_access)
+    access_type = request.data['Access_Type']
+    appr_status = request.data['Approval_Status']
+    if appr_status == 'Approved':
+        if obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'View':
+            perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                Access_Type='View').exclude(Feature_Name='ALL')
+            if perm_data:
+                perm_data.delete()
+        elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'Edit':
+            perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,Access_Type='View')
+            if perm_data_view:
+                perm_data_view.delete()
+            perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,Access_Type='Edit').exclude(Feature_Name='ALL')
+            if perm_data_edit:
+                perm_data_edit.delete()
+        elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'ALL':
+            perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,Access_Type='View')
+            if perm_data_view:
+                perm_data_view.delete()
+            perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,Access_Type='Edit')
+            if perm_data_edit:
+                perm_data_edit.delete()
+            perm_data_all = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                    Object_Type=obj_type,Access_Type='ALL').exclude(Feature_Name='ALL')
+            if perm_data_all:
+                perm_data_all.delete()
+        elif obj_type == 'ALL' and access_type == 'View':
+            perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                Access_Type='View').exclude(Object_Type='ALL', Feature_Name='ALL')
+            if perm_data:
+                perm_data.delete()
+        elif obj_type == 'ALL' and access_type == 'Edit':
+            perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='View')
+            if perm_data_view:
+                perm_data_view.delete()
+            perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='Edit').exclude(Object_Type='ALL', Feature_Name='ALL')
+            if perm_data_edit:
+                perm_data_edit.delete()
+        elif obj_type == 'ALL' and access_type == 'ALL':
+            perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='View')
+            if perm_data_view:
+                perm_data_view.delete()
+            perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='Edit')
+            if perm_data_edit:
+                perm_data_edit.delete()
+            perm_data_all = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                    Access_Type='ALL').exclude(Object_Type='ALL', Feature_Name='ALL')
+            if perm_data_all:
+                perm_data_all.delete()
+        elif access_type == 'Edit':
+            perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                Feature_Name=feature_name, Access_Type='View')
+            if perm_data:
+                perm_data.delete()
+        elif access_type == 'ALL':
+            perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,Feature_Name=feature_name, Access_Type='View')
+            perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,Feature_Name=feature_name, Access_Type='Edit')
+            if perm_data_view:
+                perm_data_view.delete()
+            if perm_data_edit:
+                perm_data_edit.delete()
+
+    perm_record = Permissions.objects.filter(User_Email = user_Email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type =access_type)
     if not perm_record:
         serializer = PermissionSerializer(data=request.data)
         if serializer.is_valid():
@@ -1253,7 +1456,7 @@ def migration_user_view(request):
     else:
         if 'ALL' in feature_value_list:
             perm_data1 = Permissions.objects.filter(
-                User_Email=email, Migration_TypeId=mig_type, Feature_Name='All')
+                User_Email=email, Migration_TypeId=mig_type, Feature_Name='ALL')
             all_type_objects = list(
                 perm_data1.values('Object_Type').distinct())
             all_type_objects_list = [
@@ -1319,6 +1522,37 @@ def migration_user_view(request):
 #         return Response(serializer.data, status=status.HTTP_200_OK)
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# @api_view(['PUT'])
+# def approvalsupdate(request, id):
+#     user_Email = request.data['User_Email']
+#     mig_type = request.data['Migration_TypeId']
+#     obj_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#     access_type = request.data['Access_Type']
+#     appr_status = request.data['Approval_Status']
+#     feature = Approvals.objects.get(id=id)
+#     serializer = ApprovalSerializer(instance=feature, data=request.data)
+#     if serializer.is_valid():
+#         serializer.save()
+#         if appr_status == 'Approved' and access_type == 'ALL':
+#             appr_data_view = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View')
+#             appr_data_edit = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'Edit')
+#             appr_data_view.delete()
+#             appr_data_edit.delete()
+#         elif appr_status == 'Approved' and access_type == 'ALL' and obj_type == 'ALL':
+#             appr_data_view = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Access_Type = 'View')
+#             appr_data_edit = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Access_Type = 'Edit')
+#             appr_data_view.delete()
+#             appr_data_edit.delete()
+#         elif appr_status == 'Approved' and access_type == 'ALL' and feature_name == 'ALL' and obj_type != 'ALL':
+#             appr_data_view = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Access_Type = 'View')
+#             appr_data_edit = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Access_Type = 'Edit')
+#             appr_data_view.delete()
+#             appr_data_edit.delete()
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['PUT'])
 def approvalsupdate(request, id):
     user_Email = request.data['User_Email']
@@ -1329,23 +1563,72 @@ def approvalsupdate(request, id):
     appr_status = request.data['Approval_Status']
     feature = Approvals.objects.get(id=id)
     serializer = ApprovalSerializer(instance=feature, data=request.data)
+
+    if appr_status == 'Approved':
+        if obj_type != 'ALL' and feature_name =='ALL' and  access_type == 'View':
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
+                                                Access_Type='View').exclude(Feature_Name='ALL')
+            if app_data:
+                app_data.delete()
+        elif obj_type != 'ALL' and feature_name =='ALL' and  access_type == 'Edit':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
+                                                     Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
+                                                     Access_Type='Edit').exclude(Feature_Name='ALL')
+            if app_data_edit:
+                app_data_edit.delete()
+        elif obj_type != 'ALL' and feature_name =='ALL' and  access_type == 'ALL':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
+                                                     Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
+                                                     Access_Type='Edit')
+            if app_data_edit:
+                app_data_edit.delete()
+            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
+                                                    Access_Type='ALL').exclude(Feature_Name='ALL')
+            if app_data_all:
+                app_data_all.delete()
+        elif obj_type == 'ALL' and access_type == 'View':
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Access_Type='View').exclude(Object_Type = 'ALL',Feature_Name = 'ALL')
+            if app_data:
+                app_data.delete()
+        elif obj_type == 'ALL' and access_type == 'Edit':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Access_Type='Edit').exclude(Object_Type = 'ALL',Feature_Name = 'ALL')
+            if app_data_edit:
+                app_data_edit.delete()
+        elif obj_type == 'ALL' and access_type == 'ALL':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Access_Type='Edit')
+            if app_data_edit:
+                app_data_edit.delete()
+            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Access_Type='ALL').exclude(Object_Type = 'ALL',Feature_Name = 'ALL')
+            if app_data_all:
+                app_data_all.delete()
+        elif access_type == 'Edit':
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                Feature_Name=feature_name, Access_Type='View')
+            if app_data:
+                app_data.delete()
+        elif access_type == 'ALL':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                     Feature_Name=feature_name, Access_Type='View')
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                     Feature_Name=feature_name, Access_Type='Edit')
+            if app_data_view:
+                app_data_view.delete()
+            if app_data_edit:
+                app_data_edit.delete()
     if serializer.is_valid():
         serializer.save()
-        if appr_status == 'Approved' and access_type == 'ALL':
-            appr_data_view = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'View')
-            appr_data_edit = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Feature_Name = feature_name,Access_Type = 'Edit')
-            appr_data_view.delete()
-            appr_data_edit.delete()
-        elif appr_status == 'Approved' and access_type == 'ALL' and obj_type == 'ALL':
-            appr_data_view = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Access_Type = 'View')
-            appr_data_edit = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Access_Type = 'Edit')
-            appr_data_view.delete()
-            appr_data_edit.delete()
-        elif appr_status == 'Approved' and access_type == 'ALL' and feature_name == 'ALL' and obj_type != 'ALL':
-            appr_data_view = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Access_Type = 'View')
-            appr_data_edit = Approvals.objects.filter(User_Email = user_Email,Migration_TypeId = mig_type,Object_Type = obj_type,Access_Type = 'Edit')
-            appr_data_view.delete()
-            appr_data_edit.delete()
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1450,80 +1733,188 @@ def super_users_list(request):
 #             return Response(serializer.data, status=status.HTTP_201_CREATED)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# @api_view(['POST'])
+# def grant_access_approve(request):
+#     User_Email = request.data['User_Email']
+#     mig_type = request.data['Migration_TypeId']
+#     Object_Type = request.data['Object_Type']
+#     Feature_Name = request.data['Feature_Name']
+#     Access_Type = request.data['Access_Type']
+#     request_appr_status = request.data['Approval_Status']
+#
+#     appr_data = Approvals.objects.filter(User_Email=User_Email,Migration_TypeId = mig_type,Object_Type=Object_Type, Feature_Name=Feature_Name,
+#                                 Access_Type=Access_Type)
+#     if appr_data:
+#         appr_status = appr_data.values()[0]['Approval_Status']
+#         if appr_status == 'Approved':
+#             serializer = ApprovalSerializer(appr_data,many=True)
+#             return Response(serializer.data[0])
+#         elif appr_status == 'Pending':
+#             approval_record = Approvals.objects.get(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name,
+#                                 Access_Type=Access_Type)
+#             serializer = ApprovalSerializer(instance=approval_record, data=request.data)
+#             if serializer.is_valid():
+#                 serializer.save()
+#                 if request_appr_status == 'Approved' and Access_Type == 'ALL':
+#                     appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                               Object_Type=Object_Type, Feature_Name=Feature_Name,
+#                                                               Access_Type='View')
+#                     appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                               Object_Type=Object_Type, Feature_Name=Feature_Name,
+#                                                               Access_Type='Edit')
+#                     appr_data_view.delete()
+#                     appr_data_edit.delete()
+#                 elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Object_Type == 'ALL':
+#                     appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                               Access_Type='View')
+#                     appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                               Access_Type='Edit')
+#                     appr_data_view.delete()
+#                     appr_data_edit.delete()
+#                 elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Feature_Name == 'ALL' and Object_Type != 'ALL':
+#                     appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                               Object_Type=Object_Type, Access_Type='View')
+#                     appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                               Object_Type=Object_Type, Access_Type='Edit')
+#                     appr_data_view.delete()
+#                     appr_data_edit.delete()
+#                 return Response(serializer.data, status=status.HTTP_200_OK)
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         serializer = ApprovalSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             if request_appr_status == 'Approved' and Access_Type == 'ALL':
+#                 appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                           Object_Type=Object_Type, Feature_Name=Feature_Name,
+#                                                           Access_Type='View')
+#                 appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                           Object_Type=Object_Type, Feature_Name=Feature_Name,
+#                                                           Access_Type='Edit')
+#                 appr_data_view.delete()
+#                 appr_data_edit.delete()
+#             elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Object_Type == 'ALL':
+#                 appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                           Access_Type='View')
+#                 appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                           Access_Type='Edit')
+#                 appr_data_view.delete()
+#                 appr_data_edit.delete()
+#             elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Feature_Name == 'ALL' and Object_Type != 'ALL':
+#                 appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                           Object_Type=Object_Type, Access_Type='View')
+#                 appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
+#                                                           Object_Type=Object_Type, Access_Type='Edit')
+#                 appr_data_view.delete()
+#                 appr_data_edit.delete()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['POST'])
 def grant_access_approve(request):
-    User_Email = request.data['User_Email']
+    user_Email = request.data['User_Email']
     mig_type = request.data['Migration_TypeId']
-    Object_Type = request.data['Object_Type']
-    Feature_Name = request.data['Feature_Name']
-    Access_Type = request.data['Access_Type']
-    request_appr_status = request.data['Approval_Status']
+    obj_type = request.data['Object_Type']
+    feature_name = request.data['Feature_Name']
+    access_type = request.data['Access_Type']
+    appr_status = request.data['Approval_Status']
+    if appr_status == 'Approved':
+        if obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'View':
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                Access_Type='View').exclude(Feature_Name='ALL')
+            if app_data:
+                app_data.delete()
+        elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'Edit':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,
+                                                     Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,
+                                                     Access_Type='Edit').exclude(Feature_Name='ALL')
+            if app_data_edit:
+                app_data_edit.delete()
+        elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'ALL':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,
+                                                     Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,
+                                                     Access_Type='Edit')
+            if app_data_edit:
+                app_data_edit.delete()
+            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                    Object_Type=obj_type,
+                                                    Access_Type='ALL').exclude(Feature_Name='ALL')
+            if app_data_all:
+                app_data_all.delete()
+        elif obj_type == 'ALL' and access_type == 'View':
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                Access_Type='View').exclude(Object_Type='ALL', Feature_Name='ALL')
+            if app_data:
+                app_data.delete()
+        elif obj_type == 'ALL' and access_type == 'Edit':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='Edit').exclude(Object_Type='ALL', Feature_Name='ALL')
+            if app_data_edit:
+                app_data_edit.delete()
+        elif obj_type == 'ALL' and access_type == 'ALL':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='View')
+            if app_data_view:
+                app_data_view.delete()
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Access_Type='Edit')
+            if app_data_edit:
+                app_data_edit.delete()
+            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                    Access_Type='ALL').exclude(Object_Type='ALL', Feature_Name='ALL')
+            if app_data_all:
+                app_data_all.delete()
+        elif access_type == 'Edit':
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                Feature_Name=feature_name, Access_Type='View')
+            if app_data:
+                app_data.delete()
+        elif access_type == 'ALL':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,
+                                                     Feature_Name=feature_name, Access_Type='View')
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
+                                                     Object_Type=obj_type,
+                                                     Feature_Name=feature_name, Access_Type='Edit')
+            if app_data_view:
+                app_data_view.delete()
+            if app_data_edit:
+                app_data_edit.delete()
 
-    appr_data = Approvals.objects.filter(User_Email=User_Email,Migration_TypeId = mig_type,Object_Type=Object_Type, Feature_Name=Feature_Name,
-                                Access_Type=Access_Type)
+    appr_data = Approvals.objects.filter(User_Email=user_Email,Migration_TypeId = mig_type,Object_Type=obj_type, Feature_Name=feature_name,
+                                Access_Type=access_type)
     if appr_data:
-        appr_status = appr_data.values()[0]['Approval_Status']
-        if appr_status == 'Approved':
+        data_appr_status = appr_data.values()[0]['Approval_Status']
+        if data_appr_status == 'Approved':
             serializer = ApprovalSerializer(appr_data,many=True)
             return Response(serializer.data[0])
-        elif appr_status == 'Pending':
-            approval_record = Approvals.objects.get(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name,
-                                Access_Type=Access_Type)
+        elif data_appr_status == 'Pending':
+            approval_record = Approvals.objects.get(User_Email=user_Email,Migration_TypeId = mig_type, Object_Type=obj_type, Feature_Name=feature_name,
+                                Access_Type=access_type)
             serializer = ApprovalSerializer(instance=approval_record, data=request.data)
             if serializer.is_valid():
                 serializer.save()
-                if request_appr_status == 'Approved' and Access_Type == 'ALL':
-                    appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                              Object_Type=Object_Type, Feature_Name=Feature_Name,
-                                                              Access_Type='View')
-                    appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                              Object_Type=Object_Type, Feature_Name=Feature_Name,
-                                                              Access_Type='Edit')
-                    appr_data_view.delete()
-                    appr_data_edit.delete()
-                elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Object_Type == 'ALL':
-                    appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                              Access_Type='View')
-                    appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                              Access_Type='Edit')
-                    appr_data_view.delete()
-                    appr_data_edit.delete()
-                elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Feature_Name == 'ALL' and Object_Type != 'ALL':
-                    appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                              Object_Type=Object_Type, Access_Type='View')
-                    appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                              Object_Type=Object_Type, Access_Type='Edit')
-                    appr_data_view.delete()
-                    appr_data_edit.delete()
                 return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         serializer = ApprovalSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            if request_appr_status == 'Approved' and Access_Type == 'ALL':
-                appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                          Object_Type=Object_Type, Feature_Name=Feature_Name,
-                                                          Access_Type='View')
-                appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                          Object_Type=Object_Type, Feature_Name=Feature_Name,
-                                                          Access_Type='Edit')
-                appr_data_view.delete()
-                appr_data_edit.delete()
-            elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Object_Type == 'ALL':
-                appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                          Access_Type='View')
-                appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                          Access_Type='Edit')
-                appr_data_view.delete()
-                appr_data_edit.delete()
-            elif request_appr_status == 'Approved' and Access_Type == 'ALL' and Feature_Name == 'ALL' and Object_Type != 'ALL':
-                appr_data_view = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                          Object_Type=Object_Type, Access_Type='View')
-                appr_data_edit = Approvals.objects.filter(User_Email=User_Email, Migration_TypeId=mig_type,
-                                                          Object_Type=Object_Type, Access_Type='Edit')
-                appr_data_view.delete()
-                appr_data_edit.delete()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
