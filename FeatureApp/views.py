@@ -213,7 +213,7 @@ def featuredetail(request, pk):
     user_is_superuser = user_values[0]['is_superuser']
     user_admin_list = user_values[0]['admin_migrations']
     if user_admin_list != None:
-        user_admin_list = user_admin_list.split('.')
+        user_admin_list = user_admin_list.split(',')
         user_admin_list = [x for x in user_admin_list if x]
     else :
         user_admin_list = []
@@ -400,7 +400,7 @@ def feature_catalog_access_check(request):
     user_is_superuser = user_values[0]['is_superuser']
     user_admin_list = user_values[0]['admin_migrations']
     if user_admin_list != None:
-        user_admin_list = user_admin_list.split('.')
+        user_admin_list = user_admin_list.split(',')
         user_admin_list = [x for x in user_admin_list if x]
     else:
         user_admin_list = []
@@ -1632,7 +1632,7 @@ def migration_user_view(request):
     user_is_superuser = user.values()[0]['is_superuser']
     user_admin_list = user.values()[0]['admin_migrations']
     if user_admin_list != None:
-        user_admin_list = user_admin_list.split('.')
+        user_admin_list = user_admin_list.split(',')
         user_admin_list = [x for x in user_admin_list if x]
     else:
         user_admin_list = []
@@ -1835,9 +1835,9 @@ def admin_permissions(request):
         temp1 = []
         temp = ''
     else:
-        temp1 = temp.split('.')
+        temp1 = temp.split(',')
     if migtype not in temp1:
-        temp = temp + migtype + '.'
+        temp = temp + migtype + ','
         a = Users.objects.get(email=email)
         a.admin_migrations = temp
         a.save()
@@ -1845,16 +1845,33 @@ def admin_permissions(request):
     else:
         return Response("User Already Have Permission with Admin Access")
 
-@api_view(['POST','GET','PUT'])
-def remove_permission(request):
+
+@api_view(['GET','POST','PUT'])
+def remove_admin_permission(request):
     User_Email = request.data['User_Email']
-    admin_migrations = request.data['admin_migrations']
-    per = Users.objects.get(email=User_Email)
-    serializer = userssremovepermissionserializer(instance=per, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    mig_type = request.data['Migration_Type']
+    user = Users.objects.get(email = User_Email)
+    admin_migration_list = user.admin_migrations.split(',')
+    admin_migration_list = [x for x in admin_migration_list if x != '']
+    if mig_type in admin_migration_list:
+        admin_migration_list.remove(mig_type)
+    admin_migartions = ','.join(admin_migration_list)
+    user.admin_migrations = admin_migartions + ','
+    user.save()
+    return Response("Admin access removed")
+
+@api_view(['GET'])
+def admin_rm_migration_list(request):
+    final_list = []
+    inter_dict = {}
+    User_Email = request.data['User_Email']
+    user = Users.objects.get(email=User_Email)
+    admin_migration_list = user.admin_migrations.split(',')
+    admin_migration_list = [x for x in admin_migration_list if x != '']
+    for migration in admin_migration_list:
+        inter_dict['Migration_Type'] = migration
+        final_list.append(inter_dict.copy())
+    return Response(final_list)
 
 @api_view(['PUT'])
 def permissionsupdate(request, User_Email):
@@ -1887,7 +1904,7 @@ def admin_users_list(request):
         admin_mig_value = user_i['admin_migrations']
         if admin_mig_value != None and admin_mig_value != '': #and user_i['is_superuser'] == False
             admin_dict['Email'] =user_i['email']
-            admin_mig_value = admin_mig_value.replace('.',',')
+            # admin_mig_value = admin_mig_value#.replace('.',',')
             admin_dict['Migration_Types'] = admin_mig_value
             admin_list.append(admin_dict.copy())
     return Response(admin_list)
@@ -2154,7 +2171,7 @@ def migrationlistperuser(request):
     temp = temp['admin_migrations']
     if temp:
         # print("entering")
-        temp = temp.split('.')
+        temp = temp.split(',')
         res = [ele for ele in temp if ele.strip()]
     else:
         print("not entering")

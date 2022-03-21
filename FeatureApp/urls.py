@@ -55,7 +55,8 @@ urlpatterns = [
                   # path('etargetcode/<int:id>',views.Expectedconversion),
                   path('adminpermission/', views.admin_permissions, name='adminpermission'),
 
-                  path('removeadminmigrations/', views.remove_permission),
+                  path('removeadminmigrations/', views.remove_admin_permission),
+                  path('adminrmmigrationlist/', admin_rm_migration_list),
 
 
                   path('adminlist/', views.admin_users_list, name='admin_users_list'),

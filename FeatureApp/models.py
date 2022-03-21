@@ -77,6 +77,17 @@ class Feature(models.Model):
         self.Feature_Version = self.Feature_Version + 1
         super().save(*args, **kwargs)
 
+    # def save(self, *args, **kwargs):
+    #     print("count===", len(self.Object_Type))
+    #     if len(self.Object_Type) == 3:
+    #         object_type_name = self.Object_Type[0:3]
+    #     elif len(self.Object_Type) > 3:
+    #         object_type_name = self.Object_Type[0:4]
+    #     self.Feature_Name = object_type_name.upper() + '_' + self.Feature_Name
+    #     self.Version_Id = self.Version_Id + 1
+    #     self.Feature_Version = self.Feature_Version + 1
+    #     super().save(*args, **kwargs)
+
 
 def user_directory_path(instance, filename):
 
