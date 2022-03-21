@@ -1855,12 +1855,17 @@ def remove_admin_permission(request):
     admin_migration_list = [x for x in admin_migration_list if x != '']
     if mig_type in admin_migration_list:
         admin_migration_list.remove(mig_type)
-    admin_migartions = ','.join(admin_migration_list)
-    user.admin_migrations = admin_migartions + ','
-    user.save()
-    return Response("Admin access removed")
+    if admin_migration_list:
+        admin_migartions = ','.join(admin_migration_list)
+        user.admin_migrations = admin_migartions + ','
+        user.save()
+        return Response("Admin access removed")
+    else:
+        user.admin_migrations = ''
+        user.save()
+        return Response("No Permissions")
 
-@api_view(['GET'])
+@api_view(['GET','POST'])
 def admin_rm_migration_list(request):
     final_list = []
     inter_dict = {}
