@@ -1098,10 +1098,14 @@ def migrationsscreate(request):
     migration_type = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
     serializer = migrationcreateserializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(Code=migration_type.replace(' ', '_'))
-        serializer.save(Object_Type=Object_Type.upper())
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    check_obj_type = migrations.objects.filter(Migration_TypeId=migration_type,Object_Type=Object_Type.upper())
+    if not check_obj_type:
+        if serializer.is_valid():
+            serializer.save(Code=migration_type.replace(' ', '_'))
+            serializer.save(Object_Type=Object_Type.upper())
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response('Object Type Already Existed')
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
@@ -1841,6 +1845,17 @@ def admin_permissions(request):
     else:
         return Response("User Already Have Permission with Admin Access")
 
+@api_view(['POST','GET','PUT'])
+def remove_permission(request):
+    User_Email = request.data['User_Email']
+    admin_migrations = request.data['admin_migrations']
+    per = Users.objects.get(email=User_Email)
+    serializer = userssremovepermissionserializer(instance=per, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['PUT'])
 def permissionsupdate(request, User_Email):
     feature = Permissions.objects.get(User_Email=User_Email)
@@ -1870,7 +1885,7 @@ def admin_users_list(request):
     admin_dict = {}
     for user_i in users.values():
         admin_mig_value = user_i['admin_migrations']
-        if admin_mig_value != None and user_i['is_superuser'] == False and admin_mig_value != '':
+        if admin_mig_value != None and admin_mig_value != '': #and user_i['is_superuser'] == False
             admin_dict['Email'] =user_i['email']
             admin_mig_value = admin_mig_value.replace('.',',')
             admin_dict['Migration_Types'] = admin_mig_value

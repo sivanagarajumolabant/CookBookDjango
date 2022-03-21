@@ -54,6 +54,10 @@ urlpatterns = [
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
                   # path('etargetcode/<int:id>',views.Expectedconversion),
                   path('adminpermission/', views.admin_permissions, name='adminpermission'),
+
+                  path('removeadminmigrations/', views.remove_permission),
+
+
                   path('adminlist/', views.admin_users_list, name='admin_users_list'),
                   path('superuserlist/', views.super_users_list, name='super_users_list'),
                   path('grantaccess/', views.grant_access_approve, name='grant_access_approve'),

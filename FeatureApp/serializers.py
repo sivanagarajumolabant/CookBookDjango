@@ -291,6 +291,11 @@ class usersserializer(serializers.ModelSerializer):
         model = Users
         fields = ('email',)
 
+class userssremovepermissionserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ('email','admin_migrations')
+
 class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permissions
