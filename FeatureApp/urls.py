@@ -57,6 +57,7 @@ urlpatterns = [
 
                   path('removeadminmigrations/', views.remove_admin_permission),
                   path('adminrmmigrationlist/', admin_rm_migration_list),
+                  path('adminsobjectslist/',admin_rm_object_list),
 
 
                   path('adminlist/', views.admin_users_list, name='admin_users_list'),

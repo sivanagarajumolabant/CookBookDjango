@@ -204,6 +204,52 @@ def featuredropdownlist(request):
 #     return Response(response)
 
 
+# @api_view(['POST'])
+# def featuredetail(request, pk):
+#     email = request.data['User_Email']
+#     user = Users.objects.filter(email=email)
+#
+#     user_values = list(user.values())
+#     user_is_superuser = user_values[0]['is_superuser']
+#     user_admin_list = user_values[0]['admin_migrations']
+#     if user_admin_list != None:
+#         user_admin_list = user_admin_list.split(',')
+#         user_admin_list = [x for x in user_admin_list if x]
+#     else :
+#         user_admin_list = []
+#
+#     feature = Feature.objects.filter(Feature_Id=pk)
+#     mig_type = feature.values()[0]['Migration_TypeId']
+#     obj_type = feature.values()[0]['Object_Type']
+#     feature_name = feature.values()[0]['Feature_Name']
+#
+#     EDIT = 0
+#     if user_is_superuser == True or mig_type in user_admin_list :
+#         EDIT = 1
+#     else:
+#         perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,Feature_Name=feature_name)
+#         if perm_data1:
+#             data1_access = perm_data1.values()[0]['Access_Type']
+#             if data1_access in ('Edit', 'ALL'):
+#                 EDIT = 1
+#         perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,Feature_Name='ALL')
+#         if perm_data2:
+#             data2_access = perm_data2.values()[0]['Access_Type']
+#             if data2_access in ('Edit', 'ALL'):
+#                 EDIT = 1
+#         perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
+#         if perm_data3:
+#             data3_access = perm_data3.values()[0]['Access_Type']
+#             if data3_access in ('Edit', 'ALL'):
+#                 EDIT = 1
+#         if not perm_data1 and perm_data2 and perm_data3:
+#             EDIT = 0
+#     features = Feature.objects.get(Feature_Id=pk)
+#     serializer = FeatureSerializer(features, many=False)
+#     response = {'edit': EDIT, 'serializer': serializer.data}
+#     return Response(response)
+
+
 @api_view(['POST'])
 def featuredetail(request, pk):
     email = request.data['User_Email']
@@ -211,12 +257,12 @@ def featuredetail(request, pk):
 
     user_values = list(user.values())
     user_is_superuser = user_values[0]['is_superuser']
-    user_admin_list = user_values[0]['admin_migrations']
-    if user_admin_list != None:
-        user_admin_list = user_admin_list.split(',')
-        user_admin_list = [x for x in user_admin_list if x]
-    else :
-        user_admin_list = []
+    admin_access = user_values[0]['admin_migrations']
+    if admin_access != '':
+        admin_access = admin_access.replace("\'", "\"")
+        admin_access_dict = json.loads(admin_access)
+    else:
+        admin_access_dict = {}
 
     feature = Feature.objects.filter(Feature_Id=pk)
     mig_type = feature.values()[0]['Migration_TypeId']
@@ -224,8 +270,11 @@ def featuredetail(request, pk):
     feature_name = feature.values()[0]['Feature_Name']
 
     EDIT = 0
-    if user_is_superuser == True or mig_type in user_admin_list :
+    if user_is_superuser == True :
         EDIT = 1
+    elif mig_type in admin_access_dict.keys():
+        if obj_type in admin_access_dict[mig_type]:
+            EDIT = 1
     else:
         perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,Feature_Name=feature_name)
         if perm_data1:
@@ -387,6 +436,68 @@ def featuredetail(request, pk):
 #     return Response(response)
 
 
+# @api_view(['GET','POST'])
+# def feature_catalog_access_check(request):
+#     user_email = request.data['User_Email']
+#     mig_type = request.data['Migration_Type']
+#     obj_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#
+#     user = Users.objects.filter(email=user_email)
+#
+#     user_values = list(user.values())
+#     user_is_superuser = user_values[0]['is_superuser']
+#     user_admin_list = user_values[0]['admin_migrations']
+#     if user_admin_list != None:
+#         user_admin_list = user_admin_list.split(',')
+#         user_admin_list = [x for x in user_admin_list if x]
+#     else:
+#         user_admin_list = []
+#     flag = 1
+#     if user_is_superuser == True or mig_type in user_admin_list:
+#         flag = 3
+#     elif obj_type != ''  and feature_name != '':
+#         perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                                 Feature_Name=feature_name)
+#         if perm_data1:
+#             data1_access = perm_data1.values()[0]['Access_Type']
+#             if data1_access in ('Edit', 'ALL'):
+#                 flag = 3
+#             elif data1_access == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                                 Feature_Name='ALL')
+#         if perm_data2:
+#             data2_access = perm_data2.values()[0]['Access_Type']
+#             if data2_access in ('Edit', 'ALL'):
+#                 flag = 3
+#             elif data2_access == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type='ALL')
+#         if perm_data3:
+#             data3_access = perm_data3.values()[0]['Access_Type']
+#             if data3_access in ('Edit', 'ALL'):
+#                 flag = 3
+#             elif data3_access == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         if not perm_data1 and perm_data2 and perm_data3:
+#             flag = 1
+#     if feature_name!='ALL' and obj_type != 'ALL':
+#         features = Feature.objects.get(Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                         Feature_Name=feature_name)
+#         serializer = FeatureSerializer(features, many=False)
+#         response = {'serializer': serializer.data, 'flag': flag}
+#     else:
+#         response = {'serializer': 'No Data', 'flag': flag}
+#     return Response(response)
+
+
 @api_view(['GET','POST'])
 def feature_catalog_access_check(request):
     user_email = request.data['User_Email']
@@ -398,15 +509,19 @@ def feature_catalog_access_check(request):
 
     user_values = list(user.values())
     user_is_superuser = user_values[0]['is_superuser']
-    user_admin_list = user_values[0]['admin_migrations']
-    if user_admin_list != None:
-        user_admin_list = user_admin_list.split(',')
-        user_admin_list = [x for x in user_admin_list if x]
+    admin_access = user_values[0]['admin_migrations']
+    if admin_access != '':
+        admin_access = admin_access.replace("\'", "\"")
+        admin_access_dict = json.loads(admin_access)
     else:
-        user_admin_list = []
+        admin_access_dict = {}
+
     flag = 1
-    if user_is_superuser == True or mig_type in user_admin_list:
+    if user_is_superuser == True :
         flag = 3
+    elif mig_type in admin_access_dict.keys():
+        if obj_type in admin_access_dict[mig_type]:
+            flag = 3
     elif obj_type != ''  and feature_name != '':
         perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
                                                 Feature_Name=feature_name)
@@ -1824,46 +1939,165 @@ def approvalsupdate(request, id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['GET','POST'])
+# def admin_permissions(request):
+#     email = request.data['email']
+#     migtype =request.data['mig_type']
+#     temp = Users.objects.filter(email=email)
+#     temp = list(temp.values())
+#     temp = temp[0]['admin_migrations']
+#     if temp == None:
+#         temp1 = []
+#         temp = ''
+#     else:
+#         temp1 = temp.split(',')
+#     if migtype not in temp1:
+#         temp = temp + migtype + ','
+#         a = Users.objects.get(email=email)
+#         a.admin_migrations = temp
+#         a.save()
+#         return Response("Admin Access created the Migration")
+#     else:
+#         return Response("User Already Have Permission with Admin Access")
+
+
 @api_view(['GET','POST'])
 def admin_permissions(request):
     email = request.data['email']
     migtype =request.data['mig_type']
-    temp = Users.objects.filter(email=email)
-    temp = list(temp.values())
-    temp = temp[0]['admin_migrations']
-    if temp == None:
-        temp1 = []
-        temp = ''
+    object_type = request.data['Object_Type']
+    user = Users.objects.get(email=email)
+    if user.admin_migrations!=None:
+        admin_access = user.admin_migrations.replace("\'", "\"")
     else:
-        temp1 = temp.split(',')
-    if migtype not in temp1:
-        temp = temp + migtype + ','
+        admin_access =''
+    if admin_access != '':
+        admin_access_dict = json.loads(admin_access)
+        if migtype not in admin_access_dict.keys():
+            object_list = []
+            object_list.append(object_type)
+            admin_access_dict[migtype] = object_list
+            a = Users.objects.get(email=email)
+            a.admin_migrations = admin_access_dict
+            a.save()
+            return Response("Admin Access created the Migration")
+        else:
+            if object_type not in admin_access_dict[migtype]:
+                admin_access_dict[migtype].append(object_type)
+                a = Users.objects.get(email=email)
+                a.admin_migrations = admin_access_dict
+                a.save()
+                return Response("Admin Access created the Migration")
+            else:
+                # print("else else")
+                return Response("User Already Have Permission with Admin Access")
+    else:
+        final_dict = {}
+        object_list =[]
+        object_list.append(object_type)
+        final_dict[migtype] = object_list
         a = Users.objects.get(email=email)
-        a.admin_migrations = temp
+        a.admin_migrations = final_dict
         a.save()
         return Response("Admin Access created the Migration")
-    else:
-        return Response("User Already Have Permission with Admin Access")
 
 
-@api_view(['GET','POST','PUT'])
+# @api_view(['GET','POST','PUT'])
+# def remove_admin_permission(request):
+#     User_Email = request.data['User_Email']
+#     mig_type = request.data['Migration_Type']
+#     user = Users.objects.get(email = User_Email)
+#     admin_migration_list = user.admin_migrations.split(',')
+#     admin_migration_list = [x for x in admin_migration_list if x != '']
+#     if mig_type in admin_migration_list:
+#         admin_migration_list.remove(mig_type)
+#     if admin_migration_list:
+#         admin_migartions = ','.join(admin_migration_list)
+#         user.admin_migrations = admin_migartions + ','
+#         user.save()
+#         return Response("Admin access removed")
+#     else:
+#         user.admin_migrations = ''
+#         user.save()
+#         return Response("No Permissions")
+
+@api_view(['GET', 'POST', 'PUT'])
 def remove_admin_permission(request):
     User_Email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
-    user = Users.objects.get(email = User_Email)
-    admin_migration_list = user.admin_migrations.split(',')
-    admin_migration_list = [x for x in admin_migration_list if x != '']
-    if mig_type in admin_migration_list:
-        admin_migration_list.remove(mig_type)
-    if admin_migration_list:
-        admin_migartions = ','.join(admin_migration_list)
-        user.admin_migrations = admin_migartions + ','
-        user.save()
-        return Response("Admin access removed")
-    else:
+    object_type = request.data['Object_type']
+    user = Users.objects.get(email=User_Email)
+    admin_access = user.admin_migrations.replace("\'", "\"")
+    if admin_access == '' or admin_access==None:
         user.admin_migrations = ''
         user.save()
         return Response("No Permissions")
+    else:
+        admin_access_dict = json.loads(admin_access)
+        print(admin_access_dict)
+        if mig_type in admin_access_dict.keys():
+            if object_type == 'ALL':
+                del admin_access_dict[mig_type]
+                if len(admin_access_dict) == 0:
+                    a = Users.objects.get(email=User_Email)
+                    a.admin_migrations = ''
+                    a.save()
+                else:
+                    a = Users.objects.get(email=User_Email)
+                    a.admin_migrations = admin_access_dict
+                    a.save()
+            else:
+                if object_type in admin_access_dict[mig_type]:
+                    admin_access_dict[mig_type].remove(object_type)
+                    if admin_access_dict[mig_type]:
+                        a = Users.objects.get(email=User_Email)
+                        a.admin_migrations = admin_access_dict
+                        a.save()
+                    else:
+                        del admin_access_dict[mig_type]
+                        if len(admin_access_dict) == 0:
+                            a = Users.objects.get(email=User_Email)
+                            a.admin_migrations = ''
+                            a.save()
+                        else:
+                            a = Users.objects.get(email=User_Email)
+                            a.admin_migrations = admin_access_dict
+                            a.save()
+        return Response("Admin access removed")
+
+# @api_view(['GET','POST'])
+# def admin_rm_migration_list(request):
+#     final_list = []
+#     inter_dict = {}
+#     User_Email = request.data['User_Email']
+#     user = Users.objects.get(email=User_Email)
+#     admin_migration_list = user.admin_migrations.split(',')
+#     admin_migration_list = [x for x in admin_migration_list if x != '']
+#     for migration in admin_migration_list:
+#         inter_dict['Migration_Type'] = migration
+#         final_list.append(inter_dict.copy())
+#     return Response(final_list)
+
+# @api_view(['GET','POST'])
+# def admin_rm_migration_list(request):
+#     final_list = []
+#     inter_dict = {}
+#     User_Email = request.data['User_Email']
+#     user = Users.objects.get(email=User_Email)
+#     admin_access = user.admin_migrations
+#     if admin_access != '':
+#         admin_access = admin_access.replace("\'", "\"")
+#         admin_access_dict = json.loads(admin_access)
+#     else:
+#         admin_access_dict = {}
+#     migration_type_list = admin_access_dict.keys()
+#
+#     for migration in migration_type_list:
+#         inter_dict['Migration_Type'] = migration
+#         inter_dict['Object_types'] = admin_access_dict[migration]
+#         final_list.append(inter_dict.copy())
+#     return Response(final_list)
+
 
 @api_view(['GET','POST'])
 def admin_rm_migration_list(request):
@@ -1871,12 +2105,39 @@ def admin_rm_migration_list(request):
     inter_dict = {}
     User_Email = request.data['User_Email']
     user = Users.objects.get(email=User_Email)
-    admin_migration_list = user.admin_migrations.split(',')
-    admin_migration_list = [x for x in admin_migration_list if x != '']
-    for migration in admin_migration_list:
+    admin_access = user.admin_migrations
+    if admin_access != '' and admin_access != None:
+        admin_access = admin_access.replace("\'", "\"")
+        admin_access_dict = json.loads(admin_access)
+    else:
+        admin_access_dict = {}
+    for migration in admin_access_dict.keys():
         inter_dict['Migration_Type'] = migration
         final_list.append(inter_dict.copy())
     return Response(final_list)
+
+
+@api_view(['GET','POST'])
+def admin_rm_object_list(request):
+    final_list = []
+    inter_dict = {}
+    User_Email = request.data['User_Email']
+    mig_type = request.data['Migration_Type']
+
+    user = Users.objects.get(email=User_Email)
+    admin_access = user.admin_migrations
+    if admin_access != '' and admin_access != None:
+        admin_access = admin_access.replace("\'", "\"")
+        admin_access_dict = json.loads(admin_access)
+    else:
+        admin_access_dict = {}
+    if mig_type in admin_access_dict.keys():
+        object_list = admin_access_dict[mig_type]
+        for object_i in object_list:
+            inter_dict['Object_type'] = object_i
+            final_list.append(inter_dict.copy())
+    return Response(final_list)
+
 
 @api_view(['PUT'])
 def permissionsupdate(request, User_Email):
@@ -1900,19 +2161,37 @@ def permissionslist(request):
     serializer = PermissionSerializer(features, many=True)
     return Response(serializer.data)
     
+# @api_view(['GET'])
+# def admin_users_list(request):
+#     users = Users.objects.all()
+#     admin_list =[]
+#     admin_dict = {}
+#     for user_i in users.values():
+#         admin_mig_value = user_i['admin_migrations']
+#         if admin_mig_value != None and admin_mig_value != '': #and user_i['is_superuser'] == False
+#             admin_dict['Email'] =user_i['email']
+#             # admin_mig_value = admin_mig_value#.replace('.',',')
+#             admin_dict['Migration_Types'] = admin_mig_value
+#             admin_list.append(admin_dict.copy())
+#     return Response(admin_list)
+
 @api_view(['GET'])
 def admin_users_list(request):
     users = Users.objects.all()
-    admin_list =[]
-    admin_dict = {}
+    final_list =[]
+    inter_dict = {}
     for user_i in users.values():
         admin_mig_value = user_i['admin_migrations']
         if admin_mig_value != None and admin_mig_value != '': #and user_i['is_superuser'] == False
-            admin_dict['Email'] =user_i['email']
-            # admin_mig_value = admin_mig_value#.replace('.',',')
-            admin_dict['Migration_Types'] = admin_mig_value
-            admin_list.append(admin_dict.copy())
-    return Response(admin_list)
+            inter_dict['Email'] =user_i['email']
+            admin_access = admin_mig_value.replace("\'", "\"")
+            admin_access_dict = json.loads(admin_access)
+            migration_type_list = admin_access_dict.keys()
+            for migration in migration_type_list:
+                inter_dict['Migration_Type'] = migration
+                inter_dict['Object_types'] = admin_access_dict[migration]
+                final_list.append(inter_dict.copy())
+    return Response(final_list)
 
 @api_view(['GET'])
 def super_users_list(request):
