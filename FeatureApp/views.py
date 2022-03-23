@@ -1961,16 +1961,54 @@ def approvalsupdate(request, id):
 #         return Response("User Already Have Permission with Admin Access")
 
 
+# @api_view(['GET','POST'])
+# def admin_permissions(request):
+#     email = request.data['email']
+#     migtype =request.data['mig_type']
+#     object_type = request.data['Object_Type']
+#     user = Users.objects.get(email=email)
+#     if user.admin_migrations!=None:
+#         admin_access = user.admin_migrations.replace("\'", "\"")
+#     else:
+#         admin_access =''
+#     if admin_access != '':
+#         admin_access_dict = json.loads(admin_access)
+#         if migtype not in admin_access_dict.keys():
+#             object_list = []
+#             object_list.append(object_type)
+#             admin_access_dict[migtype] = object_list
+#             a = Users.objects.get(email=email)
+#             a.admin_migrations = admin_access_dict
+#             a.save()
+#             return Response("Admin Access created the Migration")
+#         else:
+#             if object_type not in admin_access_dict[migtype]:
+#                 admin_access_dict[migtype].append(object_type)
+#                 a = Users.objects.get(email=email)
+#                 a.admin_migrations = admin_access_dict
+#                 a.save()
+#                 return Response("Admin Access created the Migration")
+#             else:
+#                 # print("else else")
+#                 return Response("User Already Have Permission with Admin Access")
+#     else:
+#         final_dict = {}
+#         object_list =[]
+#         object_list.append(object_type)
+#         final_dict[migtype] = object_list
+#         a = Users.objects.get(email=email)
+#         a.admin_migrations = final_dict
+#         a.save()
+#         return Response("Admin Access created the Migration")
+
+
 @api_view(['GET','POST'])
 def admin_permissions(request):
     email = request.data['email']
     migtype =request.data['mig_type']
     object_type = request.data['Object_Type']
     user = Users.objects.get(email=email)
-    if user.admin_migrations!=None:
-        admin_access = user.admin_migrations.replace("\'", "\"")
-    else:
-        admin_access =''
+    admin_access = user.admin_migrations.replace("\'", "\"")
     if admin_access != '':
         admin_access_dict = json.loads(admin_access)
         if migtype not in admin_access_dict.keys():
@@ -1980,17 +2018,28 @@ def admin_permissions(request):
             a = Users.objects.get(email=email)
             a.admin_migrations = admin_access_dict
             a.save()
-            return Response("Admin Access created the Migration")
+            return Response("Admin access created for user")
         else:
             if object_type not in admin_access_dict[migtype]:
-                admin_access_dict[migtype].append(object_type)
-                a = Users.objects.get(email=email)
-                a.admin_migrations = admin_access_dict
-                a.save()
-                return Response("Admin Access created the Migration")
+                if object_type == 'ALL':
+                    admin_access_dict[migtype].clear()
+                    admin_access_dict[migtype].append(object_type)
+                    a = Users.objects.get(email=email)
+                    a.admin_migrations = admin_access_dict
+                    a.save()
+                    return Response("Admin access created for user")
+                else:
+                    if 'ALL' not in admin_access_dict[migtype]:
+                        admin_access_dict[migtype].append(object_type)
+                        a = Users.objects.get(email=email)
+                        a.admin_migrations = admin_access_dict
+                        a.save()
+                        return Response("Admin access created for user")
+                    else:
+                        return Response("User already has admin permission for ALL Object Types")
+
             else:
-                # print("else else")
-                return Response("User Already Have Permission with Admin Access")
+                return Response("User already has this admin permission")
     else:
         final_dict = {}
         object_list =[]
@@ -1999,8 +2048,7 @@ def admin_permissions(request):
         a = Users.objects.get(email=email)
         a.admin_migrations = final_dict
         a.save()
-        return Response("Admin Access created the Migration")
-
+        return Response("Admin access created for user")
 
 # @api_view(['GET','POST','PUT'])
 # def remove_admin_permission(request):
