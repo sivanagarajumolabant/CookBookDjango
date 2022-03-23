@@ -47,7 +47,7 @@ urlpatterns = [
                   path('approvalslist', views.approvalslist),
                   path('userslist/', views.userslist, name='userslist'),
                   path('permissionscreate/', views.permissionscreate, name='permissionscreate'),
-                  path('usersfeaturelist/', views.migration_user_view, name='usersfeaturelist'),
+
                   path('approvalsupdate/<int:id>', views.approvalsupdate, name='approvalsupdate'),
                   path('permissionslist/', views.permissionslist, name='permissionslist'),
                   # path('sourcecode/<int:id>',views.Sourcecode),
@@ -59,12 +59,15 @@ urlpatterns = [
                   path('adminrmmigrationlist/', admin_rm_migration_list),
                   path('adminsobjectslist/',admin_rm_object_list),
 
+                # header api's
+                  path('createflagcheck/', create_check_list, name='create_check_list'),
+                  path('migrationlistperuser/', migrationlistperuser, name='migrationlistperuser'), # for header mig types list
+                  path('usersfeaturelist/', views.migration_user_view, name='usersfeaturelist'),
 
                   path('adminlist/', views.admin_users_list, name='admin_users_list'),
                   path('superuserlist/', views.super_users_list, name='super_users_list'),
                   path('grantaccess/', views.grant_access_approve, name='grant_access_approve'),
                   path('createsuperadmin/', views.createsuperadmin, name='createsuperadmin'),
                   path('removesuperadmin/', views.removesuperadmin, name='removesuperadmin'),
-                  path('migrationlistperuser/', migrationlistperuser, name='migrationlistperuser'), # for header mig types list
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
