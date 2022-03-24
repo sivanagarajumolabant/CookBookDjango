@@ -69,5 +69,8 @@ urlpatterns = [
                   path('grantaccess/', views.grant_access_approve, name='grant_access_approve'),
                   path('createsuperadmin/', views.createsuperadmin, name='createsuperadmin'),
                   path('removesuperadmin/', views.removesuperadmin, name='removesuperadmin'),
+path('objectadminviewtlist/', views.objectadminviewtlist, name='objectadminviewtlist'),
+    path('templatedownload/', views.template_download),
+    path('pdfdownload/', views.pdf_download)
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

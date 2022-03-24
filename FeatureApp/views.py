@@ -250,6 +250,54 @@ def featuredropdownlist(request):
 #     return Response(response)
 
 
+# @api_view(['POST'])
+# def featuredetail(request, pk):
+#     email = request.data['User_Email']
+#     user = Users.objects.filter(email=email)
+#
+#     user_values = list(user.values())
+#     user_is_superuser = user_values[0]['is_superuser']
+#     admin_access = user_values[0]['admin_migrations']
+#     if admin_access != '':
+#         admin_access = admin_access.replace("\'", "\"")
+#         admin_access_dict = json.loads(admin_access)
+#     else:
+#         admin_access_dict = {}
+#
+#     feature = Feature.objects.filter(Feature_Id=pk)
+#     mig_type = feature.values()[0]['Migration_TypeId']
+#     obj_type = feature.values()[0]['Object_Type']
+#     feature_name = feature.values()[0]['Feature_Name']
+#
+#     EDIT = 0
+#     if user_is_superuser == True :
+#         EDIT = 1
+#     elif mig_type in admin_access_dict.keys():
+#         if obj_type in admin_access_dict[mig_type]:
+#             EDIT = 1
+#     else:
+#         perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,Feature_Name=feature_name)
+#         if perm_data1:
+#             data1_access = perm_data1.values()[0]['Access_Type']
+#             if data1_access in ('Edit', 'ALL'):
+#                 EDIT = 1
+#         perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,Feature_Name='ALL')
+#         if perm_data2:
+#             data2_access = perm_data2.values()[0]['Access_Type']
+#             if data2_access in ('Edit', 'ALL'):
+#                 EDIT = 1
+#         perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
+#         if perm_data3:
+#             data3_access = perm_data3.values()[0]['Access_Type']
+#             if data3_access in ('Edit', 'ALL'):
+#                 EDIT = 1
+#         if not perm_data1 and perm_data2 and perm_data3:
+#             EDIT = 0
+#     features = Feature.objects.get(Feature_Id=pk)
+#     serializer = FeatureSerializer(features, many=False)
+#     response = {'edit': EDIT, 'serializer': serializer.data}
+#     return Response(response)
+
 @api_view(['POST'])
 def featuredetail(request, pk):
     email = request.data['User_Email']
@@ -270,9 +318,9 @@ def featuredetail(request, pk):
     feature_name = feature.values()[0]['Feature_Name']
 
     EDIT = 0
-    if user_is_superuser == True :
-        EDIT = 1
-    elif mig_type in admin_access_dict.keys():
+    # if user_is_superuser == True :
+    #     EDIT = 1
+    if mig_type in admin_access_dict.keys():
         if obj_type in admin_access_dict[mig_type]:
             EDIT = 1
     else:
@@ -498,6 +546,71 @@ def featuredetail(request, pk):
 #     return Response(response)
 
 
+# @api_view(['GET','POST'])
+# def feature_catalog_access_check(request):
+#     user_email = request.data['User_Email']
+#     mig_type = request.data['Migration_Type']
+#     obj_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#
+#     user = Users.objects.filter(email=user_email)
+#
+#     user_values = list(user.values())
+#     user_is_superuser = user_values[0]['is_superuser']
+#     admin_access = user_values[0]['admin_migrations']
+#     if admin_access != '':
+#         admin_access = admin_access.replace("\'", "\"")
+#         admin_access_dict = json.loads(admin_access)
+#     else:
+#         admin_access_dict = {}
+#
+#     flag = 1
+#     if user_is_superuser == True :
+#         flag = 3
+#     elif mig_type in admin_access_dict.keys():
+#         if obj_type in admin_access_dict[mig_type]:
+#             flag = 3
+#     elif obj_type != ''  and feature_name != '':
+#         perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                                 Feature_Name=feature_name)
+#         if perm_data1:
+#             data1_access = perm_data1.values()[0]['Access_Type']
+#             if data1_access in ('Edit', 'ALL'):
+#                 flag = 3
+#             elif data1_access == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                                 Feature_Name='ALL')
+#         if perm_data2:
+#             data2_access = perm_data2.values()[0]['Access_Type']
+#             if data2_access in ('Edit', 'ALL'):
+#                 flag = 3
+#             elif data2_access == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type='ALL')
+#         if perm_data3:
+#             data3_access = perm_data3.values()[0]['Access_Type']
+#             if data3_access in ('Edit', 'ALL'):
+#                 flag = 3
+#             elif data3_access == 'View':
+#                 flag = 2
+#             else:
+#                 flag = 1
+#         if not perm_data1 and perm_data2 and perm_data3:
+#             flag = 1
+#     if feature_name!='ALL' and obj_type != 'ALL':
+#         features = Feature.objects.get(Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                         Feature_Name=feature_name)
+#         serializer = FeatureSerializer(features, many=False)
+#         response = {'serializer': serializer.data, 'flag': flag}
+#     else:
+#         response = {'serializer': 'No Data', 'flag': flag}
+#     return Response(response)
+
 @api_view(['GET','POST'])
 def feature_catalog_access_check(request):
     user_email = request.data['User_Email']
@@ -517,9 +630,9 @@ def feature_catalog_access_check(request):
         admin_access_dict = {}
 
     flag = 1
-    if user_is_superuser == True :
-        flag = 3
-    elif mig_type in admin_access_dict.keys():
+    # if user_is_superuser == True :
+    #     flag = 3
+    if mig_type in admin_access_dict.keys():
         if obj_type in admin_access_dict[mig_type]:
             flag = 3
     elif obj_type != ''  and feature_name != '':
@@ -1313,21 +1426,53 @@ def approvalscreate(request):
 #     return Response(serializer.data)
 
 
-@api_view(['GET','POST'])
+# @api_view(['GET','POST'])
+# def approvalslist(request):
+#     Migration_TypeId = request.data['Migration_TypeId']
+#     Object_Type = request.data['Object_Type']
+#     today = date.today()
+#     week_ago = today - timedelta(days=7)
+#     final_list = []
+#     appr_data = Approvals.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+#     for dict in appr_data.values():
+#         created_date = dict['Created_at']
+#         if created_date > week_ago:
+#             final_list.append(dict)
+#     serializer = ApprovalSerializer(final_list, many=True)
+#     return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
 def approvalslist(request):
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
+    email = request.data['User_Email']
+
+    user = Users.objects.get(email=email)
+    admin_access = user.admin_migrations
+    if admin_access != '':
+        admin_access = admin_access.replace("\'", "\"")
+        admin_access_dict = json.loads(admin_access)
+    else:
+        admin_access_dict = {}
+
     today = date.today()
     week_ago = today - timedelta(days=7)
     final_list = []
-    appr_data = Approvals.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+
+    if Migration_TypeId in admin_access_dict.keys():
+        if 'ALL' in admin_access_dict[Migration_TypeId]:
+            appr_data = Approvals.objects.filter(Migration_TypeId=Migration_TypeId,
+                                                 Object_Type__in=(Object_Type, 'ALL'))
+        else:
+            appr_data = Approvals.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+
     for dict in appr_data.values():
         created_date = dict['Created_at']
         if created_date > week_ago:
             final_list.append(dict)
     serializer = ApprovalSerializer(final_list, many=True)
     return Response(serializer.data)
-
 
 
 @api_view(['GET'])
@@ -3061,3 +3206,53 @@ def migrationlistperuser(request):
         dict1["admin"] = ADMIN
         final_res.append(dict1)
     return Response(final_res)
+
+@api_view(['GET'])
+def pdf_download(request):
+    file_path = 'media/Documents/PDF/instructions.pdf'
+    file_name = 'instructions.pdf'
+    fl = open(file_path, 'rb')
+    mime_type, _ = mimetypes.guess_type(file_path)
+    response = HttpResponse(fl, content_type=mime_type)
+    response['Content-Disposition'] = "attachment; filename=%s" % file_name
+    return response
+
+@api_view(['GET'])
+def template_download(request):
+    file_path = 'media/Documents/Template/template.py'
+    file_name = 'template.py'
+    fl = open(file_path, 'rb')
+    mime_type, _ = mimetypes.guess_type(file_path)
+    response = HttpResponse(fl, content_type=mime_type)
+    response['Content-Disposition'] = "attachment; filename=%s" % file_name
+    return response
+
+
+@api_view(['POST'])
+def objectadminviewtlist(request):
+    Migration_TypeId = request.data['Migration_TypeId']
+    object_type = request.data['Object_Type']
+    email = request.data['User_Email']
+
+    user = Users.objects.get(email=email)
+    admin_access = user.admin_migrations
+    if admin_access != '':
+        admin_access = admin_access.replace("\'", "\"")
+        admin_access_dict = json.loads(admin_access)
+    else:
+        admin_access_dict = {}
+
+    object_list = []
+    final_list = []
+    inter_dict = {}
+
+    if Migration_TypeId in admin_access_dict.keys():
+        if 'ALL' in admin_access_dict[Migration_TypeId]:
+            object_list.append('ALL')
+            object_list.append(object_type)
+        else:
+            object_list.append(object_type)
+    for obj in object_list:
+        inter_dict['Object_Type'] = obj
+        final_list.append(inter_dict.copy())
+    return Response(final_list)
