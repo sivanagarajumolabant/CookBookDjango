@@ -306,11 +306,11 @@ def featuredetail(request, pk):
     user_values = list(user.values())
     user_is_superuser = user_values[0]['is_superuser']
     admin_access = user_values[0]['admin_migrations']
-    if admin_access != '':
+    if admin_access == '' or admin_access == None:
+        admin_access_dict = {}
+    else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
-    else:
-        admin_access_dict = {}
 
     feature = Feature.objects.filter(Feature_Id=pk)
     mig_type = feature.values()[0]['Migration_TypeId']
@@ -344,6 +344,7 @@ def featuredetail(request, pk):
     features = Feature.objects.get(Feature_Id=pk)
     serializer = FeatureSerializer(features, many=False)
     response = {'edit': EDIT, 'serializer': serializer.data}
+    print(response)
     return Response(response)
 
 # @api_view(['GET','POST'])
@@ -623,11 +624,11 @@ def feature_catalog_access_check(request):
     user_values = list(user.values())
     user_is_superuser = user_values[0]['is_superuser']
     admin_access = user_values[0]['admin_migrations']
-    if admin_access != '':
+    if admin_access == '' or admin_access == None:
+        admin_access_dict = {}
+    else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
-    else:
-        admin_access_dict = {}
 
     flag = 1
     # if user_is_superuser == True :
@@ -674,6 +675,7 @@ def feature_catalog_access_check(request):
         response = {'serializer': serializer.data, 'flag': flag}
     else:
         response = {'serializer': 'No Data', 'flag': flag}
+    print(response)
     return Response(response)
 
 @api_view(['PUT'])
@@ -2182,6 +2184,7 @@ def create_check_list(request):
                 inter_dict['Label'] = object_name
                 inter_dict['Create_Flag'] = 0
                 final_list.append(inter_dict.copy())
+    print(final_list)
     return Response(final_list)
 
 
@@ -2193,11 +2196,13 @@ def migration_user_view(request):
     user = Users.objects.get(email=email)
     user_is_superuser = user.is_superuser
     admin_access = user.admin_migrations
-    if admin_access != '':
+    print("admin_access=====",admin_access)
+    if admin_access == '' or admin_access == None :
+        admin_access_dict = {}
+    else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
-    else:
-        admin_access_dict = {}
+
 
     mig_data = migrations.objects.filter(Migration_TypeId=mig_type).exclude(Object_Type='')
     object_names = [obj['Object_Type'] for obj in mig_data.values()]
@@ -2485,6 +2490,7 @@ def migration_user_view(request):
                 label_dict['SubMenu'] = []
                 label_dict['Admin_Flag'] = 0
                 final_list.append(label_dict.copy())
+    print(final_list)
     return Response(final_list)
 
 # @api_view(['PUT'])
@@ -2677,8 +2683,18 @@ def admin_permissions(request):
     migtype =request.data['mig_type']
     object_type = request.data['Object_Type']
     user = Users.objects.get(email=email)
-    admin_access = user.admin_migrations.replace("\'", "\"")
-    if admin_access != '':
+    admin_access = user.admin_migrations
+    if admin_access == '' or admin_access == None:
+        final_dict = {}
+        object_list = []
+        object_list.append(object_type)
+        final_dict[migtype] = object_list
+        a = Users.objects.get(email=email)
+        a.admin_migrations = final_dict
+        a.save()
+        return Response("Admin access created for user")
+    else:
+        admin_access = user.admin_migrations.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
         if migtype not in admin_access_dict.keys():
             object_list = []
@@ -2709,15 +2725,7 @@ def admin_permissions(request):
 
             else:
                 return Response("User already has this admin permission")
-    else:
-        final_dict = {}
-        object_list =[]
-        object_list.append(object_type)
-        final_dict[migtype] = object_list
-        a = Users.objects.get(email=email)
-        a.admin_migrations = final_dict
-        a.save()
-        return Response("Admin access created for user")
+
 
 # @api_view(['GET','POST','PUT'])
 # def remove_admin_permission(request):
@@ -2744,12 +2752,13 @@ def remove_admin_permission(request):
     mig_type = request.data['Migration_Type']
     object_type = request.data['Object_type']
     user = Users.objects.get(email=User_Email)
-    admin_access = user.admin_migrations.replace("\'", "\"")
+    admin_access = user.admin_migrations
     if admin_access == '' or admin_access==None:
         user.admin_migrations = ''
         user.save()
         return Response("No Permissions")
     else:
+        admin_access = user.admin_migrations.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
         print(admin_access_dict)
         if mig_type in admin_access_dict.keys():
@@ -2823,11 +2832,11 @@ def admin_rm_migration_list(request):
     User_Email = request.data['User_Email']
     user = Users.objects.get(email=User_Email)
     admin_access = user.admin_migrations
-    if admin_access != '' and admin_access != None:
+    if admin_access == '' or admin_access == None:
+        admin_access_dict = {}
+    else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
-    else:
-        admin_access_dict = {}
     for migration in admin_access_dict.keys():
         inter_dict['Migration_Type'] = migration
         final_list.append(inter_dict.copy())
@@ -2843,11 +2852,11 @@ def admin_rm_object_list(request):
 
     user = Users.objects.get(email=User_Email)
     admin_access = user.admin_migrations
-    if admin_access != '' and admin_access != None:
+    if admin_access == '' or admin_access == None:
+        admin_access_dict = {}
+    else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
-    else:
-        admin_access_dict = {}
     if mig_type in admin_access_dict.keys():
         object_list = admin_access_dict[mig_type]
         for object_i in object_list:
@@ -2916,8 +2925,10 @@ def admin_users_list(request):
     inter_dict = {}
     for user_i in users.values():
         admin_mig_value = user_i['admin_migrations']
-        if admin_mig_value != None and admin_mig_value != '': #and user_i['is_superuser'] == False
-            inter_dict['Email'] =user_i['email']
+        if admin_mig_value == '' or admin_mig_value == None: #and user_i['is_superuser'] == False
+            continue
+        else:
+            inter_dict['Email'] = user_i['email']
             admin_access = admin_mig_value.replace("\'", "\"")
             admin_access_dict = json.loads(admin_access)
             migration_type_list = admin_access_dict.keys()
@@ -3244,11 +3255,11 @@ def objectadminviewtlist(request):
 
     user = Users.objects.get(email=email)
     admin_access = user.admin_migrations
-    if admin_access != '':
+    if admin_access == '' or admin_access == None:
+        admin_access_dict = {}
+    else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
-    else:
-        admin_access_dict = {}
 
     object_list = []
     final_list = []
