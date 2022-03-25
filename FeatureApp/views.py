@@ -2189,11 +2189,9 @@ def create_check_list(request):
 def migration_user_view(request):
     email = request.data['User_Email']
     mig_type = request.data['Migration_TypeId']
-    # print('mig_type=================', mig_type)
 
     user = Users.objects.get(email=email)
     user_is_superuser = user.is_superuser
-    # print("user_is_superuser====",user_is_superuser)
     admin_access = user.admin_migrations
     if admin_access != '':
         admin_access = admin_access.replace("\'", "\"")
@@ -2210,11 +2208,8 @@ def migration_user_view(request):
     label_dict = {}
     final_list = []
     if user_is_superuser == True :
-        print(mig_type,"============",admin_access_dict.keys())
         if mig_type in admin_access_dict.keys():
-            print("if if loop")
             if 'ALL' in admin_access_dict[mig_type]:
-                print("if if if loop")
                 for object_name in object_names:
                     inter_list = []
                     label_dict['Label'] = object_name
@@ -2238,7 +2233,6 @@ def migration_user_view(request):
                         label_dict['Admin_Flag'] = 1
                         final_list.append(label_dict.copy())
             else:
-                print("if if else loop")
                 for object_name in object_names:
                     inter_list = []
                     label_dict['Label'] = object_name
@@ -2301,7 +2295,6 @@ def migration_user_view(request):
                                 label_dict['Admin_Flag'] = 0
                                 final_list.append(label_dict.copy())
         else:
-            print("if else loop")
             for object_name in object_names:
                 inter_list = []
                 label_dict['Label'] = object_name
@@ -2338,15 +2331,23 @@ def migration_user_view(request):
                     inter_dict["Feature_Name"] = feature_name
                     inter_list.append(inter_dict)
                 label_dict['SubMenu'] = inter_list
-                if object_name in admin_access_dict[mig_type]:
-                    label_dict['Admin_Flag'] = 1
+                if len(admin_access_dict) != 0:
+                    if mig_type in admin_access_dict.keys():
+                        if object_name in admin_access_dict[mig_type] :
+                            label_dict['Admin_Flag'] = 1
+                        else:
+                            label_dict['Admin_Flag'] = 0
                 else:
                     label_dict['Admin_Flag'] = 0
                 final_list.append(label_dict.copy())
             else:
                 label_dict['SubMenu'] = []
-                if object_name in admin_access_dict[mig_type]:
-                    label_dict['Admin_Flag'] = 1
+                if len(admin_access_dict) != 0:
+                    if mig_type in admin_access_dict.keys():
+                        if object_name in admin_access_dict[mig_type]:
+                            label_dict['Admin_Flag'] = 1
+                        else:
+                            label_dict['Admin_Flag'] = 0
                 else:
                     label_dict['Admin_Flag'] = 0
                 final_list.append(label_dict.copy())
@@ -2436,6 +2437,10 @@ def migration_user_view(request):
                             label_dict['SubMenu'] = inter_list
                             label_dict['Admin_Flag'] = 0
                             final_list.append(label_dict.copy())
+                    else:
+                        label_dict['SubMenu'] = []
+                        label_dict['Admin_Flag'] = 0
+                        final_list.append(label_dict.copy())
     else:
         for object_name in object_names:
             inter_list = []
@@ -2476,7 +2481,10 @@ def migration_user_view(request):
                     label_dict['SubMenu'] = inter_list
                     label_dict['Admin_Flag'] = 0
                     final_list.append(label_dict.copy())
-    print(final_list)
+            else:
+                label_dict['SubMenu'] = []
+                label_dict['Admin_Flag'] = 0
+                final_list.append(label_dict.copy())
     return Response(final_list)
 
 # @api_view(['PUT'])
