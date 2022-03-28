@@ -3003,7 +3003,7 @@ def permissionsupdate(request, User_Email):
 
 @api_view(['GET','POST'])
 def permissionslist(request):
-    if len(request.data)>1:
+    if len(request.data)>2:
         Object_Type = request.data['Object_Type']
         User_Email = request.data['User_Email']
         Migration_TypeId = request.data['Migration_TypeId']
@@ -3011,6 +3011,10 @@ def permissionslist(request):
             features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
         else:
             features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+    elif len(request.data)>1:
+        User_Email = request.data['User_Email']
+        Migration_TypeId = request.data['Migration_TypeId']
+        features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
     else:
         Migration_TypeId = request.data['Migration_TypeId']
         features = Permissions.objects.filter(Migration_TypeId=Migration_TypeId)
