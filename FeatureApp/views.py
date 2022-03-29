@@ -36,57 +36,16 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 
 
-# # Create your views here.
-# @api_view(['POST'])
-# # @permission_classes([IsAuthenticated])
-# # @permission_required('FeatureApp.add_feature', raise_exception=True)
-# def featurecreate(request):
-#     serializer = FeatureSerializer(data=request.data)
-#     if serializer.is_valid():
-#         serializer.save()
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+# Create your views here.
 @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# @permission_required('FeatureApp.add_feature', raise_exception=True)
 def featurecreate(request):
-    migration_type = request.data['Migration_TypeId']
-    object_type = request.data['Object_Type']
-    feature_name = request.data['Feature_Name']
-    project_version = request.data['Project_Version_Id']
-
-    feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-                                          Feature_Name=feature_name, Project_Version_Id=project_version,
-                                          Feature_version_approval_status='Approved')
-    version_list = []
-
-    if feature_data:
-        for dict in feature_data.values():
-            version_list.append(dict['Feature_Version_Id'])
-        max_version = max(version_list)
-        feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-                                              Feature_Name=feature_name, Project_Version_Id=project_version,
-                                              Feature_version_approval_status='Pending')
-        if feature_data:
-            return Response("Feature already present with this version.Kindly request access for it")
-        else:
-            serializer = FeatureSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(Feature_Version_Id=max_version + 1)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-                                              Feature_Name=feature_name, Project_Version_Id=project_version,
-                                              Feature_version_approval_status='Pending')
-        if feature_data:
-            return Response("Feature already present with this version.Kindly request access for it")
-        else:
-            serializer = FeatureSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(Feature_Version_Id=int(request.data['Feature_Version_Id']) + 1)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    serializer = FeatureSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
