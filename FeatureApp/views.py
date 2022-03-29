@@ -1813,15 +1813,36 @@ def add_view(request):
 #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# @api_view(['POST'])
+# def create_tablepage_featuresdata(request):
+#     # print(request)
+#     Migration_TypeId = request.data['Migration_TypeId']
+#     Object_Type = request.data['Object_Type']
+#     data = Feature.objects.filter(
+#         Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+#     serializer = FeatureSerializer(data, many=True)
+#     return Response(serializer.data)
+
 @api_view(['POST'])
 def create_tablepage_featuresdata(request):
-    # print(request)
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
-    data = Feature.objects.filter(
-        Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
-    serializer = FeatureSerializer(data, many=True)
-    return Response(serializer.data)
+    feature_names = Feature.objects.values('Feature_Name').distinct()
+    features = []
+    for dict in feature_names:
+        features.append(dict['Feature_Name'])
+    final_list = []
+    for feature in features:
+        feature_versions = Feature.objects.filter(Feature_Name=feature)
+        version_list = []
+        for dict1 in feature_versions.values():
+            version_list.append(dict1['Feature_Version_Id'])
+        max_version = max(version_list)
+        data = Feature.objects.filter(
+            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,Feature_Name=feature,Feature_Version_Id = max_version)
+        serializer = FeatureSerializer(data, many=True)
+        final_list.append(serializer.data)
+    return Response(final_list)
 
 
 # @api_view(['POST'])
@@ -1865,29 +1886,97 @@ def create_tablepage_featuresdata(request):
 #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# @api_view(['POST'])
+# def get_Featurenames(request):
+#     # body_unicode = request.body.decode('utf-8')
+#     # body_data = json.loads(body_unicode)
+#     Migration_TypeId = request.data['Migration_TypeId']
+#     Object_Type = request.data['Object_Type']#.upper()
+#     # print(Object_Type)
+#     Feature_Name = request.data['Feature_Name']#.upper()
+#     # print(Feature_Name)
+#     # if str(Object_Type).upper() == 'ALL':
+#     #     features = Feature.objects.all()
+#     # else:
+#     if Object_Type == 'ALL':
+#         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId)
+#
+#     elif Feature_Name == 'ALL':
+#         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+#
+#     else:
+#         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+#
+#     serializer = migrationlevelfeatures(features, many=True)
+#     return Response(serializer.data, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 def get_Featurenames(request):
-    # body_unicode = request.body.decode('utf-8')
-    # body_data = json.loads(body_unicode)
     Migration_TypeId = request.data['Migration_TypeId']
-    Object_Type = request.data['Object_Type']#.upper()
-    # print(Object_Type)
-    Feature_Name = request.data['Feature_Name']#.upper()
-    # print(Feature_Name)
-    # if str(Object_Type).upper() == 'ALL':
-    #     features = Feature.objects.all()
-    # else:
+    Object_Type = request.data['Object_Type']
+    Feature_Name = request.data['Feature_Name']
+    final_list = []
     if Object_Type == 'ALL':
         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId)
-
+        feature_names = features.values('Feature_Name').distinct()
+        features = []
+        for dict in feature_names:
+            features.append(dict['Feature_Name'])
+        for feature in features:
+            feature_versions = Feature.objects.filter(Feature_Name=feature)
+            version_list = []
+            object_list = []
+            for dict1 in feature_versions.values():
+                version_list.append(dict1['Feature_Version_Id'])
+                object_list.append(dict1['Object_Type'])
+            object_list = list(set(object_list))
+            max_version = max(version_list)
+            for object in object_list:
+                data = Feature.objects.filter(
+                    Migration_TypeId=Migration_TypeId, Object_Type=object, Feature_Name = feature,
+                    Feature_Version_Id = max_version)
+                serializer = migrationlevelfeatures(data, many=True)
+                print(serializer.data)
+                final_list.append(serializer.data)
     elif Feature_Name == 'ALL':
         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
-
+        feature_names = features.values('Feature_Name').distinct()
+        features = []
+        for dict in feature_names:
+            features.append(dict['Feature_Name'])
+        for feature in features:
+            feature_versions = Feature.objects.filter(Feature_Name=feature)
+            version_list = []
+            for dict1 in feature_versions.values():
+                version_list.append(dict1['Feature_Version_Id'])
+            max_version = max(version_list)
+            data = Feature.objects.filter(
+                Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
+                Feature_Version_Id=max_version)
+            serializer = migrationlevelfeatures(data, many=True)
+            final_list.append(serializer.data)
     else:
         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+        feature_names = features.values('Feature_Name').distinct()
+        features = []
+        for dict in feature_names:
+            features.append(dict['Feature_Name'])
+        for feature in features:
+            feature_versions = Feature.objects.filter(Feature_Name=feature)
+            version_list = []
+            for dict1 in feature_versions.values():
+                version_list.append(dict1['Feature_Version_Id'])
+            max_version = max(version_list)
+            data = Feature.objects.filter(
+                Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
+                Feature_Version_Id=max_version)
+            serializer = migrationlevelfeatures(data, many=True)
+            final_list.append(serializer.data)
+    final_output_list = []
+    for final_dict in final_list:
+        final_output_list.append(final_dict[0])
+    return Response(final_output_list, status=status.HTTP_200_OK)
 
-    serializer = migrationlevelfeatures(features, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
 
 # @api_view(['POST'])
 # def migrationsscreate(request):
