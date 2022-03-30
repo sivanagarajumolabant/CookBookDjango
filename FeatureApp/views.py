@@ -57,6 +57,48 @@ def featurelist(request):
     return Response(serializer.data)
 
 
+
+# @api_view(['POST'])
+# def featurecreate(request):
+#     migration_type = request.data['Migration_TypeId']
+#     object_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#     project_version = request.data['Project_Version_Id']
+#
+#     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
+#                                           Feature_Name=feature_name, Project_Version_Id=project_version,
+#                                           Feature_version_approval_status='Approved')
+#     version_list = []
+#
+#     if feature_data:
+#         for dict in feature_data.values():
+#             version_list.append(dict['Feature_Version_Id'])
+#         max_version = max(version_list)
+#         feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
+#                                               Feature_Name=feature_name, Project_Version_Id=project_version,
+#                                               Feature_version_approval_status='Pending')
+#         if feature_data:
+#             return Response("Feature already present with this version.Kindly request access for it")
+#         else:
+#             serializer = FeatureSerializer(data=request.data)
+#             if serializer.is_valid():
+#                 serializer.save(Feature_Version_Id=max_version + 1)
+#                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
+#                                               Feature_Name=feature_name, Project_Version_Id=project_version,
+#                                               Feature_version_approval_status='Pending')
+#         if feature_data:
+#             return Response("Feature already present with this version.Kindly request access for it")
+#         else:
+#             serializer = FeatureSerializer(data=request.data)
+#             if serializer.is_valid():
+#                 serializer.save(Feature_Version_Id=int(request.data['Feature_Version_Id']) + 1)
+#                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['POST'])
 def featurecreate(request):
     migration_type = request.data['Migration_TypeId']
@@ -64,38 +106,16 @@ def featurecreate(request):
     feature_name = request.data['Feature_Name']
     project_version = request.data['Project_Version_Id']
 
-    feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-                                          Feature_Name=feature_name, Project_Version_Id=project_version,
-                                          Feature_version_approval_status='Approved')
-    version_list = []
-
+    feature_data = Feature.objects.filter(Project_Version_Id = project_version, Migration_TypeId=migration_type, Object_Type=object_type,
+                                          Feature_Name=feature_name)
     if feature_data:
-        for dict in feature_data.values():
-            version_list.append(dict['Feature_Version_Id'])
-        max_version = max(version_list)
-        feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-                                              Feature_Name=feature_name, Project_Version_Id=project_version,
-                                              Feature_version_approval_status='Pending')
-        if feature_data:
-            return Response("Feature already present with this version.Kindly request access for it")
-        else:
-            serializer = FeatureSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(Feature_Version_Id=max_version + 1)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response("Feature already present with this version.Kindly request access for it")
     else:
-        feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-                                              Feature_Name=feature_name, Project_Version_Id=project_version,
-                                              Feature_version_approval_status='Pending')
-        if feature_data:
-            return Response("Feature already present with this version.Kindly request access for it")
-        else:
-            serializer = FeatureSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save(Feature_Version_Id=int(request.data['Feature_Version_Id']) + 1)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = FeatureSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(Feature_Version_Id=int(request.data['Feature_Version_Id']) + 1)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def featuredropdownlist(request):
@@ -567,7 +587,7 @@ def featuredetail(request, feature_name):
         elif feature_version_id == max_version and f_approval == 'Approved':
             latest_flag = 0
             max_flag = 1
-        elif feature_version_id == max_version and f_approval == 'Pending':
+        elif feature_version_id == max_version and f_approval == 'In Progress':
             latest_flag = 1
             max_flag = 1
         else:
@@ -4254,3 +4274,52 @@ def objectadminviewtlist(request):
         inter_dict['Object_Type'] = obj
         final_list.append(inter_dict.copy())
     return Response(final_list)
+
+
+@api_view(['POST'])
+def feature_approval_list(request):
+    project_version = request.data['Project_Version_Id']
+    migration_type = request.data['Migration_TypeId']
+    object_type = request.data['Object_Type']
+
+    today = date.today()
+    week_ago = today - timedelta(days=7)
+    final_list=[]
+    feature_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId = migration_type,Object_Type = object_type,
+                                                    Feature_version_approval_status__in = ('Approved','Awaiting Approval','Denied'))
+    for dict in feature_data.values():
+        Request_Create_Date = dict['Feature_Approval_Date']
+        if Request_Create_Date > week_ago:
+            final_list.append(dict)
+    serializer = FeatureSerializer(feature_data, many=True)
+    return Response(serializer.data)
+
+
+
+@api_view(['POST'])
+def approval_featurecreate(request):
+    migration_type = request.data['Migration_TypeId']
+    object_type = request.data['Object_Type']
+    feature_name = request.data['Feature_Name']
+    project_version = request.data['Project_Version_Id']
+
+    feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
+                                          Feature_Name=feature_name, Project_Version_Id=project_version,
+                                          Feature_version_approval_status='Approved')
+    version_list = []
+    if feature_data:
+        for dict in feature_data.values():
+            version_list.append(dict['Feature_Version_Id'])
+        max_version = max(version_list)
+        serializer = FeatureSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(Feature_Version_Id=max_version + 1)
+            if len(version_list) >= 3:
+                min_version = min(version_list)
+                min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
+                                              Feature_Name=feature_name, Project_Version_Id=project_version,Feature_Version_Id = min_version)
+                min_feature.delete()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response("New versions won't be created until it has a previous version approved")

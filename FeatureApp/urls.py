@@ -72,6 +72,8 @@ urlpatterns = [
                   path('removesuperadmin/', views.removesuperadmin, name='removesuperadmin'),
                   path('objectadminviewtlist/', views.objectadminviewtlist, name='objectadminviewtlist'),
                   path('templatedownload/', views.template_download),
-                  path('pdfdownload/', views.pdf_download)
+                  path('pdfdownload/', views.pdf_download),
+                  path('featureapprovalslist/', views.feature_approval_list),
+                  path('featureapprovalcreate/', views.approval_featurecreate)
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
