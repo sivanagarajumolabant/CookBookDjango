@@ -1362,6 +1362,23 @@ def Conversion(request, id):
 #     return Response(serializer.data)
 
 
+# @api_view(['POST'])
+# def attachment_delete(request):
+#     file_name = request.data['file_name']
+#     migration_typeid = request.data['migration_typeid']
+#     object_type = request.data['object_type']
+#     AttachmentType = request.data['AttachmentType']
+#     id = request.data['id']
+#     featurename = request.data['fname']
+#     attachment = Attachments.objects.get(id=id)
+#     attachment.delete()
+#     fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + \
+#         object_type + '/' + featurename + '/' + AttachmentType + '/'
+#     filename = fl_path + file_name
+#     os.remove(filename)
+#     return Response('Deleted')
+
+
 @api_view(['POST'])
 def attachment_delete(request):
     file_name = request.data['file_name']
@@ -1371,12 +1388,32 @@ def attachment_delete(request):
     id = request.data['id']
     featurename = request.data['fname']
     attachment = Attachments.objects.get(id=id)
+    project_id = attachment.Project_Version_Id
+    feature_version_id = attachment.Feature_Version_Id
     attachment.delete()
-    fl_path = MEDIA_ROOT + '/media' + '/' + migration_typeid + '/' + \
-        object_type + '/' + featurename + '/' + AttachmentType + '/'
+    fl_path = MEDIA_ROOT +'/media/' + 'Project_version_' + str(project_id) + '/' + migration_typeid + '/' + object_type + '/' + featurename + '/' + 'Version_' + str(feature_version_id) + '/' + AttachmentType + '/'
     filename = fl_path + file_name
     os.remove(filename)
     return Response('Deleted')
+
+
+# @api_view(['POST'])
+# def Attcahmentupdate(request, pk):
+#     feature = Feature.objects.get(Feature_Id=pk)
+#     AttachmentType = request.data['AttachmentType']
+#     Attachment = request.FILES['Attachment']
+#     filename = request.data['filename']
+#     dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename": filename,
+#                   "Attachment": Attachment}
+#     attachements = AttachementSerializer(data=dictionary)
+#     if attachements.is_valid():
+#         attachements.save()
+#         for row in Attachments.objects.all().reverse():
+#             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+#                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
+#                 row.delete()
+#         return Response(attachements.data, status=status.HTTP_200_OK)
+#     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -1385,7 +1422,9 @@ def Attcahmentupdate(request, pk):
     AttachmentType = request.data['AttachmentType']
     Attachment = request.FILES['Attachment']
     filename = request.data['filename']
-    dictionary = {"Feature_Id": feature, 'AttachmentType': AttachmentType, "filename": filename,
+    project_id = feature.Project_Version_Id
+    feature_version_id = feature.Feature_Version_Id
+    dictionary = {"Feature_Id": feature,'Project_Version_Id':project_id,'Feature_Version_Id':feature_version_id,'AttachmentType': AttachmentType, "filename": filename,
                   "Attachment": Attachment}
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
@@ -1396,7 +1435,6 @@ def Attcahmentupdate(request, pk):
                 row.delete()
         return Response(attachements.data, status=status.HTTP_200_OK)
     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # @api_view(['DELETE'])
 # def featuredelete(request, pk):
@@ -1416,8 +1454,20 @@ def featuredelete(request, pk):
     return Response('Deleted')
 
 
+# @api_view(['POST'])
+# # def sequence(request, Object_Type, Migration_TypeId):
+# def predessors(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     Object_Type = body_data['Object_Type']
+#     Migration_TypeId = body_data['Migration_TypeId']
+#     features = Feature.objects.filter(
+#         Object_Type=Object_Type, Migration_TypeId=Migration_TypeId)
+#     serializer = SequenceSerializer(features, many=True)
+#     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 @api_view(['POST'])
-# def sequence(request, Object_Type, Migration_TypeId):
 def predessors(request):
     body_unicode = request.body.decode('utf-8')
     body_data = json.loads(body_unicode)
@@ -1426,7 +1476,37 @@ def predessors(request):
     features = Feature.objects.filter(
         Object_Type=Object_Type, Migration_TypeId=Migration_TypeId)
     serializer = SequenceSerializer(features, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    feature_list = []
+    final_list = []
+    final_dict = {}
+    for dict in serializer.data:
+        feature_list.append(dict['Feature_Name'])
+    feature_list = list(set(feature_list))
+    for feature in feature_list:
+        final_dict['Feature_Name'] = feature
+        final_list.append(final_dict.copy())
+    return Response(final_list, status=status.HTTP_200_OK)
+
+
+# @api_view(['POST'])
+# def download_attachment(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     file_name = body_data['file_name']
+#     migration_typeid = body_data['migration_typeid']
+#     attach_type = body_data['AttachmentType']
+#     object_type = body_data['object_type']
+#     featurename = body_data['fname']
+#     fid = body_data['feature_id']
+#     filter_files = Attachments.objects.filter(
+#         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
+#     filter_values = list(filter_files.values_list())
+#     file_path = filter_values[0]
+#     fl = open(file_path[4], 'rb')
+#     mime_type, _ = mimetypes.guess_type(file_path[4])
+#     response = HttpResponse(fl, content_type=mime_type)
+#     response['Content-Disposition'] = "attachment; filename=%s" % file_name
+#     return response
 
 
 @api_view(['POST'])
@@ -1434,25 +1514,56 @@ def download_attachment(request):
     body_unicode = request.body.decode('utf-8')
     body_data = json.loads(body_unicode)
     file_name = body_data['file_name']
-    migration_typeid = body_data['migration_typeid']
     attach_type = body_data['AttachmentType']
-    object_type = body_data['object_type']
-    featurename = body_data['fname']
     fid = body_data['feature_id']
     filter_files = Attachments.objects.filter(
         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
     filter_values = list(filter_files.values_list())
     file_path = filter_values[0]
-    fl = open(file_path[4], 'rb')
+    fl = open(file_path[6], 'rb')
     mime_type, _ = mimetypes.guess_type(file_path[4])
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
 
+# @api_view(['POST'])
+# def conversion(request):
+#     # try:
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     feature_name = body_data['featurename']
+#     python_code = body_data['convcode']
+#     source_code = body_data['sourcecode']
+#     migration_typeid = body_data['migration_typeid']
+#     object_type = body_data['object_type']
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     module_folder_name = "Modules"
+#     module_path = path + '/' + module_folder_name + \
+#         '/' + migration_typeid + '/' + object_type
+#     sys.path.append(module_path)
+#     if not os.path.exists(module_path):
+#         os.makedirs(module_path)
+#     python_code = re.sub(r'def\s+main', 'def ' + feature_name, python_code)
+#     file_path = module_path + '/' + str(feature_name).strip() + '.py'
+#     sys.path.insert(0, file_path)
+#     python_code = python_code.replace("r@rawstringstart'", '')
+#     python_code = python_code.replace("'@rawstringend", '')
+#     # print(file_path,"===========")
+#     with open(file_path, 'w') as f:
+#         f.write(python_code)
+#     # print(feature_name)
+#     # module = import_module(feature_name)
+#     module = import_file(file_path)
+#     # print(feature_name, '=====', module)
+#     data = getattr(module, str(feature_name).strip())
+#     # print(data)
+#     executableoutput = data(source_code)
+#     # print(executableoutput)
+#     return Response(executableoutput, status=status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 def conversion(request):
-    # try:
     body_unicode = request.body.decode('utf-8')
     body_data = json.loads(body_unicode)
     feature_name = body_data['featurename']
@@ -1460,31 +1571,25 @@ def conversion(request):
     source_code = body_data['sourcecode']
     migration_typeid = body_data['migration_typeid']
     object_type = body_data['object_type']
+    project_id = body_data['Project_Version_Id']
+    feature_version_id = body_data['Feature_Version_Id']
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     module_folder_name = "Modules"
-    module_path = path + '/' + module_folder_name + \
-        '/' + migration_typeid + '/' + object_type
+    module_path = path + '/' + module_folder_name + '/' + 'Project_Version_'+ str(project_id) +'/' + migration_typeid + '/' + object_type + '/' + feature_name + '/' + 'Feature_Version_' + str(feature_version_id)
     sys.path.append(module_path)
     if not os.path.exists(module_path):
         os.makedirs(module_path)
-    python_code = re.sub(r'def\s+main', 'def ' + feature_name, python_code)
+    print(module_path)
+    python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+    python_code = re.sub(r'def(.*?)\(','def ' + feature_name.strip() + '(',python_code)
     file_path = module_path + '/' + str(feature_name).strip() + '.py'
     sys.path.insert(0, file_path)
-    python_code = python_code.replace("r@rawstringstart'", '')
-    python_code = python_code.replace("'@rawstringend", '')
-    # print(file_path,"===========")
     with open(file_path, 'w') as f:
         f.write(python_code)
-    # print(feature_name)
-    # module = import_module(feature_name)
     module = import_file(file_path)
-    # print(feature_name, '=====', module)
     data = getattr(module, str(feature_name).strip())
-    # print(data)
     executableoutput = data(source_code)
-    # print(executableoutput)
     return Response(executableoutput, status=status.HTTP_200_OK)
-
 
 # except Exception as err:
 #     print(err)
@@ -2036,12 +2141,29 @@ def get_Featurenames(request):
 #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# @api_view(['POST'])
+# def migrationsscreate(request):
+#     migration_type = request.data['Migration_TypeId']
+#     Object_Type = request.data['Object_Type']
+#     serializer = migrationcreateserializer(data=request.data)
+#     check_obj_type = migrations.objects.filter(Migration_TypeId=migration_type,Object_Type=Object_Type.upper())
+#     if not check_obj_type:
+#         if serializer.is_valid():
+#             serializer.save(Code=migration_type.replace(' ', '_'))
+#             serializer.save(Object_Type=Object_Type.upper())
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     else:
+#         return Response('Object Type Already Existed')
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['POST'])
 def migrationsscreate(request):
+    project_id = request.data['Project_Version_Id']
     migration_type = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
     serializer = migrationcreateserializer(data=request.data)
-    check_obj_type = migrations.objects.filter(Migration_TypeId=migration_type,Object_Type=Object_Type.upper())
+    check_obj_type = migrations.objects.filter(Project_Version_Id = project_id, Migration_TypeId=migration_type,Object_Type = Object_Type.upper())
     if not check_obj_type:
         if serializer.is_valid():
             serializer.save(Code=migration_type.replace(' ', '_'))

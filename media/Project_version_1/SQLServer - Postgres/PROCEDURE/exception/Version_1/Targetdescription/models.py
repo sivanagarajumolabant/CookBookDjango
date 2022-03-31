@@ -38,35 +38,36 @@ class Feature(models.Model):
     Target_FeatureDescription = models.TextField(blank=True, null=True)
     Target_Expected_Output = models.TextField(blank=True, null=True)
     Target_ActualCode = models.TextField(blank=True, null=True)
-    Feature_Approval_Date = models.DateField(blank=True, null=True)
+    Request_Create_Date = models.DateField(null=True)
+    Request_Modified_Date = models.DateField(null=True, blank=True)
 
     def __int__(self):
         return self.Feature_Id
 
 
-def user_directory_path(instance, filename):
-    path_file = 'media/' + 'Project_version_' + str(instance.Feature_Id.Project_Version_Id) + '/' + instance.Feature_Id.Migration_TypeId + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + 'Version_' + str(instance.Feature_Id.Feature_Version_Id) + '/' + instance.AttachmentType + '/' + filename
-    if os.path.exists(path_file):
-        os.remove(path_file)
-    for row in Attachments.objects.all().reverse():
-        if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
-                                      Feature_Id_id=row.Feature_Id_id).count() > 1:
-            row.delete()
-    return 'media/Project_version_{0}/{1}/{2}/{3}/Version_{4}/{5}/{6}'.format(instance.Feature_Id.Project_Version_Id,instance.Feature_Id.Migration_TypeId, instance.Feature_Id.Object_Type,
-                                              instance.Feature_Id.Feature_Name,instance.Feature_Id.Feature_Version_Id,
-                                              instance.AttachmentType, filename)
-#
 # def user_directory_path(instance, filename):
-#     path_file = 'media/' + instance.Feature_Id.Migration_TypeId + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + instance.AttachmentType + '/' + filename
+#     path_file = 'media/' + 'Project_version_' + str(instance.Feature_Id.Project_Version_Id) + '/' + instance.Feature_Id.Migration_TypeId + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + 'Version_' + str(instance.Feature_Id.Feature_Version_Id) + '/' + instance.AttachmentType + '/' + filename
 #     if os.path.exists(path_file):
 #         os.remove(path_file)
 #     for row in Attachments.objects.all().reverse():
 #         if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
 #                                       Feature_Id_id=row.Feature_Id_id).count() > 1:
 #             row.delete()
-#     return 'media/{0}/{1}/{2}/{3}/{4}'.format(instance.Feature_Id.Migration_TypeId, instance.Feature_Id.Object_Type,
-#                                               instance.Feature_Id.Feature_Name,
+#     return 'media/Project_version_{0}/{1}/{2}/{3}/Version_{4}/{5}/{6}'.format(instance.Feature_Id.Project_Version_Id,instance.Feature_Id.Migration_TypeId, instance.Feature_Id.Object_Type,
+#                                               instance.Feature_Id.Feature_Name,instance.Feature_Id.Feature_Version_Id,
 #                                               instance.AttachmentType, filename)
+
+def user_directory_path(instance, filename):
+    path_file = 'media/' + instance.Feature_Id.Migration_TypeId + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + instance.AttachmentType + '/' + filename
+    if os.path.exists(path_file):
+        os.remove(path_file)
+    for row in Attachments.objects.all().reverse():
+        if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+                                      Feature_Id_id=row.Feature_Id_id).count() > 1:
+            row.delete()
+    return 'media/{0}/{1}/{2}/{3}/{4}'.format(instance.Feature_Id.Migration_TypeId, instance.Feature_Id.Object_Type,
+                                              instance.Feature_Id.Feature_Name,
+                                              instance.AttachmentType, filename)
 
 
 class Attachments(models.Model):
