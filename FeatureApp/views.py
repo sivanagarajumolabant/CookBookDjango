@@ -587,9 +587,10 @@ def featuredetail(request, feature_name):
         elif feature_version_id == max_version and f_approval == 'Approved':
             latest_flag = 0
             max_flag = 1
-        elif feature_version_id == max_version and f_approval == 'In Progress':
-            latest_flag = 1
-            max_flag = 1
+        elif feature_version_id == max_version :
+            if f_approval == 'In Progress' or f_approval=='Awaiting Approval':
+                latest_flag = 1
+                max_flag = 1
         else:
             latest_flag = 1
             max_flag = 0
@@ -1272,16 +1273,44 @@ def feature_catalog_access_check(request):
             return Response(response)
 
 
+#
+# @api_view(['PUT'])
+# def featureupdate(request, pk):
+#     feature = Feature.objects.get(Feature_Id=pk)
+#     serializer = FeatureSerializer(instance=feature, data=request.data)
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['PUT'])
 def featureupdate(request, pk):
+    feature_approval_status_request = request.data['Feature_version_approval_status']
     feature = Feature.objects.get(Feature_Id=pk)
-    serializer = FeatureSerializer(instance=feature, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    project_id = feature.Project_Version_Id
+    mig_type = feature.Migration_TypeId
+    obj_type = feature.Object_Type
+    feature_name = feature.Feature_Name
+    feature_version = feature.Feature_Version_Id
 
+    if feature_approval_status_request == 'Awaiting Approval':
+        feature_data = Feature.objects.filter(Project_Version_Id=project_id,Migration_TypeId = mig_type,Object_Type = obj_type,Feature_Name = feature_name,
+                                              Feature_Version_Id = feature_version,Feature_version_approval_status = 'Awaiting Approval')
+        if feature_data:
+            return Response("Request for approval already present.Please wait for admin to approve it")
+        else:
+            serializer = FeatureSerializer(instance=feature, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        serializer = FeatureSerializer(instance=feature, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def att_list(request):
