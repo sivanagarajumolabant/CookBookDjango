@@ -1161,6 +1161,135 @@ def featuredetail(request, feature_name):
 #     return Response(final_list)
 
 
+# @api_view(['GET','POST'])
+# def feature_catalog_access_check(request):
+#     user_email = request.data['User_Email']
+#     mig_type = request.data['Migration_Type']
+#     obj_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#
+#     user = Users.objects.filter(email=user_email)
+#
+#     user_values = list(user.values())
+#     admin_access = user_values[0]['admin_migrations']
+#     if admin_access == '' or admin_access == None:
+#         admin_access_dict = {}
+#     else:
+#         admin_access = admin_access.replace("\'", "\"")
+#         admin_access_dict = json.loads(admin_access)
+#     version_list = []
+#     features = Feature.objects.filter(Migration_TypeId = mig_type,Object_Type = obj_type, Feature_Name=feature_name)
+#     for dict in features.values():
+#         version_list.append(dict['Feature_Version_Id'])
+#     max_version = max(version_list)
+#
+#     #final_list = []
+#     flag = 1
+#     view_flag = 0
+#     for obj in features:
+#         mig_type = obj.Migration_TypeId
+#         obj_type = obj.Object_Type
+#         feature_name = obj.Feature_Name
+#         feature_id = obj.Feature_Id
+#         feature_version_id = obj.Feature_Version_Id
+#         f_approval = obj.Feature_version_approval_status
+#         if feature_version_id == max_version:
+#             if mig_type in admin_access_dict.keys():
+#                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
+#                     flag = 3
+#                 else:
+#
+#                     perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+#                                                             Object_Type='ALL')
+#                     if perm_data3:
+#                         data3_access = perm_data3.values()[0]['Access_Type']
+#                         if data3_access in ('Edit', 'ALL'):
+#                             flag = 3
+#                         elif data3_access == 'View':
+#                             flag = 2
+#                         else:
+#                             flag = 1
+#                     perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+#                                                             Object_Type=obj_type,
+#                                                             Feature_Name='ALL')
+#                     if perm_data2:
+#                         data2_access = perm_data2.values()[0]['Access_Type']
+#                         if data2_access in ('Edit', 'ALL'):
+#                             flag = 3
+#                         elif data2_access == 'View':
+#                             flag = 2
+#                         else:
+#                             flag = 1
+#                     perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+#                                                             Object_Type=obj_type,
+#                                                             Feature_Name=feature_name)
+#                     if perm_data1:
+#                         data1_access = perm_data1.values()[0]['Access_Type']
+#                         if data1_access in ('Edit', 'ALL'):
+#                             flag = 3
+#                         elif data1_access == 'View':
+#                             flag = 2
+#                         else:
+#                             flag = 1
+#
+#                     if not perm_data1 and perm_data2 and perm_data3:
+#                         flag = 1
+#             elif obj_type != ''  and feature_name != '':
+#
+#
+#                 perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type='ALL')
+#                 if perm_data3:
+#                     data3_access = perm_data3.values()[0]['Access_Type']
+#                     if data3_access in ('Edit', 'ALL'):
+#                         flag = 3
+#                     elif data3_access == 'View':
+#                         flag = 2
+#                     else:
+#                         flag = 1
+#
+#                 perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+#                                                         Object_Type=obj_type,
+#                                                         Feature_Name='ALL')
+#                 if perm_data2:
+#                     data2_access = perm_data2.values()[0]['Access_Type']
+#                     if data2_access in ('Edit', 'ALL'):
+#                         flag = 3
+#                     elif data2_access == 'View':
+#                         flag = 2
+#                     else:
+#                         flag = 1
+#
+#                 perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+#                                                         Object_Type=obj_type,
+#                                                         Feature_Name=feature_name)
+#                 if perm_data1:
+#                     data1_access = perm_data1.values()[0]['Access_Type']
+#                     if data1_access in ('Edit', 'ALL'):
+#                         flag = 3
+#                     elif data1_access == 'View':
+#                         flag = 2
+#                     else:
+#                         flag = 1
+#
+#                 if not perm_data1 and perm_data2 and perm_data3:
+#                     flag = 1
+#             if feature_version_id == max_version and f_approval == 'Pending':
+#                 view_flag = 0
+#             elif feature_version_id == max_version and f_approval == 'Approved':
+#                 view_flag = 1
+#             else:
+#                 view_flag = 0
+#             if feature_name!='ALL' and obj_type != 'ALL':
+#                 features = Feature.objects.get(Feature_Id=feature_id)
+#                 serializer = FeatureSerializer(features, many=False)
+#                 response = {'serializer': serializer.data, 'flag': flag,'view_flag':view_flag}
+#                 #final_list.append(response)
+#             else:
+#                 response = {'serializer': 'No Data', 'flag': flag,'view_flag':view_flag}
+#                 #final_list.append(response)
+#             return Response(response)
+
+
 @api_view(['GET','POST'])
 def feature_catalog_access_check(request):
     user_email = request.data['User_Email']
@@ -1177,67 +1306,17 @@ def feature_catalog_access_check(request):
     else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
-    version_list = []
-    features = Feature.objects.filter(Migration_TypeId = mig_type,Object_Type = obj_type, Feature_Name=feature_name)
-    for dict in features.values():
-        version_list.append(dict['Feature_Version_Id'])
-    max_version = max(version_list)
 
-    #final_list = []
     flag = 1
     view_flag = 0
-    for obj in features:
-        mig_type = obj.Migration_TypeId
-        obj_type = obj.Object_Type
-        feature_name = obj.Feature_Name
-        feature_id = obj.Feature_Id
-        feature_version_id = obj.Feature_Version_Id
-        f_approval = obj.Feature_version_approval_status
-        if feature_version_id == max_version:
-            if mig_type in admin_access_dict.keys():
-                if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-                    flag = 3
-                else:
+    if obj_type == 'ALL' or feature_name == 'ALL':
+        if mig_type in admin_access_dict.keys():
+            if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
+                flag = 3
+            else:
 
-                    perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-                                                            Object_Type='ALL')
-                    if perm_data3:
-                        data3_access = perm_data3.values()[0]['Access_Type']
-                        if data3_access in ('Edit', 'ALL'):
-                            flag = 3
-                        elif data3_access == 'View':
-                            flag = 2
-                        else:
-                            flag = 1
-                    perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-                                                            Object_Type=obj_type,
-                                                            Feature_Name='ALL')
-                    if perm_data2:
-                        data2_access = perm_data2.values()[0]['Access_Type']
-                        if data2_access in ('Edit', 'ALL'):
-                            flag = 3
-                        elif data2_access == 'View':
-                            flag = 2
-                        else:
-                            flag = 1
-                    perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-                                                            Object_Type=obj_type,
-                                                            Feature_Name=feature_name)
-                    if perm_data1:
-                        data1_access = perm_data1.values()[0]['Access_Type']
-                        if data1_access in ('Edit', 'ALL'):
-                            flag = 3
-                        elif data1_access == 'View':
-                            flag = 2
-                        else:
-                            flag = 1
-
-                    if not perm_data1 and perm_data2 and perm_data3:
-                        flag = 1
-            elif obj_type != ''  and feature_name != '':
-
-
-                perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type='ALL')
+                perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                        Object_Type='ALL')
                 if perm_data3:
                     data3_access = perm_data3.values()[0]['Access_Type']
                     if data3_access in ('Edit', 'ALL'):
@@ -1246,7 +1325,6 @@ def feature_catalog_access_check(request):
                         flag = 2
                     else:
                         flag = 1
-
                 perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
                                                         Object_Type=obj_type,
                                                         Feature_Name='ALL')
@@ -1258,7 +1336,6 @@ def feature_catalog_access_check(request):
                         flag = 2
                     else:
                         flag = 1
-
                 perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
                                                         Object_Type=obj_type,
                                                         Feature_Name=feature_name)
@@ -1273,21 +1350,149 @@ def feature_catalog_access_check(request):
 
                 if not perm_data1 and perm_data2 and perm_data3:
                     flag = 1
-            if feature_version_id == max_version and f_approval == 'Pending':
-                view_flag = 0
-            elif feature_version_id == max_version and f_approval == 'Approved':
-                view_flag = 1
-            else:
-                view_flag = 0
-            if feature_name!='ALL' and obj_type != 'ALL':
+        elif obj_type != '' and feature_name != '':
+            perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type='ALL')
+            if perm_data3:
+                data3_access = perm_data3.values()[0]['Access_Type']
+                if data3_access in ('Edit', 'ALL'):
+                    flag = 3
+                elif data3_access == 'View':
+                    flag = 2
+                else:
+                    flag = 1
+
+            perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                    Object_Type=obj_type,
+                                                    Feature_Name='ALL')
+            if perm_data2:
+                data2_access = perm_data2.values()[0]['Access_Type']
+                if data2_access in ('Edit', 'ALL'):
+                    flag = 3
+                elif data2_access == 'View':
+                    flag = 2
+                else:
+                    flag = 1
+
+            perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                    Object_Type=obj_type,
+                                                    Feature_Name=feature_name)
+            if perm_data1:
+                data1_access = perm_data1.values()[0]['Access_Type']
+                if data1_access in ('Edit', 'ALL'):
+                    flag = 3
+                elif data1_access == 'View':
+                    flag = 2
+                else:
+                    flag = 1
+
+            if not perm_data1 and perm_data2 and perm_data3:
+                flag = 1
+        response = {'serializer': 'No Data', 'flag': flag, 'view_flag': 'No Data'}
+    else:
+        features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name)
+        version_list = []
+        for dict in features.values():
+            version_list.append(dict['Feature_Version_Id'])
+        max_version = max(version_list)
+        for obj in features:
+            mig_type = obj.Migration_TypeId
+            obj_type = obj.Object_Type
+            feature_name = obj.Feature_Name
+            feature_id = obj.Feature_Id
+            feature_version_id = obj.Feature_Version_Id
+            f_approval = obj.Feature_version_approval_status
+            if feature_version_id == max_version:
+                if mig_type in admin_access_dict.keys():
+                    if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
+                        flag = 3
+                    else:
+
+                        perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                                Object_Type='ALL')
+                        if perm_data3:
+                            data3_access = perm_data3.values()[0]['Access_Type']
+                            if data3_access in ('Edit', 'ALL'):
+                                flag = 3
+                            elif data3_access == 'View':
+                                flag = 2
+                            else:
+                                flag = 1
+                        perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                                Object_Type=obj_type,
+                                                                Feature_Name='ALL')
+                        if perm_data2:
+                            data2_access = perm_data2.values()[0]['Access_Type']
+                            if data2_access in ('Edit', 'ALL'):
+                                flag = 3
+                            elif data2_access == 'View':
+                                flag = 2
+                            else:
+                                flag = 1
+                        perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                                Object_Type=obj_type,
+                                                                Feature_Name=feature_name)
+                        if perm_data1:
+                            data1_access = perm_data1.values()[0]['Access_Type']
+                            if data1_access in ('Edit', 'ALL'):
+                                flag = 3
+                            elif data1_access == 'View':
+                                flag = 2
+                            else:
+                                flag = 1
+
+                        if not perm_data1 and perm_data2 and perm_data3:
+                            flag = 1
+                elif obj_type != '' and feature_name != '':
+                    perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                            Object_Type='ALL')
+                    if perm_data3:
+                        data3_access = perm_data3.values()[0]['Access_Type']
+                        if data3_access in ('Edit', 'ALL'):
+                            flag = 3
+                        elif data3_access == 'View':
+                            flag = 2
+                        else:
+                            flag = 1
+
+                    perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                            Object_Type=obj_type,
+                                                            Feature_Name='ALL')
+                    if perm_data2:
+                        data2_access = perm_data2.values()[0]['Access_Type']
+                        if data2_access in ('Edit', 'ALL'):
+                            flag = 3
+                        elif data2_access == 'View':
+                            flag = 2
+                        else:
+                            flag = 1
+
+                    perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
+                                                            Object_Type=obj_type,
+                                                            Feature_Name=feature_name)
+                    if perm_data1:
+                        data1_access = perm_data1.values()[0]['Access_Type']
+                        if data1_access in ('Edit', 'ALL'):
+                            flag = 3
+                        elif data1_access == 'View':
+                            flag = 2
+                        else:
+                            flag = 1
+
+                    if not perm_data1 and perm_data2 and perm_data3:
+                        flag = 1
+                if feature_version_id == max_version and f_approval == 'Pending':
+                    view_flag = 0
+                elif feature_version_id == max_version and f_approval == 'Approved':
+                    view_flag = 1
+                else:
+                    view_flag = 0
+            if feature_name != 'ALL' and obj_type != 'ALL':
                 features = Feature.objects.get(Feature_Id=feature_id)
                 serializer = FeatureSerializer(features, many=False)
-                response = {'serializer': serializer.data, 'flag': flag,'view_flag':view_flag}
-                #final_list.append(response)
+                response = {'serializer': serializer.data, 'flag': flag, 'view_flag': view_flag}
             else:
-                response = {'serializer': 'No Data', 'flag': flag,'view_flag':view_flag}
-                #final_list.append(response)
-            return Response(response)
+                response = {'serializer': 'No Data', 'flag': flag, 'view_flag': view_flag}
+    return Response(response)
 
 
 #
