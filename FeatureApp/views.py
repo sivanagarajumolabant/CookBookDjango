@@ -1,6 +1,8 @@
 import imp
 from django.shortcuts import render
 from rest_framework import viewsets, status
+from django.utils.encoding import force_text, smart_str
+from wsgiref.util import FileWrapper
 from .serializers import *
 from datetime import *
 from config.config import frontend_url
@@ -1764,6 +1766,25 @@ def download_attachment(request):
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
+
+# @api_view(['POST'])
+# def download_attachment(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     file_name = body_data['file_name']
+#     attach_type = body_data['AttachmentType']
+#     fid = body_data['feature_id']
+#     filter_files = Attachments.objects.filter(
+#         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
+#     filter_values = list(filter_files.values_list())
+#     file_path = filter_values[0]
+#     wrapper = FileWrapper( open(file_path[6], 'rb') )
+#     content_type = mimetypes.guess_type(file_path[4])[0]
+#     response = HttpResponse(wrapper, content_type = content_type)
+#     response['Content-Length'] = os.path.getsize( file_path[4] ) # not FileField instance
+#     response['Content-Disposition'] = 'attachment; filename=%s/' % \
+#                                        smart_str( os.path.basename( file_path[4] ) ) # same here
+#     return response
 
 # @api_view(['POST'])
 # def conversion(request):
