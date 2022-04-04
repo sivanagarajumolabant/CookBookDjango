@@ -1766,7 +1766,7 @@ def download_attachment(request):
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
-
+#
 # @api_view(['POST'])
 # def download_attachment(request):
 #     body_unicode = request.body.decode('utf-8')
@@ -1778,12 +1778,15 @@ def download_attachment(request):
 #         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
 #     filter_values = list(filter_files.values_list())
 #     file_path = filter_values[0]
+#     print(file_path)
 #     wrapper = FileWrapper( open(file_path[6], 'rb') )
-#     content_type = mimetypes.guess_type(file_path[4])[0]
+#     content_type = mimetypes.guess_type(file_path[5])[0]
+#     print(content_type)
 #     response = HttpResponse(wrapper, content_type = content_type)
-#     response['Content-Length'] = os.path.getsize( file_path[4] ) # not FileField instance
+#     # print(response)
+#     response['Content-Length'] = os.path.getsize( file_path[6] ) # not FileField instance
 #     response['Content-Disposition'] = 'attachment; filename=%s/' % \
-#                                        smart_str( os.path.basename( file_path[4] ) ) # same here
+#                                        smart_str( os.path.basename( file_path[6] ) ) # same here
 #     return response
 
 # @api_view(['POST'])
@@ -4883,3 +4886,18 @@ def approval_featurecreate(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response("New versions won't be created until it has a previous version approved")
+
+
+@api_view(['GET'])
+def project_versions_list(request):
+    project_versions = migrations.objects.values('Project_Version_Id').distinct()
+    final_list = []
+    version_list = []
+    for dict in project_versions:
+        version_list.append(dict['Project_Version_Id'])
+    inter_dict = {}
+    for i in version_list:
+        inter_dict['title'] = 'V' + str(i)
+        inter_dict['code'] = int(i)
+        final_list.append(inter_dict.copy())
+    return Response(final_list)
