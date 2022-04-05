@@ -149,7 +149,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp-mail.outlook.com'
-EMAIL_HOST_USER = "cookbook@quadrantresource.com"
+EMAIL_HOST_USER = "qbook@quadrantresource.com"
 EMAIL_HOST_PASSWORD = "P@ssw0r$!@#"
 
 
