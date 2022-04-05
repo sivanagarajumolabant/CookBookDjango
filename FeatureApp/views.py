@@ -1729,43 +1729,43 @@ def predessors(request):
     return Response(final_list, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-def download_attachment(request):
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
-    file_name = body_data['file_name']
-    migration_typeid = body_data['migration_typeid']
-    attach_type = body_data['AttachmentType']
-    object_type = body_data['object_type']
-    featurename = body_data['fname']
-    fid = body_data['feature_id']
-    filter_files = Attachments.objects.filter(
-        Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
-    filter_values = list(filter_files.values_list())
-    file_path = filter_values[0]
-    fl = open(file_path[4], 'rb')
-    mime_type, _ = mimetypes.guess_type(file_path[4])
-    response = HttpResponse(fl, content_type=mime_type)
-    response['Content-Disposition'] = "attachment; filename=%s" % file_name
-    return response
-
-
 # @api_view(['POST'])
 # def download_attachment(request):
 #     body_unicode = request.body.decode('utf-8')
 #     body_data = json.loads(body_unicode)
 #     file_name = body_data['file_name']
+#     migration_typeid = body_data['migration_typeid']
 #     attach_type = body_data['AttachmentType']
+#     object_type = body_data['object_type']
+#     featurename = body_data['fname']
 #     fid = body_data['feature_id']
 #     filter_files = Attachments.objects.filter(
 #         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
 #     filter_values = list(filter_files.values_list())
 #     file_path = filter_values[0]
-#     fl = open(file_path[6], 'rb')
+#     fl = open(file_path[4], 'rb')
 #     mime_type, _ = mimetypes.guess_type(file_path[4])
 #     response = HttpResponse(fl, content_type=mime_type)
 #     response['Content-Disposition'] = "attachment; filename=%s" % file_name
 #     return response
+
+
+@api_view(['POST'])
+def download_attachment(request):
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+    file_name = body_data['file_name']
+    attach_type = body_data['AttachmentType']
+    fid = body_data['feature_id']
+    filter_files = Attachments.objects.filter(
+        Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
+    filter_values = list(filter_files.values_list())
+    file_path = filter_values[0]
+    fl = open(file_path[6], 'rb')
+    mime_type, _ = mimetypes.guess_type(file_path[4])
+    response = HttpResponse(fl, content_type=mime_type)
+    response['Content-Disposition'] = "attachment; filename=%s" % file_name
+    return response
 #
 # @api_view(['POST'])
 # def download_attachment(request):
