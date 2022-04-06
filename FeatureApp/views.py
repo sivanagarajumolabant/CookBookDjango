@@ -1,6 +1,7 @@
 import imp
 from django.shortcuts import render
 from rest_framework import viewsets, status
+import shutil
 from django.utils.encoding import force_text, smart_str
 from wsgiref.util import FileWrapper
 from .serializers import *
@@ -1763,7 +1764,7 @@ def download_attachment(request):
     file_path = filter_values[0]
     fl = open(file_path[6], 'rb')
     mime_type, _ = mimetypes.guess_type(file_path[4])
-    response = HttpResponse(fl, content_type=mime_type)
+    response = HttpResponse(fl, content_type='application/vnd')
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
 #
@@ -2519,8 +2520,9 @@ def get_Featurenames(request):
             data = Feature.objects.filter(
                 Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
                 Feature_Version_Id=max_version)
-            serializer = migrationlevelfeatures(data, many=True)
-            final_list.append(serializer.data)
+            if data:
+                serializer = migrationlevelfeatures(data, many=True)
+                final_list.append(serializer.data)
     else:
         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
         feature_names = features.values('Feature_Name').distinct()
@@ -2536,8 +2538,9 @@ def get_Featurenames(request):
             data = Feature.objects.filter(
                 Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
                 Feature_Version_Id=max_version)
-            serializer = migrationlevelfeatures(data, many=True)
-            final_list.append(serializer.data)
+            if data:
+                serializer = migrationlevelfeatures(data, many=True)
+                final_list.append(serializer.data)
     final_output_list = []
     for final_dict in final_list:
         final_output_list.append(final_dict[0])
@@ -4859,12 +4862,43 @@ def feature_approval_list(request):
 
 
 
+# @api_view(['POST'])
+# def approval_featurecreate(request):
+#     migration_type = request.data['Migration_TypeId']
+#     object_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#     project_version = request.data['Project_Version_Id']
+#
+#     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
+#                                           Feature_Name=feature_name, Project_Version_Id=project_version,
+#                                           Feature_version_approval_status='Approved')
+#     version_list = []
+#     if feature_data:
+#         for dict in feature_data.values():
+#             version_list.append(dict['Feature_Version_Id'])
+#         max_version = max(version_list)
+#         serializer = FeatureSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save(Feature_Version_Id=max_version + 1)
+#             if len(version_list) >= 3:
+#                 min_version = min(version_list)
+#                 min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
+#                                               Feature_Name=feature_name, Project_Version_Id=project_version,Feature_Version_Id = min_version)
+#                 min_feature.delete()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         return Response("New versions won't be created until it has a previous version approved")
+
+
 @api_view(['POST'])
 def approval_featurecreate(request):
     migration_type = request.data['Migration_TypeId']
     object_type = request.data['Object_Type']
     feature_name = request.data['Feature_Name']
     project_version = request.data['Project_Version_Id']
+
+    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
                                           Feature_Name=feature_name, Project_Version_Id=project_version,
@@ -4881,12 +4915,16 @@ def approval_featurecreate(request):
                 min_version = min(version_list)
                 min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
                                               Feature_Name=feature_name, Project_Version_Id=project_version,Feature_Version_Id = min_version)
+                feature_id = min_feature.Feature_Id
                 min_feature.delete()
+                attachments_data = Attachments.objects.filter(Feature_Id_id = feature_id)
+                attachments_data.delete()
+                folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(project_version) + '/' + object_type + '/' + feature_name +'/' + 'Feature_V' + str(min_version)
+                shutil.rmtree(folder_path)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response("New versions won't be created until it has a previous version approved")
-
 
 @api_view(['GET'])
 def project_versions_list(request):
