@@ -7,6 +7,9 @@ from FeatureApp.storage import CleanFileNameStorage
 class Users(AbstractUser):
     is_verified = models.BooleanField(default=False)
     admin_migrations = models.TextField(null=True)
+    user_migrations = models.TextField(null=True)
+    is_user_admin = models.BooleanField(default=False)
+    user_registration_status = models.TextField(default='Awaiting for admin approval')
 
 
 class migrations(models.Model):
@@ -14,6 +17,8 @@ class migrations(models.Model):
     Migration_TypeId = models.CharField(max_length=100)
     Code = models.CharField(max_length=100, blank=True)
     Object_Type = models.CharField(max_length=100, blank=True)
+    Project_Version_limit = models.CharField(max_length=50, blank=True)
+    Feature_Version_Limit = models.CharField(max_length=50, blank=True)
 
 
 class Feature(models.Model):
@@ -104,7 +109,7 @@ class Attachments(models.Model):
 
 class Approvals(models.Model):
     User_Email = models.CharField(max_length=100)
-    Project_Version_Id = models.SmallIntegerField(default=0)
+    # Project_Version_Id = models.SmallIntegerField(default=0)
     Migration_TypeId = models.CharField(max_length=50, null=True)
     Object_Type = models.CharField(max_length=100)
     Feature_Name = models.CharField(max_length=100)
@@ -117,7 +122,7 @@ class Approvals(models.Model):
 
 class Permissions(models.Model):
     User_Email = models.CharField(max_length=100)
-    Project_Version_Id = models.SmallIntegerField(default=0)
+    # Project_Version_Id = models.SmallIntegerField(default=0)
     Migration_TypeId = models.CharField(max_length=100, null=True)
     Object_Type = models.CharField(max_length=100)
     Feature_Name = models.CharField(max_length=100)

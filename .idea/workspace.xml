@@ -2,8 +2,17 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4a8199b4-f08c-4652-8237-bf56aa2a3001" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/migration_sqlite_to_postgres.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/migrations/0002_auto_20220329_1452.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/migrations/0003_auto_20220330_1444.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/migrations/0004_auto_20220330_2005.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/migrations/0005_remove_feature_request_create_date.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/migrations/0006_rename_request_modified_date_feature_feature_approval_date.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,7 +42,7 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../Flask Appli" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../Oraganizations/QmigratorOra2pg/v6-Utility-Main-21" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RecentsManager">

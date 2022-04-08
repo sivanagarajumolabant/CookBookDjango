@@ -75,6 +75,6 @@ urlpatterns = [
                   path('pdfdownload/', views.pdf_download),
                   path('featureapprovalslist/', views.feature_approval_list),
                   path('featureapprovalcreate/', views.approval_featurecreate),
-                  path('project_versions_list/', views.project_versions_list, name='project_versions_list')
-
+                  path('project_versions_list/', views.project_versions_list, name='project_versions_list'),
+                  path('create_project_version/', views.create_project_version, name='create_project_version'),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
