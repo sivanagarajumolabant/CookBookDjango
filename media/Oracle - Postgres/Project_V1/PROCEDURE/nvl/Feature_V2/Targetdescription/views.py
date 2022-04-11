@@ -1,9 +1,6 @@
 import imp
 from django.shortcuts import render
 from rest_framework import viewsets, status
-import shutil
-from django.utils.encoding import force_text, smart_str
-from wsgiref.util import FileWrapper
 from .serializers import *
 from datetime import *
 from config.config import frontend_url
@@ -60,6 +57,7 @@ def featurelist(request):
     return Response(serializer.data)
 
 
+
 # @api_view(['POST'])
 # def featurecreate(request):
 #     migration_type = request.data['Migration_TypeId']
@@ -108,8 +106,7 @@ def featurecreate(request):
     feature_name = request.data['Feature_Name']
     project_version = request.data['Project_Version_Id']
 
-    feature_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=migration_type,
-                                          Object_Type=object_type,
+    feature_data = Feature.objects.filter(Project_Version_Id = project_version, Migration_TypeId=migration_type, Object_Type=object_type,
                                           Feature_Name=feature_name)
     if feature_data:
         return Response("Feature already present with this version.Kindly request access for it")
@@ -119,7 +116,6 @@ def featurecreate(request):
             serializer.save(Feature_Version_Id=int(request.data['Feature_Version_Id']) + 1)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 def featuredropdownlist(request):
@@ -487,18 +483,17 @@ def featuredropdownlist(request):
 #     return Response(response)
 
 
+
 @api_view(['POST'])
 def feature_version_list(request):
     mig_type = request.data['Migration_Type']
     obj_type = request.data['Object_Type']
     feature_name = request.data['Feature_Name']
-    project_version = request.data['Project_Version_Id']
 
     version_list = []
     inter_dict = {}
     final_list = []
-    features = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
-                                      Object_Type=obj_type, Feature_Name=feature_name)
+    features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name)
     for dict in features.values():
         version_list.append(dict['Feature_Version_Id'])
 
@@ -508,119 +503,11 @@ def feature_version_list(request):
         final_list.append(inter_dict.copy())
     return Response(final_list)
 
-
-# @api_view(['POST'])
-# def featuredetail(request, feature_name):
-#     email = request.data['User_Email']
-#     mig_type = request.data['Migration_Type']
-#     obj_type = request.data['Object_Type']
-#     user = Users.objects.filter(email=email)
-#
-#     user_values = list(user.values())
-#     admin_access = user_values[0]['admin_migrations']
-#     if admin_access == '' or admin_access == None:
-#         admin_access_dict = {}
-#     else:
-#         admin_access = admin_access.replace("\'", "\"")
-#         admin_access_dict = json.loads(admin_access)
-#
-#     final_list = []
-#     version_list = []
-#     features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name)
-#     for dict in features.values():
-#         version_list.append(dict['Feature_Version_Id'])
-#     max_version = max(version_list)
-#
-#     for obj in features:
-#         mig_type = obj.Migration_TypeId
-#         obj_type = obj.Object_Type
-#         feature_name = obj.Feature_Name
-#         feature_id = obj.Feature_Id
-#         feature_version_id = obj.Feature_Version_Id
-#         f_approval = obj.Feature_version_approval_status
-#         EDIT = 0
-#         latest_flag = 0
-#         if mig_type in admin_access_dict.keys():
-#             if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                 EDIT = 1
-#             else:
-#
-#                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#                 if perm_data3:
-#                     data3_access = perm_data3.values()[0]['Access_Type']
-#                     if data3_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#
-#                 perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type, Feature_Name='ALL')
-#                 if perm_data2:
-#                     data2_access = perm_data2.values()[0]['Access_Type']
-#                     if data2_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type, Feature_Name=feature_name)
-#                 if perm_data1:
-#                     data1_access = perm_data1.values()[0]['Access_Type']
-#                     if data1_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#
-#                 if not perm_data1 and perm_data2 and perm_data3:
-#                     EDIT = 0
-#             if feature_version_id < max_version and f_approval == 'Approved':
-#                 latest_flag = 0
-#             elif feature_version_id == max_version and f_approval == 'Approved':
-#                 latest_flag = 0
-#             else:
-#                 latest_flag = 1
-#         else:
-#
-#             perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#             if perm_data3:
-#                 data3_access = perm_data3.values()[0]['Access_Type']
-#                 if data3_access in ('Edit', 'ALL'):
-#                     EDIT = 1
-#             perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                     Feature_Name='ALL')
-#             if perm_data2:
-#                 data2_access = perm_data2.values()[0]['Access_Type']
-#                 if data2_access in ('Edit', 'ALL'):
-#                     EDIT = 1
-#             perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                     Feature_Name=feature_name)
-#             if perm_data1:
-#                 data1_access = perm_data1.values()[0]['Access_Type']
-#                 if data1_access in ('Edit', 'ALL'):
-#                     EDIT = 1
-#             if not perm_data1 and perm_data2 and perm_data3:
-#                 EDIT = 0
-#         if feature_version_id < max_version and f_approval == 'Approved':
-#             latest_flag = 0
-#             max_flag = 0
-#         elif feature_version_id == max_version and f_approval == 'Approved':
-#             latest_flag = 0
-#             max_flag = 1
-#         elif feature_version_id == max_version:
-#             if f_approval == 'In Progress' or f_approval == 'Awaiting Approval':
-#                 latest_flag = 1
-#                 max_flag = 1
-#         else:
-#             latest_flag = 1
-#             max_flag = 0
-#
-#         feature = Feature.objects.get(Feature_Id=feature_id)
-#         serializer = FeatureSerializer(feature, many=False)
-#         response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag, 'serializer': serializer.data}
-#         final_list.append(response)
-#
-#     return Response(final_list)
-
-
 @api_view(['POST'])
 def featuredetail(request, feature_name):
     email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
     obj_type = request.data['Object_Type']
-    Project_Version_Id = request.data['Project_Version_Id']
     user = Users.objects.filter(email=email)
 
     user_values = list(user.values())
@@ -633,7 +520,7 @@ def featuredetail(request, feature_name):
 
     final_list = []
     version_list = []
-    features = Feature.objects.filter(Migration_TypeId = mig_type,Object_Type = obj_type, Feature_Name=feature_name, Project_Version_Id=Project_Version_Id)
+    features = Feature.objects.filter(Migration_TypeId = mig_type,Object_Type = obj_type, Feature_Name=feature_name)
     for dict in features.values():
         version_list.append(dict['Feature_Version_Id'])
     max_version = max(version_list)
@@ -722,7 +609,6 @@ def featuredetail(request, feature_name):
         final_list.append(response)
 
     return Response(final_list)
-
 
 # @api_view(['GET','POST'])
 # def featuredetail(request, pk):
@@ -1404,218 +1290,12 @@ def featuredetail(request, feature_name):
 #             return Response(response)
 
 
-# @api_view(['GET', 'POST'])
-# def feature_catalog_access_check(request):
-#     user_email = request.data['User_Email']
-#     mig_type = request.data['Migration_Type']
-#     obj_type = request.data['Object_Type']
-#     feature_name = request.data['Feature_Name']
-#
-#     user = Users.objects.filter(email=user_email)
-#
-#     user_values = list(user.values())
-#     admin_access = user_values[0]['admin_migrations']
-#     if admin_access == '' or admin_access == None:
-#         admin_access_dict = {}
-#     else:
-#         admin_access = admin_access.replace("\'", "\"")
-#         admin_access_dict = json.loads(admin_access)
-#
-#     flag = 1
-#     view_flag = 0
-#     if obj_type == 'ALL' or feature_name == 'ALL':
-#         if mig_type in admin_access_dict.keys():
-#             if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                 flag = 3
-#             else:
-#
-#                 perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                         Object_Type='ALL')
-#                 if perm_data3:
-#                     data3_access = perm_data3.values()[0]['Access_Type']
-#                     if data3_access in ('Edit', 'ALL'):
-#                         flag = 3
-#                     elif data3_access == 'View':
-#                         flag = 2
-#                     else:
-#                         flag = 1
-#                 perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type,
-#                                                         Feature_Name='ALL')
-#                 if perm_data2:
-#                     data2_access = perm_data2.values()[0]['Access_Type']
-#                     if data2_access in ('Edit', 'ALL'):
-#                         flag = 3
-#                     elif data2_access == 'View':
-#                         flag = 2
-#                     else:
-#                         flag = 1
-#                 perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type,
-#                                                         Feature_Name=feature_name)
-#                 if perm_data1:
-#                     data1_access = perm_data1.values()[0]['Access_Type']
-#                     if data1_access in ('Edit', 'ALL'):
-#                         flag = 3
-#                     elif data1_access == 'View':
-#                         flag = 2
-#                     else:
-#                         flag = 1
-#
-#                 if not perm_data1 and perm_data2 and perm_data3:
-#                     flag = 1
-#         elif obj_type != '' and feature_name != '':
-#             perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type, Object_Type='ALL')
-#             if perm_data3:
-#                 data3_access = perm_data3.values()[0]['Access_Type']
-#                 if data3_access in ('Edit', 'ALL'):
-#                     flag = 3
-#                 elif data3_access == 'View':
-#                     flag = 2
-#                 else:
-#                     flag = 1
-#
-#             perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                     Object_Type=obj_type,
-#                                                     Feature_Name='ALL')
-#             if perm_data2:
-#                 data2_access = perm_data2.values()[0]['Access_Type']
-#                 if data2_access in ('Edit', 'ALL'):
-#                     flag = 3
-#                 elif data2_access == 'View':
-#                     flag = 2
-#                 else:
-#                     flag = 1
-#
-#             perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                     Object_Type=obj_type,
-#                                                     Feature_Name=feature_name)
-#             if perm_data1:
-#                 data1_access = perm_data1.values()[0]['Access_Type']
-#                 if data1_access in ('Edit', 'ALL'):
-#                     flag = 3
-#                 elif data1_access == 'View':
-#                     flag = 2
-#                 else:
-#                     flag = 1
-#
-#             if not perm_data1 and perm_data2 and perm_data3:
-#                 flag = 1
-#         response = {'serializer': 'No Data', 'flag': flag, 'view_flag': 'No Data'}
-#     else:
-#         features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name)
-#         version_list = []
-#         for dict in features.values():
-#             version_list.append(dict['Feature_Version_Id'])
-#         max_version = max(version_list)
-#         for obj in features:
-#             mig_type = obj.Migration_TypeId
-#             obj_type = obj.Object_Type
-#             feature_name = obj.Feature_Name
-#             feature_id = obj.Feature_Id
-#             feature_version_id = obj.Feature_Version_Id
-#             f_approval = obj.Feature_version_approval_status
-#             if feature_version_id == max_version:
-#                 if mig_type in admin_access_dict.keys():
-#                     if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                         flag = 3
-#                     else:
-#
-#                         perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                                 Object_Type='ALL')
-#                         if perm_data3:
-#                             data3_access = perm_data3.values()[0]['Access_Type']
-#                             if data3_access in ('Edit', 'ALL'):
-#                                 flag = 3
-#                             elif data3_access == 'View':
-#                                 flag = 2
-#                             else:
-#                                 flag = 1
-#                         perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                                 Object_Type=obj_type,
-#                                                                 Feature_Name='ALL')
-#                         if perm_data2:
-#                             data2_access = perm_data2.values()[0]['Access_Type']
-#                             if data2_access in ('Edit', 'ALL'):
-#                                 flag = 3
-#                             elif data2_access == 'View':
-#                                 flag = 2
-#                             else:
-#                                 flag = 1
-#                         perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                                 Object_Type=obj_type,
-#                                                                 Feature_Name=feature_name)
-#                         if perm_data1:
-#                             data1_access = perm_data1.values()[0]['Access_Type']
-#                             if data1_access in ('Edit', 'ALL'):
-#                                 flag = 3
-#                             elif data1_access == 'View':
-#                                 flag = 2
-#                             else:
-#                                 flag = 1
-#
-#                         if not perm_data1 and perm_data2 and perm_data3:
-#                             flag = 1
-#                 elif obj_type != '' and feature_name != '':
-#                     perm_data3 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                             Object_Type='ALL')
-#                     if perm_data3:
-#                         data3_access = perm_data3.values()[0]['Access_Type']
-#                         if data3_access in ('Edit', 'ALL'):
-#                             flag = 3
-#                         elif data3_access == 'View':
-#                             flag = 2
-#                         else:
-#                             flag = 1
-#
-#                     perm_data2 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type,
-#                                                             Feature_Name='ALL')
-#                     if perm_data2:
-#                         data2_access = perm_data2.values()[0]['Access_Type']
-#                         if data2_access in ('Edit', 'ALL'):
-#                             flag = 3
-#                         elif data2_access == 'View':
-#                             flag = 2
-#                         else:
-#                             flag = 1
-#
-#                     perm_data1 = Permissions.objects.filter(User_Email=user_email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type,
-#                                                             Feature_Name=feature_name)
-#                     if perm_data1:
-#                         data1_access = perm_data1.values()[0]['Access_Type']
-#                         if data1_access in ('Edit', 'ALL'):
-#                             flag = 3
-#                         elif data1_access == 'View':
-#                             flag = 2
-#                         else:
-#                             flag = 1
-#
-#                     if not perm_data1 and perm_data2 and perm_data3:
-#                         flag = 1
-#                 if feature_version_id == max_version and f_approval == 'Pending':
-#                     view_flag = 0
-#                 elif feature_version_id == max_version and f_approval == 'Approved':
-#                     view_flag = 1
-#                 else:
-#                     view_flag = 0
-#             if feature_name != 'ALL' and obj_type != 'ALL':
-#                 features = Feature.objects.get(Feature_Id=feature_id)
-#                 serializer = FeatureSerializer(features, many=False)
-#                 response = {'serializer': serializer.data, 'flag': flag, 'view_flag': view_flag}
-#             else:
-#                 response = {'serializer': 'No Data', 'flag': flag, 'view_flag': view_flag}
-#     return Response(response)
-
-
 @api_view(['GET','POST'])
 def feature_catalog_access_check(request):
     user_email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
     obj_type = request.data['Object_Type']
     feature_name = request.data['Feature_Name']
-    Project_Version_Id = request.data['Project_Version_Id']
 
     user = Users.objects.filter(email=user_email)
 
@@ -1709,7 +1389,7 @@ def feature_catalog_access_check(request):
                 flag = 1
         response = {'serializer': 'No Data', 'flag': flag, 'view_flag': 'No Data'}
     else:
-        features = Feature.objects.filter(Migration_TypeId=mig_type, Project_Version_Id=Project_Version_Id, Object_Type=obj_type, Feature_Name=feature_name)
+        features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name)
         version_list = []
         for dict in features.values():
             version_list.append(dict['Feature_Version_Id'])
@@ -1837,10 +1517,8 @@ def featureupdate(request, pk):
     feature_version = feature.Feature_Version_Id
 
     if feature_approval_status_request == 'Awaiting Approval':
-        feature_data = Feature.objects.filter(Project_Version_Id=project_id, Migration_TypeId=mig_type,
-                                              Object_Type=obj_type, Feature_Name=feature_name,
-                                              Feature_Version_Id=feature_version,
-                                              Feature_version_approval_status='Awaiting Approval')
+        feature_data = Feature.objects.filter(Project_Version_Id=project_id,Migration_TypeId = mig_type,Object_Type = obj_type,Feature_Name = feature_name,
+                                              Feature_Version_Id = feature_version,Feature_version_approval_status = 'Awaiting Approval')
         if feature_data:
             return Response("Request for approval already present.Please wait for admin to approve it")
         else:
@@ -1855,7 +1533,6 @@ def featureupdate(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['GET'])
 def att_list(request):
@@ -1954,13 +1631,10 @@ def attachment_delete(request):
     project_id = attachment.Project_Version_Id
     feature_version_id = attachment.Feature_Version_Id
     attachment.delete()
-    fl_path = MEDIA_ROOT + '/media/' + migration_typeid + '/' + 'Project_V' + str(
-        project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
-        feature_version_id) + '/' + AttachmentType + '/'
+    fl_path = MEDIA_ROOT +'/media/' + migration_typeid  + '/' + 'Project_V' + str(project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(feature_version_id) + '/' + AttachmentType + '/'
     filename = fl_path + file_name
     os.remove(filename)
     return Response('Deleted')
-
 
 # @api_view(['POST'])
 # def Attcahmentupdate(request, pk):
@@ -1989,8 +1663,7 @@ def Attcahmentupdate(request, pk):
     filename = request.data['filename']
     project_id = feature.Project_Version_Id
     feature_version_id = feature.Feature_Version_Id
-    dictionary = {"Feature_Id": feature, 'Project_Version_Id': project_id, 'Feature_Version_Id': feature_version_id,
-                  'AttachmentType': AttachmentType, "filename": filename,
+    dictionary = {"Feature_Id": feature,'Project_Version_Id':project_id,'Feature_Version_Id':feature_version_id,'AttachmentType': AttachmentType, "filename": filename,
                   "Attachment": Attachment}
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
@@ -2001,7 +1674,6 @@ def Attcahmentupdate(request, pk):
                 row.delete()
         return Response(attachements.data, status=status.HTTP_200_OK)
     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 # @api_view(['DELETE'])
 # def featuredelete(request, pk):
@@ -2034,36 +1706,14 @@ def featuredelete(request, pk):
 #     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# @api_view(['POST'])
-# def predessors(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body_data = json.loads(body_unicode)
-#     Object_Type = body_data['Object_Type']
-#     Migration_TypeId = body_data['Migration_TypeId']
-#     features = Feature.objects.filter(
-#         Object_Type=Object_Type, Migration_TypeId=Migration_TypeId)
-#     serializer = SequenceSerializer(features, many=True)
-#     feature_list = []
-#     final_list = []
-#     final_dict = {}
-#     for dict in serializer.data:
-#         feature_list.append(dict['Feature_Name'])
-#     feature_list = list(set(feature_list))
-#     for feature in feature_list:
-#         final_dict['Feature_Name'] = feature
-#         final_list.append(final_dict.copy())
-#     return Response(final_list, status=status.HTTP_200_OK)
-
-
 @api_view(['POST'])
 def predessors(request):
     body_unicode = request.body.decode('utf-8')
     body_data = json.loads(body_unicode)
     Object_Type = body_data['Object_Type']
     Migration_TypeId = body_data['Migration_TypeId']
-    Project_Version_Id = body_data['Project_Version_Id']
     features = Feature.objects.filter(
-        Object_Type=Object_Type, Migration_TypeId=Migration_TypeId, Project_Version_Id=Project_Version_Id)
+        Object_Type=Object_Type, Migration_TypeId=Migration_TypeId)
     serializer = SequenceSerializer(features, many=True)
     feature_list = []
     final_list = []
@@ -2075,6 +1725,7 @@ def predessors(request):
         final_dict['Feature_Name'] = feature
         final_list.append(final_dict.copy())
     return Response(final_list, status=status.HTTP_200_OK)
+
 
 # @api_view(['POST'])
 # def download_attachment(request):
@@ -2113,30 +1764,6 @@ def download_attachment(request):
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
-
-
-#
-# @api_view(['POST'])
-# def download_attachment(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body_data = json.loads(body_unicode)
-#     file_name = body_data['file_name']
-#     attach_type = body_data['AttachmentType']
-#     fid = body_data['feature_id']
-#     filter_files = Attachments.objects.filter(
-#         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
-#     filter_values = list(filter_files.values_list())
-#     file_path = filter_values[0]
-#     print(file_path)
-#     wrapper = FileWrapper( open(file_path[6], 'rb') )
-#     content_type = mimetypes.guess_type(file_path[5])[0]
-#     print(content_type)
-#     response = HttpResponse(wrapper, content_type = content_type)
-#     # print(response)
-#     response['Content-Length'] = os.path.getsize( file_path[6] ) # not FileField instance
-#     response['Content-Disposition'] = 'attachment; filename=%s/' % \
-#                                        smart_str( os.path.basename( file_path[6] ) ) # same here
-#     return response
 
 # @api_view(['POST'])
 # def conversion(request):
@@ -2218,13 +1845,12 @@ def conversion(request):
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     if python_code != '':
-        module_path = path + '/' + 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
-            project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
+        module_path = path + '/' + 'Modules/' + migration_typeid +'/' + 'Project_V'+ str(project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
         sys.path.append(module_path)
         if not os.path.exists(module_path):
             os.makedirs(module_path)
         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-        python_code = re.sub(r'def(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
+        python_code = re.sub(r'def(.*?)\(','def ' + feature_name.strip() + '(',python_code)
         file_path = module_path + '/' + str(feature_name).strip() + '.py'
         sys.path.insert(0, file_path)
         with open(file_path, 'w') as f:
@@ -2235,8 +1861,6 @@ def conversion(request):
         return Response(executableoutput, status=status.HTTP_200_OK)
     else:
         return Response('Please add the conversion code in conversion module')
-
-
 # except Exception as err:
 #     print(err)
 #     return Response(err, status=status.HTTP_400_BAD_REQUEST)
@@ -2384,95 +2008,94 @@ def create_and_append_sqlfile_single(path_of_file_sql, data):
 @api_view(['POST'])
 def feature_conversion_files(request):
     # try:
-    body_unicode = request.body.decode('utf-8')
-    body_data = json.loads(body_unicode)
-    feature_id = body_data['Feature_Id']
-    attach_type = body_data['AttachmentType']
-    feature = body_data['Feature_Name']
-    migid = body_data['Migration_TypeId']
-    objtype = body_data['Object_Type']
-    conversion_code = body_data['convcode']
-    project_id = body_data['Project_Version_Id']
-    feature_version_Id = body_data['Feature_Version_Id']
+        body_unicode = request.body.decode('utf-8')
+        body_data = json.loads(body_unicode)
+        feature_id = body_data['Feature_Id']
+        attach_type = body_data['AttachmentType']
+        feature = body_data['Feature_Name']
+        migid = body_data['Migration_TypeId']
+        objtype = body_data['Object_Type']
+        conversion_code = body_data['convcode']
+        project_id = body_data['Project_Version_Id']
+        feature_version_Id = body_data['Feature_Version_Id']
 
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
-        project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-        feature_version_Id) + '/' + 'Actualtargetcode' + '/'
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
-        project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-        feature_version_Id) + '/' + 'Conversion' + '/'
+        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
+            project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+            feature_version_Id) + '/' + 'Actualtargetcode' + '/'
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
+            project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+            feature_version_Id) + '/' + 'Conversion' + '/'
 
-    if not os.path.exists(module_path):
-        os.makedirs(module_path)
-    sys.path.append(module_path)
 
-    module_path_files = os.listdir(module_path)
-    module_path_files = [x for x in module_path_files if x != '__pycache__']
+        if not os.path.exists(module_path):
+            os.makedirs(module_path)
+        sys.path.append(module_path)
 
-    if module_path_files:
-        module_file = module_path_files[0]
-        file_path = module_path + '/' + module_file
-        with open(file_path) as f:
-            python_code = f.read()
-        python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-        python_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', python_code)
-        with open(file_path, "w") as f:
-            f.write(python_code)
-    else:
-        if conversion_code != '':
-            module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
-                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-                feature_version_Id) + '/'
-            if not os.path.exists(module_path_raw):
-                os.makedirs(module_path_raw)
-            conversion_code = conversion_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-            conversion_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
-            file_path = module_path_raw + '/' + str(feature).strip() + '.py'
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-            with open(file_path, 'w') as f:
-                f.write(conversion_code)
+        module_path_files = os.listdir(module_path)
+        module_path_files = [x for x in module_path_files if x != '__pycache__']
+
+        if module_path_files:
+            module_file = module_path_files[0]
+            file_path = module_path + '/' + module_file
+            with open(file_path) as f:
+                python_code = f.read()
+            python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+            python_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', python_code)
+            with open(file_path, "w") as f:
+                f.write(python_code)
         else:
-            return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
-                            status=status.HTTP_400_BAD_REQUEST)
-    sys.path.insert(0, file_path)
+            if conversion_code != '':
+                module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
+                    project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+                    feature_version_Id) + '/'
+                if not os.path.exists(module_path_raw):
+                    os.makedirs(module_path_raw)
+                conversion_code = conversion_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+                conversion_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
+                file_path = module_path_raw + '/' + str(feature).strip() + '.py'
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                with open(file_path, 'w') as f:
+                    f.write(conversion_code)
+            else:
+                return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
+                                status=status.HTTP_400_BAD_REQUEST)
+        sys.path.insert(0, file_path)
 
-    filter_files = Attachments.objects.filter(
-        Feature_Id=feature_id, AttachmentType=attach_type)
-    filter_values = list(filter_files.values_list())
+        filter_files = Attachments.objects.filter(
+            Feature_Id=feature_id, AttachmentType=attach_type)
+        filter_values = list(filter_files.values_list())
 
-    if filter_values:
-        for file in filter_values:
-            with open(file[6], 'r', encoding='utf-8') as f:
-                read_text = f.read()
-            a = import_file(file_path)
-            function_call = getattr(a, str(feature).strip())
-            output = function_call(read_text)
-            if os.path.isfile(output_path + file[5]):
-                os.remove(output_path + file[5])
-            create_and_append_sqlfile_single(output_path + file[5], output)
-            target_filename = file[5]
-            target_filepath = output_path + file[5]
-            split_media = 'media' + target_filepath.split('media')[1]
-            target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
-                                        AttachmentType='Actualtargetcode', filename=target_filename,
-                                        Attachment=split_media, Feature_Id_id=feature_id)
-            target_object.save()
-        for row in Attachments.objects.all().reverse():
-            if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
-                                          Feature_Id_id=row.Feature_Id_id).count() > 1:
-                row.delete()
-        serializer = ConversionfilesSerializer(filter_files, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    else:
-        return Response("Please Add Source Code Attachment")
-
-
-# except Exception as err:
-#     return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
+        if filter_values:
+            for file in filter_values:
+                with open(file[6], 'r', encoding='utf-8') as f:
+                    read_text = f.read()
+                a = import_file(file_path)
+                function_call = getattr(a, str(feature).strip())
+                output = function_call(read_text)
+                if os.path.isfile(output_path + file[5]):
+                    os.remove(output_path + file[5])
+                create_and_append_sqlfile_single(output_path + file[5], output)
+                target_filename = file[5]
+                target_filepath = output_path + file[5]
+                split_media = 'media' + target_filepath.split('media')[1]
+                target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
+                                            AttachmentType='Actualtargetcode', filename=target_filename,
+                                            Attachment=split_media, Feature_Id_id=feature_id)
+                target_object.save()
+            for row in Attachments.objects.all().reverse():
+                if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+                                              Feature_Id_id=row.Feature_Id_id).count() > 1:
+                    row.delete()
+            serializer = ConversionfilesSerializer(filter_files, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response("Please Add Source Code Attachment")
+    # except Exception as err:
+    #     return Response({"error": err}, status=status.HTTP_400_BAD_REQUEST)
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
@@ -2490,7 +2113,7 @@ class RegisterView(generics.GenericAPIView):
         # relativeLink = reverse('email-verify')
         # absurl = 'http://localhost:3000/' + current_site + relativeLink + "?token=" + str(token)
 
-        absurl = frontend_url + 'emailverification?' + str(token)
+        absurl = frontend_url+'emailverification?' + str(token)
         # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
         # data = {'email_body': email_body, 'to_email': user.email,
         #         'email_subject': 'Verify your email'}
@@ -2525,7 +2148,7 @@ class ResendVerifyEmail(generics.GenericAPIView):
             # email_body = 'Hi ' + user.username + 'Use below link to verify your account \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email, 'email_subject': 'Verify your email'}
 
-            absurl = frontend_url + 'emailverification?' + str(token)
+            absurl = frontend_url+'emailverification?' + str(token)
 
             # email_body = 'Hi ' + user.username + ' Use below link to verify your account \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email,
@@ -2562,8 +2185,8 @@ class RequestPasswordResetEmail(generics.GenericAPIView):
 
             # absurl = 'http://' + current_site + relativeLink
 
-            absurl = frontend_url + 'resetpassword?token=' + \
-                     str(token) + "?uid=" + uidb64
+            absurl = frontend_url+'resetpassword?token=' + \
+                str(token) + "?uid=" + uidb64
             # email_body = 'Hello,  \n Use below link to reset your password \n' + absurl
             # data = {'email_body': email_body, 'to_email': user.email,
             #         'email_subject': 'Reset your password'}
@@ -2739,50 +2362,23 @@ def add_view(request):
 #     return Response(final_list)
 
 
-# @api_view(['POST'])
-# def create_tablepage_featuresdata(request):
-#     Migration_TypeId = request.data['Migration_TypeId']
-#     Object_Type = request.data['Object_Type']
-#     feature_names = Feature.objects.values('Feature_Name').distinct()
-#     features = []
-#     for dict in feature_names:
-#         features.append(dict['Feature_Name'])
-#     final_list = []
-#     for feature in features:
-#         feature_versions = Feature.objects.filter(Feature_Name=feature)
-#         version_list = []
-#         for dict1 in feature_versions.values():
-#             version_list.append(dict1['Feature_Version_Id'])
-#         max_version = max(version_list)
-#         data = Feature.objects.filter(
-#             Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
-#             Feature_Version_Id=max_version)
-#         serializer = FeatureSerializer(data, many=True)
-#         final_list.append(serializer.data)
-#     final_output_list = []
-#     for final_dict in final_list:
-#         if final_dict:
-#             final_output_list.append(final_dict[0])
-#     return Response(final_output_list)
-
 @api_view(['POST'])
 def create_tablepage_featuresdata(request):
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
-    Project_Version_Id = request.data['Project_Version_Id']
     feature_names = Feature.objects.values('Feature_Name').distinct()
     features = []
     for dict in feature_names:
         features.append(dict['Feature_Name'])
     final_list = []
     for feature in features:
-        feature_versions = Feature.objects.filter(Feature_Name=feature, Project_Version_Id=Project_Version_Id)
+        feature_versions = Feature.objects.filter(Feature_Name=feature)
         version_list = []
         for dict1 in feature_versions.values():
             version_list.append(dict1['Feature_Version_Id'])
         max_version = max(version_list)
         data = Feature.objects.filter(
-            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,Feature_Name=feature,Feature_Version_Id = max_version, Project_Version_Id=Project_Version_Id)
+            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,Feature_Name=feature,Feature_Version_Id = max_version)
         serializer = FeatureSerializer(data, many=True)
         final_list.append(serializer.data)
     final_output_list = []
@@ -2790,7 +2386,6 @@ def create_tablepage_featuresdata(request):
         if final_dict:
             final_output_list.append(final_dict[0])
     return Response(final_output_list)
-
 
 # @api_view(['POST'])
 # def get_Featurenames(request):
@@ -2857,84 +2452,11 @@ def create_tablepage_featuresdata(request):
 #     serializer = migrationlevelfeatures(features, many=True)
 #     return Response(serializer.data, status=status.HTTP_200_OK)
 
-# @api_view(['POST'])
-# def get_Featurenames(request):
-#     Migration_TypeId = request.data['Migration_TypeId']
-#     Object_Type = request.data['Object_Type']
-#     Feature_Name = request.data['Feature_Name']
-#     final_list = []
-#     if Object_Type == 'ALL':
-#         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId)
-#         feature_names = features.values('Feature_Name').distinct()
-#         features = []
-#         for dict in feature_names:
-#             features.append(dict['Feature_Name'])
-#         for feature in features:
-#             feature_versions = Feature.objects.filter(Feature_Name=feature)
-#             version_list = []
-#             object_list = []
-#             for dict1 in feature_versions.values():
-#                 version_list.append(dict1['Feature_Version_Id'])
-#                 object_list.append(dict1['Object_Type'])
-#             object_list = list(set(object_list))
-#             max_version = max(version_list)
-#             for object in object_list:
-#                 data = Feature.objects.filter(
-#                     Migration_TypeId=Migration_TypeId, Object_Type=object, Feature_Name=feature,
-#                     Feature_Version_Id=max_version)
-#                 serializer = migrationlevelfeatures(data, many=True)
-#                 print(serializer.data)
-#                 final_list.append(serializer.data)
-#     elif Feature_Name == 'ALL':
-#         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
-#         feature_names = features.values('Feature_Name').distinct()
-#         features = []
-#         for dict in feature_names:
-#             features.append(dict['Feature_Name'])
-#         for feature in features:
-#             feature_versions = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-#                                                       Feature_Name=feature)
-#             version_list = []
-#             for dict1 in feature_versions.values():
-#                 version_list.append(dict1['Feature_Version_Id'])
-#             max_version = max(version_list)
-#             data = Feature.objects.filter(
-#                 Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
-#                 Feature_Version_Id=max_version)
-#             if data:
-#                 serializer = migrationlevelfeatures(data, many=True)
-#                 final_list.append(serializer.data)
-#     else:
-#         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
-#         feature_names = features.values('Feature_Name').distinct()
-#         features = []
-#         for dict in feature_names:
-#             features.append(dict['Feature_Name'])
-#         for feature in features:
-#             feature_versions = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-#                                                       Feature_Name=feature)
-#             version_list = []
-#             for dict1 in feature_versions.values():
-#                 version_list.append(dict1['Feature_Version_Id'])
-#             max_version = max(version_list)
-#             data = Feature.objects.filter(
-#                 Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
-#                 Feature_Version_Id=max_version)
-#             if data:
-#                 serializer = migrationlevelfeatures(data, many=True)
-#                 final_list.append(serializer.data)
-#     final_output_list = []
-#     for final_dict in final_list:
-#         final_output_list.append(final_dict[0])
-#     return Response(final_output_list, status=status.HTTP_200_OK)
-
-
 @api_view(['POST'])
 def get_Featurenames(request):
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
     Feature_Name = request.data['Feature_Name']
-    Project_Version_Id = request.data['Project_Version_Id']
     final_list = []
     if Object_Type == 'ALL':
         features = Feature.objects.filter(Migration_TypeId=Migration_TypeId)
@@ -2953,53 +2475,50 @@ def get_Featurenames(request):
             max_version = max(version_list)
             for object in object_list:
                 data = Feature.objects.filter(
-                    Migration_TypeId=Migration_TypeId, Object_Type=object, Feature_Name=feature,
-                    Feature_Version_Id=max_version)
+                    Migration_TypeId=Migration_TypeId, Object_Type=object, Feature_Name = feature,
+                    Feature_Version_Id = max_version)
                 serializer = migrationlevelfeatures(data, many=True)
                 print(serializer.data)
                 final_list.append(serializer.data)
     elif Feature_Name == 'ALL':
-        features = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+        features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
         feature_names = features.values('Feature_Name').distinct()
         features = []
         for dict in feature_names:
             features.append(dict['Feature_Name'])
         for feature in features:
-            feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-                                                      Feature_Name=feature)
+            feature_versions = Feature.objects.filter(Feature_Name=feature)
             version_list = []
             for dict1 in feature_versions.values():
                 version_list.append(dict1['Feature_Version_Id'])
             max_version = max(version_list)
-            data = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
+            data = Feature.objects.filter(
                 Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
                 Feature_Version_Id=max_version)
-            if data:
-                serializer = migrationlevelfeatures(data, many=True)
-                final_list.append(serializer.data)
+            serializer = migrationlevelfeatures(data, many=True)
+            final_list.append(serializer.data)
     else:
-        features = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+        features = Feature.objects.filter(Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
         feature_names = features.values('Feature_Name').distinct()
         features = []
         for dict in feature_names:
             features.append(dict['Feature_Name'])
         for feature in features:
-            feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-                                                      Feature_Name=feature)
+            feature_versions = Feature.objects.filter(Feature_Name=feature)
             version_list = []
             for dict1 in feature_versions.values():
                 version_list.append(dict1['Feature_Version_Id'])
             max_version = max(version_list)
-            data = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
+            data = Feature.objects.filter(
                 Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
                 Feature_Version_Id=max_version)
-            if data:
-                serializer = migrationlevelfeatures(data, many=True)
-                final_list.append(serializer.data)
+            serializer = migrationlevelfeatures(data, many=True)
+            final_list.append(serializer.data)
     final_output_list = []
     for final_dict in final_list:
         final_output_list.append(final_dict[0])
     return Response(final_output_list, status=status.HTTP_200_OK)
+
 
 # @api_view(['POST'])
 # def migrationsscreate(request):
@@ -3026,62 +2545,25 @@ def get_Featurenames(request):
 #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# @api_view(['POST'])
-# def migrationsscreate(request):
-#     project_id = request.data['Project_Version_Id']
-#     migration_type = request.data['Migration_TypeId']
-#     Object_Type = request.data['Object_Type']
-#     serializer = migrationcreateserializer(data=request.data)
-#     check_obj_type = migrations.objects.filter(Project_Version_Id=project_id, Migration_TypeId=migration_type,
-#                                                Object_Type=Object_Type.upper())
-#     if not check_obj_type:
-#         if serializer.is_valid():
-#             serializer.save(Code=migration_type.replace(' ', '_'))
-#             serializer.save(Object_Type=Object_Type.upper())
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#     else:
-#         return Response('Object Type Already Existed')
-#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 @api_view(['POST'])
 def migrationsscreate(request):
     project_id = request.data['Project_Version_Id']
     migration_type = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
-    project_version_limit = request.data['Project_Version_limit']
-    feature_version_limit = request.data['Feature_Version_Limit']
     serializer = migrationcreateserializer(data=request.data)
-    check_obj_type = migrations.objects.filter(Project_Version_Id=project_id, Migration_TypeId = migration_type,
-                                               Object_Type = Object_Type.upper())
+    check_obj_type = migrations.objects.filter(Project_Version_Id = project_id, Migration_TypeId=migration_type,Object_Type = Object_Type.upper())
     if not check_obj_type:
-        if Object_Type == '':
-            if project_version_limit == '' and feature_version_limit == '':
-                if serializer.is_valid():
-                    serializer.save(Code=migration_type.replace(' ', '_'),Object_Type = Object_Type.upper(),Project_Version_limit = 3,Feature_Version_Limit = 3)
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                if serializer.is_valid():
-                    serializer.save(Code=migration_type.replace(' ', '_'),Object_Type=Object_Type.upper(),Project_Version_limit = project_version_limit,Feature_Version_Limit = feature_version_limit)
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            if serializer.is_valid():
-                serializer.save(Code=migration_type.replace(' ', '_'),Object_Type = Object_Type.upper(),Project_Version_limit = '',Feature_Version_Limit = '')
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if serializer.is_valid():
+            serializer.save(Code=migration_type.replace(' ', '_'))
+            serializer.save(Object_Type=Object_Type.upper())
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
         return Response('Object Type Already Existed')
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['GET'])
-# def migrationviewlist(request):
-#     features = migrations.objects.values('Migration_TypeId', 'Code').distinct()
-#     serializer = migrationviewserializer(features, many=True)
-#     return Response(serializer.data)
-
-@api_view(['GET','POST'])
+@api_view(['GET'])
 def migrationviewlist(request):
-    Project_Version_Id = request.data['Project_Version_Id']
-    features = migrations.objects.filter(Project_Version_Id=Project_Version_Id).values('Migration_TypeId', 'Code').distinct()
+    features = migrations.objects.values('Migration_TypeId', 'Code').distinct()
     serializer = migrationviewserializer(features, many=True)
     return Response(serializer.data)
 
@@ -3096,26 +2578,10 @@ def migrationviewlist(request):
 #     serializer = objectviewserializer(features, many=True)
 #     return Response(serializer.data)
 
-# @api_view(['POST'])
-# def objectviewtlist(request):
-#     Migration_TypeId = request.data['Migration_TypeId']
-#     features = migrations.objects.filter(Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
-#     # a = features.values()
-#     # new = []
-#     # for i in a:
-#     #     new.append(i['Object_Type'])
-#     # if "All" not in new:
-#     #     query = migrations.objects.create(Migration_TypeId=Migration_TypeId, Code = Migration_TypeId.replace(' ', '_'), Object_Type="All")
-#     #     query.save()
-#     serializer = objectviewserializer(features, many=True)
-#     return Response(serializer.data)
-
-
 @api_view(['POST'])
 def objectviewtlist(request):
     Migration_TypeId = request.data['Migration_TypeId']
-    Project_Version_Id = request.data['Project_Version_Id']
-    features = migrations.objects.filter(Migration_TypeId=Migration_TypeId, Project_Version_Id=Project_Version_Id).exclude(Object_Type="")
+    features = migrations.objects.filter(Migration_TypeId=Migration_TypeId).exclude(Object_Type="")
     # a = features.values()
     # new = []
     # for i in a:
@@ -3125,6 +2591,7 @@ def objectviewtlist(request):
     #     query.save()
     serializer = objectviewserializer(features, many=True)
     return Response(serializer.data)
+
 
 # @api_view(['POST'])
 # def approvalscreate(request):
@@ -3159,8 +2626,7 @@ def approvalscreate(request):
     Object_Type = request.data['Object_Type']
     Feature_Name = request.data['Feature_Name']
     Access_Type = request.data['Access_Type']
-    if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name,
-                                Access_Type=Access_Type).exists():
+    if Approvals.objects.filter(User_Email=User_Email, Object_Type=Object_Type, Feature_Name=Feature_Name, Access_Type=Access_Type).exists():
         return Response("Request Already Sent")
     else:
         serializer = ApprovalSerializer(data=request.data)
@@ -3355,7 +2821,7 @@ def userslist(request):
 #         return Response("User already has permission")
 
 
-@api_view(['POST', 'GET'])
+@api_view(['POST','GET'])
 def permissionscreate(request):
     user_Email = request.data['User_Email']
     mig_type = request.data['Migration_TypeId']
@@ -3365,83 +2831,75 @@ def permissionscreate(request):
     appr_status = request.data['Approval_Status']
     if appr_status == 'Approved':
         if obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'View':
-            perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                   Object_Type=obj_type,
-                                                   Access_Type='View').exclude(Feature_Name='ALL')
+            perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                Access_Type='View').exclude(Feature_Name='ALL')
             if perm_data:
                 perm_data.delete()
         elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'Edit':
             perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Object_Type=obj_type, Access_Type='View')
+                                                     Object_Type=obj_type,Access_Type='View')
             if perm_data_view:
                 perm_data_view.delete()
             perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Object_Type=obj_type, Access_Type='Edit').exclude(
-                Feature_Name='ALL')
+                                                     Object_Type=obj_type,Access_Type='Edit').exclude(Feature_Name='ALL')
             if perm_data_edit:
                 perm_data_edit.delete()
         elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'ALL':
             perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Object_Type=obj_type, Access_Type='View')
+                                                     Object_Type=obj_type,Access_Type='View')
             if perm_data_view:
                 perm_data_view.delete()
             perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Object_Type=obj_type, Access_Type='Edit')
+                                                     Object_Type=obj_type,Access_Type='Edit')
             if perm_data_edit:
                 perm_data_edit.delete()
             perm_data_all = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                       Object_Type=obj_type, Access_Type='ALL').exclude(
-                Feature_Name='ALL')
+                                                    Object_Type=obj_type,Access_Type='ALL').exclude(Feature_Name='ALL')
             if perm_data_all:
                 perm_data_all.delete()
         elif obj_type == 'ALL' and access_type == 'View':
             perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                   Access_Type='View').exclude(Object_Type='ALL', Feature_Name='ALL')
+                                                Access_Type='View').exclude(Object_Type='ALL', Feature_Name='ALL')
             if perm_data:
                 perm_data.delete()
         elif obj_type == 'ALL' and access_type == 'Edit':
             perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Access_Type='View')
+                                                     Access_Type='View')
             if perm_data_view:
                 perm_data_view.delete()
             perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Access_Type='Edit').exclude(Object_Type='ALL',
-                                                                                    Feature_Name='ALL')
+                                                     Access_Type='Edit').exclude(Object_Type='ALL', Feature_Name='ALL')
             if perm_data_edit:
                 perm_data_edit.delete()
         elif obj_type == 'ALL' and access_type == 'ALL':
             perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Access_Type='View')
+                                                     Access_Type='View')
             if perm_data_view:
                 perm_data_view.delete()
             perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Access_Type='Edit')
+                                                     Access_Type='Edit')
             if perm_data_edit:
                 perm_data_edit.delete()
             perm_data_all = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                       Access_Type='ALL').exclude(Object_Type='ALL', Feature_Name='ALL')
+                                                    Access_Type='ALL').exclude(Object_Type='ALL', Feature_Name='ALL')
             if perm_data_all:
                 perm_data_all.delete()
         elif access_type == 'Edit':
-            perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                   Object_Type=obj_type,
-                                                   Feature_Name=feature_name, Access_Type='View')
+            perm_data = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                                                Feature_Name=feature_name, Access_Type='View')
             if perm_data:
                 perm_data.delete()
         elif access_type == 'ALL':
             perm_data_view = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Object_Type=obj_type, Feature_Name=feature_name,
-                                                        Access_Type='View')
+                                                     Object_Type=obj_type,Feature_Name=feature_name, Access_Type='View')
             perm_data_edit = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                        Object_Type=obj_type, Feature_Name=feature_name,
-                                                        Access_Type='Edit')
+                                                     Object_Type=obj_type,Feature_Name=feature_name, Access_Type='Edit')
             if perm_data_view:
                 perm_data_view.delete()
             if perm_data_edit:
                 perm_data_edit.delete()
 
-    perm_record = Permissions.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
-                                             Feature_Name=feature_name, Access_Type=access_type)
+    perm_record = Permissions.objects.filter(User_Email = user_Email, Migration_TypeId = mig_type, Object_Type = obj_type,Feature_Name = feature_name,Access_Type =access_type)
     if not perm_record:
         serializer = PermissionSerializer(data=request.data)
         if serializer.is_valid():
@@ -3917,7 +3375,7 @@ def permissionscreate(request):
 #     return Response(final_list)
 #
 #
-@api_view(['GET', 'POST'])
+@api_view(['GET','POST'])
 def create_check_list(request):
     email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
@@ -3926,20 +3384,17 @@ def create_check_list(request):
     object_names = [obj['Object_Type'] for obj in mig_data.values()]
 
     perm_object_list = []
-    perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-                                           Access_Type='Edit') | Permissions.objects.filter(User_Email=email,
-                                                                                            Migration_TypeId=mig_type,
-                                                                                            Access_Type='ALL')
+    perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Access_Type = 'Edit') | Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Access_Type = 'ALL')
     object_data = perm_data.values('Object_Type')
     for dict in object_data:
         perm_object_list.append(dict['Object_Type'])
     perm_object_list = list(set(perm_object_list))
 
     inter_dict = {}
-    final_list = []
+    final_list =[]
     if 'ALL' in perm_object_list:
         for object_name in object_names:
-            inter_dict['Label'] = object_name
+            inter_dict['Label'] =  object_name
             inter_dict['Create_Flag'] = 1
             final_list.append(inter_dict.copy())
     else:
@@ -4262,331 +3717,22 @@ def create_check_list(request):
 #     return Response(final_list)
 
 
-# @api_view(['POST'])
-# def migration_user_view(request):
-#     email = request.data['User_Email']
-#     mig_type = request.data['Migration_TypeId']
-#
-#     user = Users.objects.get(email=email)
-#     user_is_superuser = user.is_superuser
-#     admin_access = user.admin_migrations
-#     if admin_access == '' or admin_access == None:
-#         admin_access_dict = {}
-#     else:
-#         admin_access = admin_access.replace("\'", "\"")
-#         admin_access_dict = json.loads(admin_access)
-#
-#     mig_data = migrations.objects.filter(Migration_TypeId=mig_type).exclude(Object_Type='')
-#     object_names = [obj['Object_Type'] for obj in mig_data.values()]
-#
-#     perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type)
-#     object_values_list = [obj['Object_Type'] for obj in perm_data.values()]
-#
-#     label_dict = {}
-#     final_list = []
-#     if user_is_superuser == True:
-#         if mig_type in admin_access_dict.keys():
-#             if 'ALL' in admin_access_dict[mig_type]:
-#                 for object_name in object_names:
-#                     inter_list = []
-#                     label_dict['Label'] = object_name
-#                     features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                     if feature_values:
-#                         for feature_name in feature_values:
-#                             # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                             #                                              Object_Type=object_name,
-#                             #                                              Feature_Name=feature_name)
-#                             # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                             inter_dict = {}
-#                             # inter_dict["Feature_Id"] = feature_id
-#                             inter_dict["Feature_Name"] = feature_name
-#                             inter_list.append(inter_dict)
-#                         label_dict['SubMenu'] = inter_list
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#             else:
-#                 for object_name in object_names:
-#                     inter_list = []
-#                     label_dict['Label'] = object_name
-#                     if object_name in admin_access_dict[mig_type]:
-#                         features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#                         feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                         if feature_values:
-#                             for feature_name in feature_values:
-#                                 # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                                 #                                              Object_Type=object_name,
-#                                 #                                              Feature_Name=feature_name)
-#                                 # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                                 inter_dict = {}
-#                                 # inter_dict["Feature_Id"] = feature_id
-#                                 inter_dict["Feature_Name"] = feature_name
-#                                 inter_list.append(inter_dict)
-#                             label_dict['SubMenu'] = inter_list
-#                             label_dict['Admin_Flag'] = 1
-#                             final_list.append(label_dict.copy())
-#                         else:
-#                             label_dict['SubMenu'] = []
-#                             label_dict['Admin_Flag'] = 1
-#                             final_list.append(label_dict.copy())
-#                     else:
-#                         if object_name in object_values_list:
-#                             perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                                    Object_Type=object_name)
-#                             feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
-#                             if 'ALL' in feature_names_list:
-#                                 features_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                                                                        Object_Type=object_name)
-#                                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                                 if feature_values:
-#                                     for feature_name in feature_values:
-#                                         # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                                         #                                              Object_Type=object_name,
-#                                         #                                              Feature_Name=feature_name)
-#                                         # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                                         inter_dict = {}
-#                                         # inter_dict["Feature_Id"] = feature_id
-#                                         inter_dict["Feature_Name"] = feature_name
-#                                         inter_list.append(inter_dict)
-#                                     label_dict['SubMenu'] = inter_list
-#                                     label_dict['Admin_Flag'] = 0
-#                                     final_list.append(label_dict.copy())
-#                                 else:
-#                                     label_dict['SubMenu'] = []
-#                                     label_dict['Admin_Flag'] = 0
-#                                     final_list.append(label_dict.copy())
-#                             else:
-#                                 for feature_i in feature_names_list:
-#                                     # features_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                                     #                                        Object_Type=object_name,
-#                                     #                                        Feature_Name=feature_i)
-#                                     # feature_id = features_data.values()[0]['Feature_Id']
-#                                     inter_dict = {}
-#                                     # inter_dict["Feature_Id"] = feature_id
-#                                     inter_dict["Feature_Name"] = feature_i
-#                                     inter_list.append(inter_dict)
-#                                 label_dict['SubMenu'] = inter_list
-#                                 label_dict['Admin_Flag'] = 0
-#                                 final_list.append(label_dict.copy())
-#         else:
-#             for object_name in object_names:
-#                 inter_list = []
-#                 label_dict['Label'] = object_name
-#                 features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                 if feature_values:
-#                     for feature_name in feature_values:
-#                         # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,Feature_Name=feature_name)
-#                         # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                         inter_dict = {}
-#                         # inter_dict["Feature_Id"] = feature_id
-#                         inter_dict["Feature_Name"] = feature_name
-#                         inter_list.append(inter_dict)
-#                     label_dict['SubMenu'] = inter_list
-#                     label_dict['Admin_Flag'] = 0
-#                     final_list.append(label_dict.copy())
-#                 else:
-#                     label_dict['SubMenu'] = []
-#                     label_dict['Admin_Flag'] = 0
-#                     final_list.append(label_dict.copy())
-#     elif 'ALL' in object_values_list:
-#         for object_name in object_names:
-#             inter_list = []
-#             label_dict['Label'] = object_name
-#             features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#             if feature_values:
-#                 for feature_name in feature_values:
-#                     # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,
-#                     #                                              Feature_Name=feature_name)
-#                     # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                     inter_dict = {}
-#                     # inter_dict["Feature_Id"] = feature_id
-#                     inter_dict["Feature_Name"] = feature_name
-#                     inter_list.append(inter_dict)
-#                 label_dict['SubMenu'] = inter_list
-#                 if len(admin_access_dict) != 0:
-#                     if mig_type in admin_access_dict.keys():
-#                         if object_name in admin_access_dict[mig_type]:
-#                             label_dict['Admin_Flag'] = 1
-#                         else:
-#                             label_dict['Admin_Flag'] = 0
-#                 else:
-#                     label_dict['Admin_Flag'] = 0
-#                 final_list.append(label_dict.copy())
-#             else:
-#                 label_dict['SubMenu'] = []
-#                 if len(admin_access_dict) != 0:
-#                     if mig_type in admin_access_dict.keys():
-#                         if object_name in admin_access_dict[mig_type]:
-#                             label_dict['Admin_Flag'] = 1
-#                         else:
-#                             label_dict['Admin_Flag'] = 0
-#                 else:
-#                     label_dict['Admin_Flag'] = 0
-#                 final_list.append(label_dict.copy())
-#     elif mig_type in admin_access_dict.keys():
-#         if 'ALL' in admin_access_dict[mig_type]:
-#             for object_name in object_names:
-#                 inter_list = []
-#                 label_dict['Label'] = object_name
-#                 features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                 if feature_values:
-#                     for feature_name in feature_values:
-#                         # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                         #                                              Object_Type=object_name,
-#                         #                                              Feature_Name=feature_name)
-#                         # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                         inter_dict = {}
-#                         # inter_dict["Feature_Id"] = feature_id
-#                         inter_dict["Feature_Name"] = feature_name
-#                         inter_list.append(inter_dict)
-#                     label_dict['SubMenu'] = inter_list
-#                     label_dict['Admin_Flag'] = 1
-#                     final_list.append(label_dict.copy())
-#                 else:
-#                     label_dict['SubMenu'] = []
-#                     label_dict['Admin_Flag'] = 1
-#                     final_list.append(label_dict.copy())
-#         else:
-#             for object_name in object_names:
-#                 inter_list = []
-#                 label_dict['Label'] = object_name
-#                 if object_name in admin_access_dict[mig_type]:
-#                     features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                     if feature_values:
-#                         for feature_name in feature_values:
-#                             # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                             #                                              Object_Type=object_name,
-#                             #                                              Feature_Name=feature_name)
-#                             # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                             inter_dict = {}
-#                             # inter_dict["Feature_Id"] = feature_id
-#                             inter_dict["Feature_Name"] = feature_name
-#                             inter_list.append(inter_dict)
-#                         label_dict['SubMenu'] = inter_list
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#                 else:
-#                     if object_name in object_values_list:
-#                         perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                                Object_Type=object_name)
-#                         feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
-#                         if 'ALL' in feature_names_list:
-#                             features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#                             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                             if feature_values:
-#                                 for feature_name in feature_values:
-#                                     # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                                     #                                              Object_Type=object_name,
-#                                     #                                              Feature_Name=feature_name)
-#                                     # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                                     inter_dict = {}
-#                                     # inter_dict["Feature_Id"] = feature_id
-#                                     inter_dict["Feature_Name"] = feature_name
-#                                     inter_list.append(inter_dict)
-#                                 label_dict['SubMenu'] = inter_list
-#                                 label_dict['Admin_Flag'] = 0
-#                                 final_list.append(label_dict.copy())
-#                             else:
-#                                 label_dict['SubMenu'] = []
-#                                 label_dict['Admin_Flag'] = 0
-#                                 final_list.append(label_dict.copy())
-#                         else:
-#                             for feature_i in feature_names_list:
-#                                 # features_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                                 #                                        Object_Type=object_name,
-#                                 #                                        Feature_Name=feature_i)
-#                                 # feature_id = features_data.values()[0]['Feature_Id']
-#                                 inter_dict = {}
-#                                 # inter_dict["Feature_Id"] = feature_id
-#                                 inter_dict["Feature_Name"] = feature_i
-#                                 inter_list.append(inter_dict)
-#                             label_dict['SubMenu'] = inter_list
-#                             label_dict['Admin_Flag'] = 0
-#                             final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 0
-#                         final_list.append(label_dict.copy())
-#     else:
-#         for object_name in object_names:
-#             inter_list = []
-#             label_dict['Label'] = object_name
-#             if object_name in object_values_list:
-#                 perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                        Object_Type=object_name)
-#                 feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
-#                 if 'ALL' in feature_names_list:
-#                     features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
-#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                     if feature_values:
-#                         for feature_name in feature_values:
-#                             # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
-#                             #                                              Object_Type=object_name,
-#                             #                                              Feature_Name=feature_name)
-#                             # feature_id = feature_values_data.values()[0]['Feature_Id']
-#                             inter_dict = {}
-#                             # inter_dict["Feature_Id"] = feature_id
-#                             inter_dict["Feature_Name"] = feature_name
-#                             inter_list.append(inter_dict)
-#                         label_dict['SubMenu'] = inter_list
-#                         label_dict['Admin_Flag'] = 0
-#                         final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 0
-#                         final_list.append(label_dict.copy())
-#                 else:
-#                     for feature_i in feature_names_list:
-#                         # features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,
-#                         #                                        Feature_Name=feature_i)
-#                         # feature_id = features_data.values()[0]['Feature_Id']
-#                         inter_dict = {}
-#                         # inter_dict["Feature_Id"] = feature_id
-#                         inter_dict["Feature_Name"] = feature_i
-#                         inter_list.append(inter_dict)
-#                     label_dict['SubMenu'] = inter_list
-#                     label_dict['Admin_Flag'] = 0
-#                     final_list.append(label_dict.copy())
-#             else:
-#                 label_dict['SubMenu'] = []
-#                 label_dict['Admin_Flag'] = 0
-#                 final_list.append(label_dict.copy())
-#     # print(final_list)
-#     for final_dict in final_list:
-#         submenu_list = final_dict['SubMenu']
-#         submenu_list_new = [i for n, i in enumerate(submenu_list) if i not in submenu_list[n + 1:]]
-#         final_dict['SubMenu'] = submenu_list_new
-#     return Response(final_list)
-
-
 @api_view(['POST'])
 def migration_user_view(request):
     email = request.data['User_Email']
     mig_type = request.data['Migration_TypeId']
-    project_version = request.data['Project_Version_Id']
 
     user = Users.objects.get(email=email)
     user_is_superuser = user.is_superuser
     admin_access = user.admin_migrations
-    if admin_access == '' or admin_access == None:
+    if admin_access == '' or admin_access == None :
         admin_access_dict = {}
     else:
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
 
-    mig_data = migrations.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type).exclude(Object_Type='')
+
+    mig_data = migrations.objects.filter(Migration_TypeId=mig_type).exclude(Object_Type='')
     object_names = [obj['Object_Type'] for obj in mig_data.values()]
 
     perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type)
@@ -4594,13 +3740,13 @@ def migration_user_view(request):
 
     label_dict = {}
     final_list = []
-    if user_is_superuser == True:
+    if user_is_superuser == True :
         if mig_type in admin_access_dict.keys():
             if 'ALL' in admin_access_dict[mig_type]:
                 for object_name in object_names:
                     inter_list = []
                     label_dict['Label'] = object_name
-                    features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                     if feature_values:
                         for feature_name in feature_values:
@@ -4624,7 +3770,7 @@ def migration_user_view(request):
                     inter_list = []
                     label_dict['Label'] = object_name
                     if object_name in admin_access_dict[mig_type]:
-                        features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                        features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                         feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                         if feature_values:
                             for feature_name in feature_values:
@@ -4649,8 +3795,7 @@ def migration_user_view(request):
                                                                    Object_Type=object_name)
                             feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
                             if 'ALL' in feature_names_list:
-                                features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type,
-                                                                       Object_Type=object_name)
+                                features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                                 if feature_values:
                                     for feature_name in feature_values:
@@ -4659,7 +3804,7 @@ def migration_user_view(request):
                                         #                                              Feature_Name=feature_name)
                                         # feature_id = feature_values_data.values()[0]['Feature_Id']
                                         inter_dict = {}
-                                        # inter_dict["Feature_Id"] = feature_id
+                                        #inter_dict["Feature_Id"] = feature_id
                                         inter_dict["Feature_Name"] = feature_name
                                         inter_list.append(inter_dict)
                                     label_dict['SubMenu'] = inter_list
@@ -4676,7 +3821,7 @@ def migration_user_view(request):
                                     #                                        Feature_Name=feature_i)
                                     # feature_id = features_data.values()[0]['Feature_Id']
                                     inter_dict = {}
-                                    # inter_dict["Feature_Id"] = feature_id
+                                    #inter_dict["Feature_Id"] = feature_id
                                     inter_dict["Feature_Name"] = feature_i
                                     inter_list.append(inter_dict)
                                 label_dict['SubMenu'] = inter_list
@@ -4686,14 +3831,14 @@ def migration_user_view(request):
             for object_name in object_names:
                 inter_list = []
                 label_dict['Label'] = object_name
-                features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                 if feature_values:
                     for feature_name in feature_values:
                         # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,Feature_Name=feature_name)
                         # feature_id = feature_values_data.values()[0]['Feature_Id']
                         inter_dict = {}
-                        # inter_dict["Feature_Id"] = feature_id
+                        #inter_dict["Feature_Id"] = feature_id
                         inter_dict["Feature_Name"] = feature_name
                         inter_list.append(inter_dict)
                     label_dict['SubMenu'] = inter_list
@@ -4703,11 +3848,11 @@ def migration_user_view(request):
                     label_dict['SubMenu'] = []
                     label_dict['Admin_Flag'] = 0
                     final_list.append(label_dict.copy())
-    elif 'ALL' in object_values_list:
+    elif 'ALL' in object_values_list :
         for object_name in object_names:
             inter_list = []
             label_dict['Label'] = object_name
-            features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+            features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
             if feature_values:
                 for feature_name in feature_values:
@@ -4715,13 +3860,13 @@ def migration_user_view(request):
                     #                                              Feature_Name=feature_name)
                     # feature_id = feature_values_data.values()[0]['Feature_Id']
                     inter_dict = {}
-                    # inter_dict["Feature_Id"] = feature_id
+                    #inter_dict["Feature_Id"] = feature_id
                     inter_dict["Feature_Name"] = feature_name
                     inter_list.append(inter_dict)
                 label_dict['SubMenu'] = inter_list
                 if len(admin_access_dict) != 0:
                     if mig_type in admin_access_dict.keys():
-                        if object_name in admin_access_dict[mig_type]:
+                        if object_name in admin_access_dict[mig_type] :
                             label_dict['Admin_Flag'] = 1
                         else:
                             label_dict['Admin_Flag'] = 0
@@ -4744,7 +3889,7 @@ def migration_user_view(request):
             for object_name in object_names:
                 inter_list = []
                 label_dict['Label'] = object_name
-                features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                 if feature_values:
                     for feature_name in feature_values:
@@ -4753,7 +3898,7 @@ def migration_user_view(request):
                         #                                              Feature_Name=feature_name)
                         # feature_id = feature_values_data.values()[0]['Feature_Id']
                         inter_dict = {}
-                        # inter_dict["Feature_Id"] = feature_id
+                        #inter_dict["Feature_Id"] = feature_id
                         inter_dict["Feature_Name"] = feature_name
                         inter_list.append(inter_dict)
                     label_dict['SubMenu'] = inter_list
@@ -4768,7 +3913,7 @@ def migration_user_view(request):
                 inter_list = []
                 label_dict['Label'] = object_name
                 if object_name in admin_access_dict[mig_type]:
-                    features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                     if feature_values:
                         for feature_name in feature_values:
@@ -4777,7 +3922,7 @@ def migration_user_view(request):
                             #                                              Feature_Name=feature_name)
                             # feature_id = feature_values_data.values()[0]['Feature_Id']
                             inter_dict = {}
-                            # inter_dict["Feature_Id"] = feature_id
+                            #inter_dict["Feature_Id"] = feature_id
                             inter_dict["Feature_Name"] = feature_name
                             inter_list.append(inter_dict)
                         label_dict['SubMenu'] = inter_list
@@ -4793,7 +3938,7 @@ def migration_user_view(request):
                                                                Object_Type=object_name)
                         feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
                         if 'ALL' in feature_names_list:
-                            features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                            features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                             if feature_values:
                                 for feature_name in feature_values:
@@ -4802,7 +3947,7 @@ def migration_user_view(request):
                                     #                                              Feature_Name=feature_name)
                                     # feature_id = feature_values_data.values()[0]['Feature_Id']
                                     inter_dict = {}
-                                    # inter_dict["Feature_Id"] = feature_id
+                                    #inter_dict["Feature_Id"] = feature_id
                                     inter_dict["Feature_Name"] = feature_name
                                     inter_list.append(inter_dict)
                                 label_dict['SubMenu'] = inter_list
@@ -4819,7 +3964,7 @@ def migration_user_view(request):
                                 #                                        Feature_Name=feature_i)
                                 # feature_id = features_data.values()[0]['Feature_Id']
                                 inter_dict = {}
-                                # inter_dict["Feature_Id"] = feature_id
+                                #inter_dict["Feature_Id"] = feature_id
                                 inter_dict["Feature_Name"] = feature_i
                                 inter_list.append(inter_dict)
                             label_dict['SubMenu'] = inter_list
@@ -4838,7 +3983,7 @@ def migration_user_view(request):
                                                        Object_Type=object_name)
                 feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
                 if 'ALL' in feature_names_list:
-                    features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name)
                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                     if feature_values:
                         for feature_name in feature_values:
@@ -4847,7 +3992,7 @@ def migration_user_view(request):
                             #                                              Feature_Name=feature_name)
                             # feature_id = feature_values_data.values()[0]['Feature_Id']
                             inter_dict = {}
-                            # inter_dict["Feature_Id"] = feature_id
+                            #inter_dict["Feature_Id"] = feature_id
                             inter_dict["Feature_Name"] = feature_name
                             inter_list.append(inter_dict)
                         label_dict['SubMenu'] = inter_list
@@ -4863,7 +4008,7 @@ def migration_user_view(request):
                         #                                        Feature_Name=feature_i)
                         # feature_id = features_data.values()[0]['Feature_Id']
                         inter_dict = {}
-                        # inter_dict["Feature_Id"] = feature_id
+                        #inter_dict["Feature_Id"] = feature_id
                         inter_dict["Feature_Name"] = feature_i
                         inter_list.append(inter_dict)
                     label_dict['SubMenu'] = inter_list
@@ -4873,12 +4018,13 @@ def migration_user_view(request):
                 label_dict['SubMenu'] = []
                 label_dict['Admin_Flag'] = 0
                 final_list.append(label_dict.copy())
-    # print(final_list)
+    #print(final_list)
     for final_dict in final_list:
         submenu_list = final_dict['SubMenu']
         submenu_list_new = [i for n, i in enumerate(submenu_list) if i not in submenu_list[n + 1:]]
         final_dict['SubMenu'] = submenu_list_new
     return Response(final_list)
+
 
 
 # @api_view(['PUT'])
@@ -4934,63 +4080,52 @@ def approvalsupdate(request, id):
     serializer = ApprovalSerializer(instance=feature, data=request.data)
 
     if appr_status == 'Approved':
-        if obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'View':
-            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
+        if obj_type != 'ALL' and feature_name =='ALL' and  access_type == 'View':
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
                                                 Access_Type='View').exclude(Feature_Name='ALL')
             if app_data:
                 app_data.delete()
-        elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'Edit':
-            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Object_Type=obj_type,
+        elif obj_type != 'ALL' and feature_name =='ALL' and  access_type == 'Edit':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
                                                      Access_Type='View')
             if app_data_view:
                 app_data_view.delete()
-            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Object_Type=obj_type,
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
                                                      Access_Type='Edit').exclude(Feature_Name='ALL')
             if app_data_edit:
                 app_data_edit.delete()
-        elif obj_type != 'ALL' and feature_name == 'ALL' and access_type == 'ALL':
-            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Object_Type=obj_type,
+        elif obj_type != 'ALL' and feature_name =='ALL' and  access_type == 'ALL':
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
                                                      Access_Type='View')
             if app_data_view:
                 app_data_view.delete()
-            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Object_Type=obj_type,
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
                                                      Access_Type='Edit')
             if app_data_edit:
                 app_data_edit.delete()
-            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                    Object_Type=obj_type,
+            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Object_Type = obj_type,
                                                     Access_Type='ALL').exclude(Feature_Name='ALL')
             if app_data_all:
                 app_data_all.delete()
         elif obj_type == 'ALL' and access_type == 'View':
-            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                Access_Type='View').exclude(Object_Type='ALL', Feature_Name='ALL')
+            app_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Access_Type='View').exclude(Object_Type = 'ALL',Feature_Name = 'ALL')
             if app_data:
                 app_data.delete()
         elif obj_type == 'ALL' and access_type == 'Edit':
-            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Access_Type='View')
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Access_Type='View')
             if app_data_view:
                 app_data_view.delete()
-            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Access_Type='Edit').exclude(Object_Type='ALL', Feature_Name='ALL')
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Access_Type='Edit').exclude(Object_Type = 'ALL',Feature_Name = 'ALL')
             if app_data_edit:
                 app_data_edit.delete()
         elif obj_type == 'ALL' and access_type == 'ALL':
-            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Access_Type='View')
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Access_Type='View')
             if app_data_view:
                 app_data_view.delete()
-            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Access_Type='Edit')
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Access_Type='Edit')
             if app_data_edit:
                 app_data_edit.delete()
-            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                    Access_Type='ALL').exclude(Object_Type='ALL', Feature_Name='ALL')
+            app_data_all = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,Access_Type='ALL').exclude(Object_Type = 'ALL',Feature_Name = 'ALL')
             if app_data_all:
                 app_data_all.delete()
         elif access_type == 'Edit':
@@ -4999,11 +4134,9 @@ def approvalsupdate(request, id):
             if app_data:
                 app_data.delete()
         elif access_type == 'ALL':
-            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Object_Type=obj_type,
+            app_data_view = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
                                                      Feature_Name=feature_name, Access_Type='View')
-            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                     Object_Type=obj_type,
+            app_data_edit = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
                                                      Feature_Name=feature_name, Access_Type='Edit')
             if app_data_view:
                 app_data_view.delete()
@@ -5078,10 +4211,10 @@ def approvalsupdate(request, id):
 #         return Response("Admin Access created the Migration")
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET','POST'])
 def admin_permissions(request):
     email = request.data['email']
-    migtype = request.data['mig_type']
+    migtype =request.data['mig_type']
     object_type = request.data['Object_Type']
     user = Users.objects.get(email=email)
     admin_access = user.admin_migrations
@@ -5154,7 +4287,7 @@ def remove_admin_permission(request):
     object_type = request.data['Object_type']
     user = Users.objects.get(email=User_Email)
     admin_access = user.admin_migrations
-    if admin_access == '' or admin_access == None:
+    if admin_access == '' or admin_access==None:
         user.admin_migrations = ''
         user.save()
         return Response("No Permissions")
@@ -5192,7 +4325,6 @@ def remove_admin_permission(request):
                             a.save()
         return Response("Admin access removed")
 
-
 # @api_view(['GET','POST'])
 # def admin_rm_migration_list(request):
 #     final_list = []
@@ -5227,7 +4359,7 @@ def remove_admin_permission(request):
 #     return Response(final_list)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET','POST'])
 def admin_rm_migration_list(request):
     final_list = []
     inter_dict = {}
@@ -5245,7 +4377,7 @@ def admin_rm_migration_list(request):
     return Response(final_list)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET','POST'])
 def admin_rm_object_list(request):
     final_list = []
     inter_dict = {}
@@ -5290,18 +4422,17 @@ def permissionsupdate(request, User_Email):
 #     return Response(serializer.data)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET','POST'])
 def permissionslist(request):
-    if len(request.data) > 2:
+    if len(request.data)>2:
         Object_Type = request.data['Object_Type']
         User_Email = request.data['User_Email']
         Migration_TypeId = request.data['Migration_TypeId']
-        if Object_Type == '' or Object_Type == None:
+        if Object_Type == '' or Object_Type==None:
             features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
         else:
-            features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId,
-                                                  Object_Type=Object_Type)
-    elif len(request.data) > 1:
+            features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+    elif len(request.data)>1:
         User_Email = request.data['User_Email']
         Migration_TypeId = request.data['Migration_TypeId']
         features = Permissions.objects.filter(User_Email=User_Email, Migration_TypeId=Migration_TypeId)
@@ -5310,8 +4441,7 @@ def permissionslist(request):
         features = Permissions.objects.filter(Migration_TypeId=Migration_TypeId)
     serializer = PermissionSerializer(features, many=True)
     return Response(serializer.data)
-
-
+    
 # @api_view(['GET'])
 # def admin_users_list(request):
 #     users = Users.objects.all()
@@ -5329,11 +4459,11 @@ def permissionslist(request):
 @api_view(['GET'])
 def admin_users_list(request):
     users = Users.objects.all()
-    final_list = []
+    final_list =[]
     inter_dict = {}
     for user_i in users.values():
         admin_mig_value = user_i['admin_migrations']
-        if admin_mig_value == '' or admin_mig_value == None:  # and user_i['is_superuser'] == False
+        if admin_mig_value == '' or admin_mig_value == None: #and user_i['is_superuser'] == False
             continue
         else:
             inter_dict['Email'] = user_i['email']
@@ -5346,14 +4476,13 @@ def admin_users_list(request):
                 final_list.append(inter_dict.copy())
     return Response(final_list)
 
-
 @api_view(['GET'])
 def super_users_list(request):
     users = Users.objects.all()
-    superuser_list = []
+    superuser_list =[]
     superuser_dict = {}
     for user_i in users.values():
-        # admin_mig_value = user_i['admin_migrations']
+        #admin_mig_value = user_i['admin_migrations']
         if user_i['is_superuser'] == True:
             superuser_dict['User_Name'] = user_i['username']
             superuser_dict['Email'] = user_i['email']
@@ -5553,18 +4682,16 @@ def grant_access_approve(request):
             if app_data_edit:
                 app_data_edit.delete()
 
-    appr_data = Approvals.objects.filter(User_Email=user_Email, Migration_TypeId=mig_type, Object_Type=obj_type,
-                                         Feature_Name=feature_name,
-                                         Access_Type=access_type)
+    appr_data = Approvals.objects.filter(User_Email=user_Email,Migration_TypeId = mig_type,Object_Type=obj_type, Feature_Name=feature_name,
+                                Access_Type=access_type)
     if appr_data:
         data_appr_status = appr_data.values()[0]['Approval_Status']
         if data_appr_status == 'Approved':
-            serializer = ApprovalSerializer(appr_data, many=True)
+            serializer = ApprovalSerializer(appr_data,many=True)
             return Response(serializer.data[0])
         elif data_appr_status == 'Pending':
-            approval_record = Approvals.objects.get(User_Email=user_Email, Migration_TypeId=mig_type,
-                                                    Object_Type=obj_type, Feature_Name=feature_name,
-                                                    Access_Type=access_type)
+            approval_record = Approvals.objects.get(User_Email=user_Email,Migration_TypeId = mig_type, Object_Type=obj_type, Feature_Name=feature_name,
+                                Access_Type=access_type)
             serializer = ApprovalSerializer(instance=approval_record, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -5578,6 +4705,7 @@ def grant_access_approve(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 @api_view(['POST'])
 def createsuperadmin(request):
     email = request.data['email']
@@ -5587,7 +4715,6 @@ def createsuperadmin(request):
     features.save()
     return Response('super admin created successfully')
 
-
 @api_view(['POST'])
 def removesuperadmin(request):
     email = request.data['email']
@@ -5596,7 +4723,6 @@ def removesuperadmin(request):
     features.save()
     return Response('super admin removed successfully')
 
-
 # @api_view(['GET'])
 # def superadminlist(request):
 #     features = Users.objects.filter(is_superuser=True)
@@ -5604,45 +4730,9 @@ def removesuperadmin(request):
 #     return Response(serializer.data)
 
 
-# @api_view(['GET', 'POST'])
-# def migrationlistperuser(request):
-#     email = request.data['email']
-#     temp = Users.objects.filter(email=email)
-#     temp = list(temp.values())[0]
-#     temp = temp['admin_migrations']
-#     if temp:
-#         # print("entering")
-#         temp = temp.split(',')
-#         res = [ele for ele in temp if ele.strip()]
-#     else:
-#         print("not entering")
-#         res = []
-#     migrations_list = migrations.objects.values('Migration_TypeId')
-#     migrations_list = list(migrations_list.values('Migration_TypeId'))
-#     migrations_final_list = []
-#     for i in migrations_list:
-#         migrations_final_list.append(i['Migration_TypeId'])
-#     migrations_final_list = list(set(migrations_final_list))
-#     final_res = []
-#     for i in migrations_final_list:
-#         dict1 = {}
-#         features = migrations.objects.filter(Migration_TypeId=i).distinct().order_by('Migration_TypeId')
-#         features = list(features.values())[0]
-#         ADMIN = 0
-#         if i in res:
-#             ADMIN = 1
-#         code = features['Code']
-#         dict1["title"] = i
-#         dict1["code"] = code
-#         dict1["admin"] = ADMIN
-#         final_res.append(dict1)
-#     return Response(final_res)
-
-
 @api_view(['GET','POST'])
 def migrationlistperuser(request):
     email = request.data['email']
-    Project_Version_Id = request.data['Project_Version_Id']
     temp = Users.objects.filter(email=email)
     temp = list(temp.values())[0]
     temp = temp['admin_migrations']
@@ -5662,17 +4752,16 @@ def migrationlistperuser(request):
     final_res = []
     for i in migrations_final_list:
         dict1= {}
-        features = migrations.objects.filter(Migration_TypeId = i, Project_Version_Id=Project_Version_Id).distinct().order_by('Migration_TypeId')
-        if features:
-            features = list(features.values())[0]
-            ADMIN = 0
-            if i in res:
-                ADMIN = 1
-            code = features['Code']
-            dict1["title"] = i
-            dict1["code"] = code
-            dict1["admin"] = ADMIN
-            final_res.append(dict1)
+        features = migrations.objects.filter(Migration_TypeId = i).distinct().order_by('Migration_TypeId')
+        features = list(features.values())[0]
+        ADMIN = 0
+        if i in res:
+            ADMIN = 1
+        code = features['Code']
+        dict1["title"] = i
+        dict1["code"] = code
+        dict1["admin"] = ADMIN
+        final_res.append(dict1)
     return Response(final_res)
 
 @api_view(['GET'])
@@ -5684,7 +4773,6 @@ def pdf_download(request):
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
-
 
 @api_view(['GET'])
 def template_download(request):
@@ -5735,11 +4823,9 @@ def feature_approval_list(request):
 
     today = date.today()
     week_ago = today - timedelta(days=7)
-    final_list = []
-    feature_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=migration_type,
-                                          Object_Type=object_type,
-                                          Feature_version_approval_status__in=(
-                                              'Approved', 'Awaiting Approval', 'Denied'))
+    final_list=[]
+    feature_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId = migration_type,Object_Type = object_type,
+                                                    Feature_version_approval_status__in = ('Approved','Awaiting Approval','Denied'))
     for dict in feature_data.values():
         Request_Create_Date = dict['Feature_Approval_Date']
         if Request_Create_Date > week_ago:
@@ -5748,71 +4834,6 @@ def feature_approval_list(request):
     return Response(serializer.data)
 
 
-# @api_view(['POST'])
-# def approval_featurecreate(request):
-#     migration_type = request.data['Migration_TypeId']
-#     object_type = request.data['Object_Type']
-#     feature_name = request.data['Feature_Name']
-#     project_version = request.data['Project_Version_Id']
-#
-#     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-#                                           Feature_Name=feature_name, Project_Version_Id=project_version,
-#                                           Feature_version_approval_status='Approved')
-#     version_list = []
-#     if feature_data:
-#         for dict in feature_data.values():
-#             version_list.append(dict['Feature_Version_Id'])
-#         max_version = max(version_list)
-#         serializer = FeatureSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save(Feature_Version_Id=max_version + 1)
-#             if len(version_list) >= 3:
-#                 min_version = min(version_list)
-#                 min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
-#                                               Feature_Name=feature_name, Project_Version_Id=project_version,Feature_Version_Id = min_version)
-#                 min_feature.delete()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#     else:
-#         return Response("New versions won't be created until it has a previous version approved")
-
-
-# @api_view(['POST'])
-# def approval_featurecreate(request):
-#     migration_type = request.data['Migration_TypeId']
-#     object_type = request.data['Object_Type']
-#     feature_name = request.data['Feature_Name']
-#     project_version = request.data['Project_Version_Id']
-#
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#
-#     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
-#                                           Feature_Name=feature_name, Project_Version_Id=project_version,
-#                                           Feature_version_approval_status='Approved')
-#     version_list = []
-#     if feature_data:
-#         for dict in feature_data.values():
-#             version_list.append(dict['Feature_Version_Id'])
-#         max_version = max(version_list)
-#         serializer = FeatureSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save(Feature_Version_Id=max_version + 1)
-#             if len(version_list) >= 3:
-#                 min_version = min(version_list)
-#                 min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
-#                                                   Feature_Name=feature_name, Project_Version_Id=project_version,
-#                                                   Feature_Version_Id=min_version)
-#                 feature_id = min_feature.Feature_Id
-#                 min_feature.delete()
-#                 attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
-#                 attachments_data.delete()
-#                 folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(
-#                     project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(min_version)
-#                 shutil.rmtree(folder_path)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#     else:
-#         return Response("New versions won't be created until it has a previous version approved")
 
 @api_view(['POST'])
 def approval_featurecreate(request):
@@ -5820,11 +4841,6 @@ def approval_featurecreate(request):
     object_type = request.data['Object_Type']
     feature_name = request.data['Feature_Name']
     project_version = request.data['Project_Version_Id']
-
-    migration_data = migrations.objects.filter(Project_Version_Id = project_version,Migration_TypeId = migration_type,Object_Type = '')
-    feature_version_limit = migration_data.values()[0]['Feature_Version_Limit']
-    n = int(feature_version_limit)
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
                                           Feature_Name=feature_name, Project_Version_Id=project_version,
@@ -5837,189 +4853,12 @@ def approval_featurecreate(request):
         serializer = FeatureSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(Feature_Version_Id=max_version + 1)
-            version_list.append(int(max_version + 1))
-            if len(version_list) >= int(feature_version_limit):
-                version_list_del = version_list[:-n or None]
-                for version in version_list_del:
-                    min_version = version
-                    min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
-                                                      Feature_Name=feature_name, Project_Version_Id=project_version,
-                                                      Feature_Version_Id=min_version)
-                    feature_id = min_feature.Feature_Id
-                    min_feature.delete()
-                    attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
-                    attachments_data.delete()
-                    folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(
-                        project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(min_version)
-                    shutil.rmtree(folder_path)
+            if len(version_list) >= 3:
+                min_version = min(version_list)
+                min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
+                                              Feature_Name=feature_name, Project_Version_Id=project_version,Feature_Version_Id = min_version)
+                min_feature.delete()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response("New versions won't be created until it has a previous version approved")
-
-
-
-
-# @api_view(['GET'])
-# def project_versions_list(request):
-#     project_versions = migrations.objects.values('Project_Version_Id').distinct()
-#     final_list = []
-#     version_list = []
-#     for dict in project_versions:
-#         version_list.append(dict['Project_Version_Id'])
-#     inter_dict = {}
-#     for i in version_list:
-#         inter_dict['title'] = 'V' + str(i)
-#         inter_dict['code'] = int(i)
-#         final_list.append(inter_dict.copy())
-#     return Response(final_list)
-@api_view(['GET'])
-def project_versions_list(request):
-    project_versions = migrations.objects.values('Project_Version_Id').distinct()
-    final_list = []
-    version_list = []
-    if project_versions:
-        for dict in project_versions:
-            version_list.append(dict['Project_Version_Id'])
-        inter_dict = {}
-        for i in version_list:
-            inter_dict['title'] = 'V' + str(i)
-            inter_dict['code'] = int(i)
-            final_list.append(inter_dict.copy())
-    else:
-        inter_dict = {}
-        inter_dict['title'] = 'V1'
-        inter_dict['code'] = 1
-        final_list.append(inter_dict.copy())
-    return Response(final_list)
-
-
-@api_view(['POST'])
-def create_project_version(request):
-    prev_project_version = request.data['Project_Version_Id']
-    print("prev_project_version===",prev_project_version)
-    current_project_version = int(prev_project_version) + 1
-    print("current_project_version===",current_project_version)
-
-    migration_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version).values(
-        'Migration_TypeId').distinct()
-    migration_types_old_list = [dict['Migration_TypeId'] for dict in migration_types_old]
-    print("migration_types_old_list====",migration_types_old_list)
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    for migration in migration_types_old_list:
-        object_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version,
-                                                     Migration_TypeId=migration).values('Object_Type').distinct()
-        object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-        print(migration,"======",object_types_old_list)
-
-        migration_path = path + '/media/' + migration + '/' + 'Project_V' + str(current_project_version)
-        if not os.path.exists(migration_path):
-            os.makedirs(migration_path)
-
-        project_version_limit = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values()[0][
-            'Project_Version_limit']
-        print("project_version_limit====",project_version_limit)
-        n = int(project_version_limit)
-
-        project_versions_list = []
-        mig_copy_data = migrations.objects.filter(Migration_TypeId=migration)
-        project_versions = mig_copy_data.values('Project_Version_Id')
-        for i in project_versions:
-            project_versions_list.append(int(i['Project_Version_Id']))
-        project_versions_list = list(set(project_versions_list))
-        max_version = max(project_versions_list)
-        project_versions_list.append(int(max_version + 1))
-
-        for dict in mig_copy_data.values():
-            migrations.objects.create(Project_Version_Id=current_project_version,
-                                      Migration_TypeId=dict['Migration_TypeId'],
-                                      Object_Type=dict['Object_Type'], Code=dict['Code'],
-                                      Project_Version_limit=dict['Project_Version_limit'],
-                                      Feature_Version_Limit=dict['Feature_Version_Limit'])
-        if max_version >= int(project_version_limit):
-            project_versions_list_del = project_versions_list[:-n or None]
-            for version in project_versions_list_del:
-                mig_del_data = migrations.objects.filter(Project_Version_Id=int(version))
-                mig_del_data.delete()
-
-                feature_del_data = Feature.objects.filter(Project_Version_Id=int(version))
-                feature_del_data.delete()
-
-                attachments_del_data = Attachments.objects.filter(Project_Version_Id=int(version))
-                attachments_del_data.delete()
-
-        for object_i in object_types_old_list:
-            feature_names_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
-                                                       Migration_TypeId=migration, Object_Type=object_i).values(
-                'Feature_Name').distinct()
-            feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
-            for feature in feature_names_old_list:
-                feature_versions_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
-                                                              Migration_TypeId=migration,
-                                                              Object_Type=object_i, Feature_Name=feature).values(
-                    'Feature_Version_Id').distinct()
-                feature_versions_old_list = [dict['Feature_Version_Id'] for dict in feature_versions_old if
-                                             dict['Feature_Version_Id'] != '']
-                if feature_versions_old_list:
-                    latest_version = max(feature_versions_old_list)
-                    feature_data2 = Feature.objects.filter(Project_Version_Id=prev_project_version,
-                                                           Migration_TypeId=migration, Object_Type=object_i,
-                                                           Feature_Name=feature,
-                                                           Feature_Version_Id=latest_version).last()
-                    attachment_feature_id_progress_old = feature_data2.Feature_Id
-
-                    feature_data2.Feature_Id = None
-                    feature_data2.Project_Version_Id = current_project_version
-                    feature_data2.Feature_Version_Id = 1
-                    feature_data2.Feature_Approval_Date = None
-                    feature_data2.save()
-
-                    latest_version_source = path + '/media/' + migration + '/' + 'Project_V' + str(
-                        prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
-                        latest_version) + '/'
-                    if not os.path.exists(latest_version_source):
-                        os.makedirs(latest_version_source)
-                    latest_version_target = path + '/media/' + migration + '/' + 'Project_V' + str(
-                        current_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V1'  # + str(latest_version) + '/'
-                    if not os.path.exists(latest_version_target):
-                        os.makedirs(latest_version_target)
-                    print(latest_version_source,"=======",latest_version_target)
-                    shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
-
-                    feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
-                                                                   Migration_TypeId=migration, Object_Type=object_i,
-                                                                   Feature_Name=feature,
-                                                                   Feature_Version_Id=1)
-                    attachment_feature_id_progress_new = feature_data_progress[0].Feature_Id
-
-                    attachment_data_progress = Attachments.objects.filter(
-                        Feature_Id_id=attachment_feature_id_progress_old)
-                    for dict in attachment_data_progress.values():
-                        att_type = dict['AttachmentType']
-                        filename = dict['filename']
-                        feature_version_id = 1
-                        attachment = dict['Attachment']
-                        attachment = attachment.replace('Project_V1', 'Project_V2')
-                        att_object2 = Attachments(Project_Version_Id=current_project_version,
-                                                  Feature_Version_Id=feature_version_id,
-                                                  AttachmentType=att_type, filename=filename,
-                                                  Attachment=attachment,
-                                                  Feature_Id_id=attachment_feature_id_progress_new)
-                        att_object2.save()
-
-                    if len(feature_versions_old_list) > 1:
-                        version_del = max(feature_versions_old_list)
-                        del_feature = Feature.objects.get(Migration_TypeId=migration, Object_Type=object_i,
-                                                          Feature_Name=feature, Project_Version_Id=prev_project_version,
-                                                          Feature_Version_Id=version_del)
-                        feature_id = del_feature.Feature_Id
-                        del_feature.delete()
-                        attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
-                        attachments_data.delete()
-                        folder_path = path + '/media/' + migration + '/' + 'Project_V' + str(
-                            prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
-                            version_del)
-                        shutil.rmtree(folder_path)
-                # else:
-                #     print("No versions available for feature")
-    return Response("New Project Version Created Successfully")
