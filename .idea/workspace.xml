@@ -2,27 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4a8199b4-f08c-4652-8237-bf56aa2a3001" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/Features.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/FeatureApp/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/serializers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FeatureApp/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FeatureApp/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Modules/SQLServer - Postgres/Project_V1/PROCEDURE/nvl/Feature_V2/nvl.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/Oracle - Postgres/Project_V1/PROCEDURE/xml/Feature_V1/Sourcedescription/nvl_source.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/Oracle - Postgres/Project_V1/PROCEDURE/xml/Feature_V2/Targetdescription/nvl_source.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/SQLServer - Postgres/Project_V1/PROCEDURE/exception/Feature_V1/Sourcedescription/Next_week.docx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/SQLServer - Postgres/Project_V1/PROCEDURE/exception/Feature_V1/Sourcedescription/RequestFeatureData.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/SQLServer - Postgres/Project_V1/PROCEDURE/exception/Feature_V1/Targetdescription/RequestFeatureData.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/SQLServer - Postgres/Project_V1/PROCEDURE/extract/Feature_V2/Sourcedescription/Instructions.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/SQLServer - Postgres/Project_V1/PROCEDURE/extract/Feature_V3/Sourcedescription/Instructions.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/SQLServer - Postgres/Project_V1/PROCEDURE/nvl/Feature_V2/Actualtargetcode/nvl_source.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/media/SQLServer - Postgres/Project_V1/PROCEDURE/nvl/Feature_V2/Sourcecode/nvl_source.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/db.sqlite3" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

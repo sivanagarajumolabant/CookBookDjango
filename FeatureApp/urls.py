@@ -77,4 +77,12 @@ urlpatterns = [
                   path('featureapprovalcreate/', views.approval_featurecreate),
                   path('project_versions_list/', views.project_versions_list, name='project_versions_list'),
                   path('create_project_version/', views.create_project_version, name='create_project_version'),
+                  path('createuseradmin/', create_user_admin),
+                  path('user_admin_permissions/', user_admin_permissions),
+                  path('useradminlist/', useradminlist),
+                  path('removeuseradmin/', removeuseradmin),
+                  path('userwaiting_list/', user_waiting_list),
+                  path('userslist_useradmin/', userslist_useradminpage),
+                  path('migtypes_useradmin/', migrationlist_useradmin)
+
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -633,7 +633,8 @@ def featuredetail(request, feature_name):
 
     final_list = []
     version_list = []
-    features = Feature.objects.filter(Migration_TypeId = mig_type,Object_Type = obj_type, Feature_Name=feature_name, Project_Version_Id=Project_Version_Id)
+    features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name,
+                                      Project_Version_Id=Project_Version_Id)
     for dict in features.values():
         version_list.append(dict['Feature_Version_Id'])
     max_version = max(version_list)
@@ -651,7 +652,6 @@ def featuredetail(request, feature_name):
             if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
                 EDIT = 1
             else:
-
 
                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
                 if perm_data3:
@@ -682,7 +682,6 @@ def featuredetail(request, feature_name):
                 latest_flag = 1
         else:
 
-
             perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
             if perm_data3:
                 data3_access = perm_data3.values()[0]['Access_Type']
@@ -708,8 +707,8 @@ def featuredetail(request, feature_name):
         elif feature_version_id == max_version and f_approval == 'Approved':
             latest_flag = 0
             max_flag = 1
-        elif feature_version_id == max_version :
-            if f_approval == 'In Progress' or f_approval=='Awaiting Approval':
+        elif feature_version_id == max_version:
+            if f_approval == 'In Progress' or f_approval == 'Awaiting Approval':
                 latest_flag = 1
                 max_flag = 1
         else:
@@ -1609,7 +1608,7 @@ def featuredetail(request, feature_name):
 #     return Response(response)
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def feature_catalog_access_check(request):
     user_email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
@@ -1709,7 +1708,8 @@ def feature_catalog_access_check(request):
                 flag = 1
         response = {'serializer': 'No Data', 'flag': flag, 'view_flag': 'No Data'}
     else:
-        features = Feature.objects.filter(Migration_TypeId=mig_type, Project_Version_Id=Project_Version_Id, Object_Type=obj_type, Feature_Name=feature_name)
+        features = Feature.objects.filter(Migration_TypeId=mig_type, Project_Version_Id=Project_Version_Id,
+                                          Object_Type=obj_type, Feature_Name=feature_name)
         version_list = []
         for dict in features.values():
             version_list.append(dict['Feature_Version_Id'])
@@ -2075,6 +2075,7 @@ def predessors(request):
         final_dict['Feature_Name'] = feature
         final_list.append(final_dict.copy())
     return Response(final_list, status=status.HTTP_200_OK)
+
 
 # @api_view(['POST'])
 # def download_attachment(request):
@@ -2500,8 +2501,10 @@ class RegisterView(generics.GenericAPIView):
         plain_message = strip_tags(html_message)
         from_email = EMAIL_HOST_USER
         to = user.email
-        mail.send_mail(subject, plain_message, from_email,
-                       [to], html_message=html_message)
+
+        # mail.send_mail(subject, plain_message, from_email,
+        #                [to], html_message=html_message)
+
         # Util.send_email(data)
         return Response(user_data, status=status.HTTP_201_CREATED)
 
@@ -2782,7 +2785,8 @@ def create_tablepage_featuresdata(request):
             version_list.append(dict1['Feature_Version_Id'])
         max_version = max(version_list)
         data = Feature.objects.filter(
-            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,Feature_Name=feature,Feature_Version_Id = max_version, Project_Version_Id=Project_Version_Id)
+            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
+            Feature_Version_Id=max_version, Project_Version_Id=Project_Version_Id)
         serializer = FeatureSerializer(data, many=True)
         final_list.append(serializer.data)
     final_output_list = []
@@ -2959,40 +2963,46 @@ def get_Featurenames(request):
                 print(serializer.data)
                 final_list.append(serializer.data)
     elif Feature_Name == 'ALL':
-        features = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+        features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Migration_TypeId=Migration_TypeId,
+                                          Object_Type=Object_Type)
         feature_names = features.values('Feature_Name').distinct()
         features = []
         for dict in feature_names:
             features.append(dict['Feature_Name'])
         for feature in features:
-            feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
+            feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
+                                                      Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
                                                       Feature_Name=feature)
             version_list = []
             for dict1 in feature_versions.values():
                 version_list.append(dict1['Feature_Version_Id'])
             max_version = max(version_list)
             data = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
-                Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
-                Feature_Version_Id=max_version)
+                                          Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
+                                          Feature_Name=feature,
+                                          Feature_Version_Id=max_version)
             if data:
                 serializer = migrationlevelfeatures(data, many=True)
                 final_list.append(serializer.data)
     else:
-        features = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type)
+        features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Migration_TypeId=Migration_TypeId,
+                                          Object_Type=Object_Type)
         feature_names = features.values('Feature_Name').distinct()
         features = []
         for dict in feature_names:
             features.append(dict['Feature_Name'])
         for feature in features:
-            feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
+            feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
+                                                      Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
                                                       Feature_Name=feature)
             version_list = []
             for dict1 in feature_versions.values():
                 version_list.append(dict1['Feature_Version_Id'])
             max_version = max(version_list)
             data = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
-                Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
-                Feature_Version_Id=max_version)
+                                          Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
+                                          Feature_Name=feature,
+                                          Feature_Version_Id=max_version)
             if data:
                 serializer = migrationlevelfeatures(data, many=True)
                 final_list.append(serializer.data)
@@ -3000,6 +3010,7 @@ def get_Featurenames(request):
     for final_dict in final_list:
         final_output_list.append(final_dict[0])
     return Response(final_output_list, status=status.HTTP_200_OK)
+
 
 # @api_view(['POST'])
 # def migrationsscreate(request):
@@ -3052,25 +3063,30 @@ def migrationsscreate(request):
     project_version_limit = request.data['Project_Version_limit']
     feature_version_limit = request.data['Feature_Version_Limit']
     serializer = migrationcreateserializer(data=request.data)
-    check_obj_type = migrations.objects.filter(Project_Version_Id=project_id, Migration_TypeId = migration_type,
-                                               Object_Type = Object_Type.upper())
+    check_obj_type = migrations.objects.filter(Project_Version_Id=project_id, Migration_TypeId=migration_type,
+                                               Object_Type=Object_Type.upper())
     if not check_obj_type:
         if Object_Type == '':
             if project_version_limit == '' and feature_version_limit == '':
                 if serializer.is_valid():
-                    serializer.save(Code=migration_type.replace(' ', '_'),Object_Type = Object_Type.upper(),Project_Version_limit = 3,Feature_Version_Limit = 3)
+                    serializer.save(Code=migration_type.replace(' ', '_'), Object_Type=Object_Type.upper(),
+                                    Project_Version_limit=3, Feature_Version_Limit=3)
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 if serializer.is_valid():
-                    serializer.save(Code=migration_type.replace(' ', '_'),Object_Type=Object_Type.upper(),Project_Version_limit = project_version_limit,Feature_Version_Limit = feature_version_limit)
+                    serializer.save(Code=migration_type.replace(' ', '_'), Object_Type=Object_Type.upper(),
+                                    Project_Version_limit=project_version_limit,
+                                    Feature_Version_Limit=feature_version_limit)
                     return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
             if serializer.is_valid():
-                serializer.save(Code=migration_type.replace(' ', '_'),Object_Type = Object_Type.upper(),Project_Version_limit = '',Feature_Version_Limit = '')
+                serializer.save(Code=migration_type.replace(' ', '_'), Object_Type=Object_Type.upper(),
+                                Project_Version_limit='', Feature_Version_Limit='')
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
         return Response('Object Type Already Existed')
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # @api_view(['GET'])
 # def migrationviewlist(request):
@@ -3078,10 +3094,11 @@ def migrationsscreate(request):
 #     serializer = migrationviewserializer(features, many=True)
 #     return Response(serializer.data)
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def migrationviewlist(request):
     Project_Version_Id = request.data['Project_Version_Id']
-    features = migrations.objects.filter(Project_Version_Id=Project_Version_Id).values('Migration_TypeId', 'Code').distinct()
+    features = migrations.objects.filter(Project_Version_Id=Project_Version_Id).values('Migration_TypeId',
+                                                                                       'Code').distinct()
     serializer = migrationviewserializer(features, many=True)
     return Response(serializer.data)
 
@@ -3115,7 +3132,8 @@ def migrationviewlist(request):
 def objectviewtlist(request):
     Migration_TypeId = request.data['Migration_TypeId']
     Project_Version_Id = request.data['Project_Version_Id']
-    features = migrations.objects.filter(Migration_TypeId=Migration_TypeId, Project_Version_Id=Project_Version_Id).exclude(Object_Type="")
+    features = migrations.objects.filter(Migration_TypeId=Migration_TypeId,
+                                         Project_Version_Id=Project_Version_Id).exclude(Object_Type="")
     # a = features.values()
     # new = []
     # for i in a:
@@ -3125,6 +3143,7 @@ def objectviewtlist(request):
     #     query.save()
     serializer = objectviewserializer(features, many=True)
     return Response(serializer.data)
+
 
 # @api_view(['POST'])
 # def approvalscreate(request):
@@ -4586,7 +4605,8 @@ def migration_user_view(request):
         admin_access = admin_access.replace("\'", "\"")
         admin_access_dict = json.loads(admin_access)
 
-    mig_data = migrations.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type).exclude(Object_Type='')
+    mig_data = migrations.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type).exclude(
+        Object_Type='')
     object_names = [obj['Object_Type'] for obj in mig_data.values()]
 
     perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type)
@@ -4600,7 +4620,8 @@ def migration_user_view(request):
                 for object_name in object_names:
                     inter_list = []
                     label_dict['Label'] = object_name
-                    features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                           Migration_TypeId=mig_type, Object_Type=object_name)
                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                     if feature_values:
                         for feature_name in feature_values:
@@ -4624,7 +4645,8 @@ def migration_user_view(request):
                     inter_list = []
                     label_dict['Label'] = object_name
                     if object_name in admin_access_dict[mig_type]:
-                        features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                        features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                               Migration_TypeId=mig_type, Object_Type=object_name)
                         feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                         if feature_values:
                             for feature_name in feature_values:
@@ -4649,7 +4671,8 @@ def migration_user_view(request):
                                                                    Object_Type=object_name)
                             feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
                             if 'ALL' in feature_names_list:
-                                features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type,
+                                features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                                       Migration_TypeId=mig_type,
                                                                        Object_Type=object_name)
                                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                                 if feature_values:
@@ -4686,7 +4709,8 @@ def migration_user_view(request):
             for object_name in object_names:
                 inter_list = []
                 label_dict['Label'] = object_name
-                features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
+                                                       Object_Type=object_name)
                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                 if feature_values:
                     for feature_name in feature_values:
@@ -4707,7 +4731,8 @@ def migration_user_view(request):
         for object_name in object_names:
             inter_list = []
             label_dict['Label'] = object_name
-            features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+            features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
+                                                   Object_Type=object_name)
             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
             if feature_values:
                 for feature_name in feature_values:
@@ -4744,7 +4769,8 @@ def migration_user_view(request):
             for object_name in object_names:
                 inter_list = []
                 label_dict['Label'] = object_name
-                features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
+                                                       Object_Type=object_name)
                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                 if feature_values:
                     for feature_name in feature_values:
@@ -4768,7 +4794,8 @@ def migration_user_view(request):
                 inter_list = []
                 label_dict['Label'] = object_name
                 if object_name in admin_access_dict[mig_type]:
-                    features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                           Migration_TypeId=mig_type, Object_Type=object_name)
                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                     if feature_values:
                         for feature_name in feature_values:
@@ -4793,7 +4820,8 @@ def migration_user_view(request):
                                                                Object_Type=object_name)
                         feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
                         if 'ALL' in feature_names_list:
-                            features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                            features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                                   Migration_TypeId=mig_type, Object_Type=object_name)
                             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                             if feature_values:
                                 for feature_name in feature_values:
@@ -4838,7 +4866,8 @@ def migration_user_view(request):
                                                        Object_Type=object_name)
                 feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
                 if 'ALL' in feature_names_list:
-                    features_data = Feature.objects.filter(Project_Version_Id = project_version,Migration_TypeId=mig_type, Object_Type=object_name)
+                    features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                           Migration_TypeId=mig_type, Object_Type=object_name)
                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
                     if feature_values:
                         for feature_name in feature_values:
@@ -5639,41 +5668,65 @@ def removesuperadmin(request):
 #     return Response(final_res)
 
 
-@api_view(['GET','POST'])
+# @api_view(['GET', 'POST'])
+# def migrationlistperuser(request):
+#     email = request.data['email']
+#     Project_Version_Id = request.data['Project_Version_Id']
+#     temp = Users.objects.filter(email=email)
+#     temp = list(temp.values())[0]
+#     temp = temp['admin_migrations']
+#     if temp:
+#         # print("entering")
+#         temp = temp.split(',')
+#         res = [ele for ele in temp if ele.strip()]
+#     else:
+#         print("not entering")
+#         res = []
+#     migrations_list = migrations.objects.values('Migration_TypeId')
+#     migrations_list = list(migrations_list.values('Migration_TypeId'))
+#     migrations_final_list = []
+#     for i in migrations_list:
+#         migrations_final_list.append(i['Migration_TypeId'])
+#     migrations_final_list = list(set(migrations_final_list))
+#     final_res = []
+#     for i in migrations_final_list:
+#         dict1 = {}
+#         features = migrations.objects.filter(Migration_TypeId=i,
+#                                              Project_Version_Id=Project_Version_Id).distinct().order_by(
+#             'Migration_TypeId')
+#         if features:
+#             features = list(features.values())[0]
+#             ADMIN = 0
+#             if i in res:
+#                 ADMIN = 1
+#             code = features['Code']
+#             dict1["title"] = i
+#             dict1["code"] = code
+#             dict1["admin"] = ADMIN
+#             final_res.append(dict1)
+#     return Response(final_res)
+
+
+@api_view(['GET', 'POST'])
 def migrationlistperuser(request):
     email = request.data['email']
-    Project_Version_Id = request.data['Project_Version_Id']
-    temp = Users.objects.filter(email=email)
-    temp = list(temp.values())[0]
-    temp = temp['admin_migrations']
-    if temp:
-        # print("entering")
-        temp = temp.split(',')
-        res = [ele for ele in temp if ele.strip()]
-    else:
-        print("not entering")
-        res = []
-    migrations_list = migrations.objects.values('Migration_TypeId')
-    migrations_list= list(migrations_list.values('Migration_TypeId'))
-    migrations_final_list = []
-    for i in migrations_list:
-        migrations_final_list.append(i['Migration_TypeId'])
-    migrations_final_list = list(set(migrations_final_list))
-    final_res = []
-    for i in migrations_final_list:
-        dict1= {}
-        features = migrations.objects.filter(Migration_TypeId = i, Project_Version_Id=Project_Version_Id).distinct().order_by('Migration_TypeId')
-        if features:
-            features = list(features.values())[0]
-            ADMIN = 0
-            if i in res:
-                ADMIN = 1
-            code = features['Code']
-            dict1["title"] = i
-            dict1["code"] = code
-            dict1["admin"] = ADMIN
-            final_res.append(dict1)
-    return Response(final_res)
+    project_version = request.data["Project_Version_Id"]
+
+    project_version_mig_types = migrations.objects.filter(Project_Version_Id=project_version).values(
+        'Migration_TypeId').distinct()
+
+    user = Users.objects.get(email=email)
+    user_mig_access = user.user_migrations
+    user_mig_types_list = user_mig_access.split(',')
+    user_mig_types_list = [x for x in user_mig_types_list if x != '']
+    final_list = []
+    interdict = {}
+    for mig_type in project_version_mig_types:
+        if mig_type['Migration_TypeId'] in user_mig_types_list:
+            interdict['title'] = mig_type['Migration_TypeId']
+            final_list.append(interdict.copy())
+    return Response(final_list)
+
 
 @api_view(['GET'])
 def pdf_download(request):
@@ -5814,6 +5867,50 @@ def feature_approval_list(request):
 #     else:
 #         return Response("New versions won't be created until it has a previous version approved")
 
+# @api_view(['POST'])
+# def approval_featurecreate(request):
+#     migration_type = request.data['Migration_TypeId']
+#     object_type = request.data['Object_Type']
+#     feature_name = request.data['Feature_Name']
+#     project_version = request.data['Project_Version_Id']
+#
+#     migration_data = migrations.objects.filter(Project_Version_Id = project_version,Migration_TypeId = migration_type,Object_Type = '')
+#     feature_version_limit = migration_data.values()[0]['Feature_Version_Limit']
+#     n = int(feature_version_limit)
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#
+#     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
+#                                           Feature_Name=feature_name, Project_Version_Id=project_version,
+#                                           Feature_version_approval_status='Approved')
+#     version_list = []
+#     if feature_data:
+#         for dict in feature_data.values():
+#             version_list.append(dict['Feature_Version_Id'])
+#         max_version = max(version_list)
+#         serializer = FeatureSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save(Feature_Version_Id=max_version + 1)
+#             version_list.append(int(max_version + 1))
+#             if len(version_list) >= int(feature_version_limit):
+#                 version_list_del = version_list[:-n or None]
+#                 for version in version_list_del:
+#                     min_version = version
+#                     min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
+#                                                       Feature_Name=feature_name, Project_Version_Id=project_version,
+#                                                       Feature_Version_Id=min_version)
+#                     feature_id = min_feature.Feature_Id
+#                     min_feature.delete()
+#                     attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
+#                     attachments_data.delete()
+#                     folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(
+#                         project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(min_version)
+#                     shutil.rmtree(folder_path)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     else:
+#         return Response("New versions won't be created until it has a previous version approved")
+
+
 @api_view(['POST'])
 def approval_featurecreate(request):
     migration_type = request.data['Migration_TypeId']
@@ -5821,9 +5918,34 @@ def approval_featurecreate(request):
     feature_name = request.data['Feature_Name']
     project_version = request.data['Project_Version_Id']
 
-    migration_data = migrations.objects.filter(Project_Version_Id = project_version,Migration_TypeId = migration_type,Object_Type = '')
+    migration_data = migrations.objects.filter(Project_Version_Id=project_version, Migration_TypeId=migration_type,
+                                               Object_Type='')
     feature_version_limit = migration_data.values()[0]['Feature_Version_Limit']
     n = int(feature_version_limit)
+
+    mig_versions_data = migrations.objects.filter(Migration_TypeId=migration_type).values('Project_Version_Id')
+    project_versions_list = []
+    for dict in mig_versions_data:
+        project_versions_list.append(dict['Project_Version_Id'])
+    project_versions_list = list(set(project_versions_list))
+    max_project_version = max(project_versions_list)
+
+    feature_versions_list_all = []
+    feature_latest_versions_list = []
+    for project_version_i in project_versions_list:
+        mig_feature_versions_data = Feature.objects.filter(Project_Version_Id=project_version_i,
+                                                           Migration_TypeId=migration_type,
+                                                           Feature_Name=feature_name).values('Feature_Version_Id')
+        f_versions_list_without_prefix = []
+        if mig_feature_versions_data:
+            for dict in mig_feature_versions_data:
+                f_versions_list_without_prefix.append(dict['Feature_Version_Id'])
+            if project_version_i != project_version:
+                max_in_f_versions_list_without_prefix = max(f_versions_list_without_prefix)
+                feature_latest_versions_list.append(
+                    str(project_version_i) + '.' + str(max_in_f_versions_list_without_prefix))
+            for f_version in f_versions_list_without_prefix:
+                feature_versions_list_all.append(str(project_version_i) + '.' + str(f_version))
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
@@ -5838,26 +5960,31 @@ def approval_featurecreate(request):
         if serializer.is_valid():
             serializer.save(Feature_Version_Id=max_version + 1)
             version_list.append(int(max_version + 1))
-            if len(version_list) >= int(feature_version_limit):
-                version_list_del = version_list[:-n or None]
+            feature_versions_list_all.append(str(project_version) + '.' + str(max_version + 1))
+            feature_versions_list_all = sorted(feature_versions_list_all, key=float)
+            if len(feature_versions_list_all) > int(feature_version_limit):
+                version_list_del = feature_versions_list_all[:-n or None]
                 for version in version_list_del:
                     min_version = version
-                    min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
-                                                      Feature_Name=feature_name, Project_Version_Id=project_version,
-                                                      Feature_Version_Id=min_version)
-                    feature_id = min_feature.Feature_Id
-                    min_feature.delete()
-                    attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
-                    attachments_data.delete()
-                    folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(
-                        project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(min_version)
-                    shutil.rmtree(folder_path)
+                    if min_version not in feature_latest_versions_list:
+                        del_feature_version = min_version.split('.')[1]
+                        del_project_version = min_version.split('.')[0]
+                        min_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
+                                                          Feature_Name=feature_name,
+                                                          Project_Version_Id=del_project_version,
+                                                          Feature_Version_Id=del_feature_version)
+                        feature_id = min_feature.Feature_Id
+                        min_feature.delete()
+                        attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
+                        attachments_data.delete()
+                        folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(
+                            del_project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
+                            del_feature_version)
+                        shutil.rmtree(folder_path)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response("New versions won't be created until it has a previous version approved")
-
-
 
 
 # @api_view(['GET'])
@@ -5897,20 +6024,20 @@ def project_versions_list(request):
 @api_view(['POST'])
 def create_project_version(request):
     prev_project_version = request.data['Project_Version_Id']
-    print("prev_project_version===",prev_project_version)
+    print("prev_project_version===", prev_project_version)
     current_project_version = int(prev_project_version) + 1
-    print("current_project_version===",current_project_version)
+    print("current_project_version===", current_project_version)
 
     migration_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version).values(
         'Migration_TypeId').distinct()
     migration_types_old_list = [dict['Migration_TypeId'] for dict in migration_types_old]
-    print("migration_types_old_list====",migration_types_old_list)
+    print("migration_types_old_list====", migration_types_old_list)
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     for migration in migration_types_old_list:
         object_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version,
                                                      Migration_TypeId=migration).values('Object_Type').distinct()
         object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-        print(migration,"======",object_types_old_list)
+        print(migration, "======", object_types_old_list)
 
         migration_path = path + '/media/' + migration + '/' + 'Project_V' + str(current_project_version)
         if not os.path.exists(migration_path):
@@ -5918,7 +6045,7 @@ def create_project_version(request):
 
         project_version_limit = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values()[0][
             'Project_Version_limit']
-        print("project_version_limit====",project_version_limit)
+        print("project_version_limit====", project_version_limit)
         n = int(project_version_limit)
 
         project_versions_list = []
@@ -5983,7 +6110,7 @@ def create_project_version(request):
                         current_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V1'  # + str(latest_version) + '/'
                     if not os.path.exists(latest_version_target):
                         os.makedirs(latest_version_target)
-                    print(latest_version_source,"=======",latest_version_target)
+                    print(latest_version_source, "=======", latest_version_target)
                     shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
 
                     feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
@@ -6023,3 +6150,86 @@ def create_project_version(request):
                 # else:
                 #     print("No versions available for feature")
     return Response("New Project Version Created Successfully")
+
+
+@api_view(['POST'])
+def create_user_admin(request):
+    email = request.data['email']
+    user_object = Users.objects.get(email=email)
+    # pr/int(user_object)
+    user_object.is_user_admin = True
+    user_object.save()
+    return Response('user admin created successfully')
+
+
+@api_view(['POST'])
+def user_admin_permissions(request):
+    email = request.data['email']
+    migtype = request.data['mig_type']
+    user = Users.objects.get(email=email)
+    user_admin_access = user.user_migrations
+    if user_admin_access == '' or user_admin_access == None:
+        access_str = ''
+        access_str = access_str + migtype + ','
+        a = Users.objects.get(email=email)
+        # print("a===",a)
+        a.user_migrations = access_str
+        a.save()
+        return Response("user admin access created for user")
+    else:
+        user_admin_access_list = user_admin_access.split(',')
+        if migtype not in user_admin_access_list:
+            user_admin_access = user_admin_access + migtype + ','
+            print(user_admin_access)
+            a = Users.objects.get(email=email)
+            a.user_migrations = user_admin_access
+            a.save()
+            return Response("user admin access created for user")
+        return Response("user already have user admin access created for user")
+
+
+@api_view(['GET'])
+def useradminlist(request):
+    features = Users.objects.filter(is_user_admin=True)
+    serializer = useradminlistserializer(features, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def removeuseradmin(request):
+    # print(request.data, '====================')
+    email = request.data['email']
+    features = Users.objects.get(email=email)
+    features.is_user_admin = False
+    features.save()
+    return Response('User admin removed successfully')
+
+
+@api_view(['GET'])
+def user_waiting_list(request):
+    users = Users.objects.all()
+    final_list = []
+    inter_dict = {}
+    for user_i in users.values():
+        user_mig_value = user_i['user_migrations']
+        user_registration_status = user_i['user_registration_status']
+        if user_mig_value == '' or user_mig_value == None:
+            if user_registration_status == 'Awaiting for admin approval':
+                inter_dict['Email'] = user_i['email']
+                inter_dict['MigrationTypes'] = ''
+                final_list.append(inter_dict.copy())
+    return Response(final_list)
+
+
+@api_view(['GET'])
+def userslist_useradminpage(request):
+    user_objects = Users.objects.all()
+    serializer = usersserializer(user_objects, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def migrationlist_useradmin(request):
+    mig_objects = migrations.objects.values('Migration_TypeId').distinct()
+    serializer = migrationuseradminserializer(mig_objects, many=True)
+    return Response(serializer.data)

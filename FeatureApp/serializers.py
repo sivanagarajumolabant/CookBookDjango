@@ -68,9 +68,11 @@ class migrationcreateserializer(serializers.ModelSerializer):
 class migrationviewserializer(serializers.ModelSerializer):
     title = serializers.CharField(source='Migration_TypeId')
     code = serializers.CharField(source='Code')
+
     class Meta:
         model = migrations
         fields = ('title', 'code',)
+
 
 class objectviewserializer(serializers.ModelSerializer):
     class Meta:
@@ -204,7 +206,7 @@ class viewlevelfeatures(serializers.ModelSerializer):
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    
+
     def validate(self, attrs):
         data = super().validate(attrs)
         refresh = self.get_token(self.user)
@@ -214,7 +216,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add extra responses here
         data['username'] = self.user.username
         data['superadmin'] = self.user.is_superuser
-        data['email']= self.user.email
+        data['email'] = self.user.email
         user_email = data['email']
 
         today = date.today()
@@ -227,8 +229,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                                                  Object_Type=dict['Object_Type'])
                 record.delete()
                 approval_record = Approvals.objects.get(User_Email=dict['User_Email'],
-                                               Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
-                                               Object_Type=dict['Object_Type'])
+                                                        Feature_Name=dict['Feature_Name'],
+                                                        Access_Type=dict['Access_Type'],
+                                                        Object_Type=dict['Object_Type'])
                 approval_record.delete()
                 print("Expired")
             else:
@@ -237,7 +240,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 # class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    
+
 #     # @classmethod
 #     # def get_token(cls, user):
 #     #     token = super(MyTokenObtainPairSerializer, cls).get_token(user)
@@ -286,20 +289,24 @@ class resendemailserializer(serializers.ModelSerializer):
         model = Users
         fields = ('email',)
 
+
 class usersserializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = ('email',)
 
+
 class userssremovepermissionserializer(serializers.ModelSerializer):
     class Meta:
         model = Users
-        fields = ('email','admin_migrations')
+        fields = ('email', 'admin_migrations')
+
 
 class PermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Permissions
         fields = "__all__"
+
 
 class migrationformatserializer(serializers.ModelSerializer):
     class Meta:
@@ -307,3 +314,13 @@ class migrationformatserializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class useradminlistserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = ('email', 'username',)
+
+
+class migrationuseradminserializer(serializers.ModelSerializer):
+    class Meta:
+        model = migrations
+        fields = ('Migration_TypeId',)
