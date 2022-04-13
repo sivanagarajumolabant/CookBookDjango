@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="4a8199b4-f08c-4652-8237-bf56aa2a3001" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/FeatureApp/serializers.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/serializers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FeatureApp/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/urls.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FeatureApp/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureApp/views.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/db.sqlite3" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
