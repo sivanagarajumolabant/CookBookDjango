@@ -2225,11 +2225,12 @@ def conversion(request):
         if not os.path.exists(module_path):
             os.makedirs(module_path)
         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-        python_code = re.sub(r'def(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
+        python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
         file_path = module_path + '/' + str(feature_name).strip() + '.py'
         sys.path.insert(0, file_path)
         with open(file_path, 'w') as f:
             f.write(python_code)
+        print(file_path,' file_path')
         module = import_file(file_path)
         data = getattr(module, str(feature_name).strip())
         executableoutput = data(source_code)
@@ -2419,7 +2420,7 @@ def feature_conversion_files(request):
         with open(file_path) as f:
             python_code = f.read()
         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-        python_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', python_code)
+        python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', python_code)
         with open(file_path, "w") as f:
             f.write(python_code)
     else:
@@ -4590,6 +4591,327 @@ def create_check_list(request):
 #     return Response(final_list)
 
 
+# @api_view(['POST'])
+# def migration_user_view(request):
+#     email = request.data['User_Email']
+#     mig_type = request.data['Migration_TypeId']
+#     project_version = request.data['Project_Version_Id']
+#
+#     user = Users.objects.get(email=email)
+#     user_is_superuser = user.is_superuser
+#     admin_access = user.admin_migrations
+#     if admin_access == '' or admin_access == None:
+#         admin_access_dict = {}
+#     else:
+#         admin_access = admin_access.replace("\'", "\"")
+#         admin_access_dict = json.loads(admin_access)
+#
+#     mig_data = migrations.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type).exclude(
+#         Object_Type='')
+#     object_names = [obj['Object_Type'] for obj in mig_data.values()]
+#
+#     perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type)
+#     object_values_list = [obj['Object_Type'] for obj in perm_data.values()]
+#
+#     label_dict = {}
+#     final_list = []
+#     if user_is_superuser == True:
+#         if mig_type in admin_access_dict.keys():
+#             if 'ALL' in admin_access_dict[mig_type]:
+#                 for object_name in object_names:
+#                     inter_list = []
+#                     label_dict['Label'] = object_name
+#                     features_data = Feature.objects.filter(Project_Version_Id=project_version,
+#                                                            Migration_TypeId=mig_type, Object_Type=object_name)
+#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                     if feature_values:
+#                         for feature_name in feature_values:
+#                             # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                             #                                              Object_Type=object_name,
+#                             #                                              Feature_Name=feature_name)
+#                             # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                             inter_dict = {}
+#                             # inter_dict["Feature_Id"] = feature_id
+#                             inter_dict["Feature_Name"] = feature_name
+#                             inter_list.append(inter_dict)
+#                         label_dict['SubMenu'] = inter_list
+#                         label_dict['Admin_Flag'] = 1
+#                         final_list.append(label_dict.copy())
+#                     else:
+#                         label_dict['SubMenu'] = []
+#                         label_dict['Admin_Flag'] = 1
+#                         final_list.append(label_dict.copy())
+#             else:
+#                 for object_name in object_names:
+#                     inter_list = []
+#                     label_dict['Label'] = object_name
+#                     if object_name in admin_access_dict[mig_type]:
+#                         features_data = Feature.objects.filter(Project_Version_Id=project_version,
+#                                                                Migration_TypeId=mig_type, Object_Type=object_name)
+#                         feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                         if feature_values:
+#                             for feature_name in feature_values:
+#                                 # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                                 #                                              Object_Type=object_name,
+#                                 #                                              Feature_Name=feature_name)
+#                                 # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                                 inter_dict = {}
+#                                 # inter_dict["Feature_Id"] = feature_id
+#                                 inter_dict["Feature_Name"] = feature_name
+#                                 inter_list.append(inter_dict)
+#                             label_dict['SubMenu'] = inter_list
+#                             label_dict['Admin_Flag'] = 1
+#                             final_list.append(label_dict.copy())
+#                         else:
+#                             label_dict['SubMenu'] = []
+#                             label_dict['Admin_Flag'] = 1
+#                             final_list.append(label_dict.copy())
+#                     else:
+#                         if object_name in object_values_list:
+#                             perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                                    Object_Type=object_name)
+#                             feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
+#                             if 'ALL' in feature_names_list:
+#                                 features_data = Feature.objects.filter(Project_Version_Id=project_version,
+#                                                                        Migration_TypeId=mig_type,
+#                                                                        Object_Type=object_name)
+#                                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                                 if feature_values:
+#                                     for feature_name in feature_values:
+#                                         # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                                         #                                              Object_Type=object_name,
+#                                         #                                              Feature_Name=feature_name)
+#                                         # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                                         inter_dict = {}
+#                                         # inter_dict["Feature_Id"] = feature_id
+#                                         inter_dict["Feature_Name"] = feature_name
+#                                         inter_list.append(inter_dict)
+#                                     label_dict['SubMenu'] = inter_list
+#                                     label_dict['Admin_Flag'] = 0
+#                                     final_list.append(label_dict.copy())
+#                                 else:
+#                                     label_dict['SubMenu'] = []
+#                                     label_dict['Admin_Flag'] = 0
+#                                     final_list.append(label_dict.copy())
+#                             else:
+#                                 for feature_i in feature_names_list:
+#                                     # features_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                                     #                                        Object_Type=object_name,
+#                                     #                                        Feature_Name=feature_i)
+#                                     # feature_id = features_data.values()[0]['Feature_Id']
+#                                     inter_dict = {}
+#                                     # inter_dict["Feature_Id"] = feature_id
+#                                     inter_dict["Feature_Name"] = feature_i
+#                                     inter_list.append(inter_dict)
+#                                 label_dict['SubMenu'] = inter_list
+#                                 label_dict['Admin_Flag'] = 0
+#                                 final_list.append(label_dict.copy())
+#         else:
+#             for object_name in object_names:
+#                 inter_list = []
+#                 label_dict['Label'] = object_name
+#                 features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
+#                                                        Object_Type=object_name)
+#                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                 if feature_values:
+#                     for feature_name in feature_values:
+#                         # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,Feature_Name=feature_name)
+#                         # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                         inter_dict = {}
+#                         # inter_dict["Feature_Id"] = feature_id
+#                         inter_dict["Feature_Name"] = feature_name
+#                         inter_list.append(inter_dict)
+#                     label_dict['SubMenu'] = inter_list
+#                     label_dict['Admin_Flag'] = 0
+#                     final_list.append(label_dict.copy())
+#                 else:
+#                     label_dict['SubMenu'] = []
+#                     label_dict['Admin_Flag'] = 0
+#                     final_list.append(label_dict.copy())
+#     elif 'ALL' in object_values_list:
+#         for object_name in object_names:
+#             inter_list = []
+#             label_dict['Label'] = object_name
+#             features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
+#                                                    Object_Type=object_name)
+#             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#             if feature_values:
+#                 for feature_name in feature_values:
+#                     # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,
+#                     #                                              Feature_Name=feature_name)
+#                     # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                     inter_dict = {}
+#                     # inter_dict["Feature_Id"] = feature_id
+#                     inter_dict["Feature_Name"] = feature_name
+#                     inter_list.append(inter_dict)
+#                 label_dict['SubMenu'] = inter_list
+#                 if len(admin_access_dict) != 0:
+#                     if mig_type in admin_access_dict.keys():
+#                         if object_name in admin_access_dict[mig_type]:
+#                             label_dict['Admin_Flag'] = 1
+#                         else:
+#                             label_dict['Admin_Flag'] = 0
+#                 else:
+#                     label_dict['Admin_Flag'] = 0
+#                 final_list.append(label_dict.copy())
+#             else:
+#                 label_dict['SubMenu'] = []
+#                 if len(admin_access_dict) != 0:
+#                     if mig_type in admin_access_dict.keys():
+#                         if object_name in admin_access_dict[mig_type]:
+#                             label_dict['Admin_Flag'] = 1
+#                         else:
+#                             label_dict['Admin_Flag'] = 0
+#                 else:
+#                     label_dict['Admin_Flag'] = 0
+#                 final_list.append(label_dict.copy())
+#     elif mig_type in admin_access_dict.keys():
+#         if 'ALL' in admin_access_dict[mig_type]:
+#             for object_name in object_names:
+#                 inter_list = []
+#                 label_dict['Label'] = object_name
+#                 features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
+#                                                        Object_Type=object_name)
+#                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                 if feature_values:
+#                     for feature_name in feature_values:
+#                         # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                         #                                              Object_Type=object_name,
+#                         #                                              Feature_Name=feature_name)
+#                         # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                         inter_dict = {}
+#                         # inter_dict["Feature_Id"] = feature_id
+#                         inter_dict["Feature_Name"] = feature_name
+#                         inter_list.append(inter_dict)
+#                     label_dict['SubMenu'] = inter_list
+#                     label_dict['Admin_Flag'] = 1
+#                     final_list.append(label_dict.copy())
+#                 else:
+#                     label_dict['SubMenu'] = []
+#                     label_dict['Admin_Flag'] = 1
+#                     final_list.append(label_dict.copy())
+#         else:
+#             for object_name in object_names:
+#                 inter_list = []
+#                 label_dict['Label'] = object_name
+#                 if object_name in admin_access_dict[mig_type]:
+#                     features_data = Feature.objects.filter(Project_Version_Id=project_version,
+#                                                            Migration_TypeId=mig_type, Object_Type=object_name)
+#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                     if feature_values:
+#                         for feature_name in feature_values:
+#                             # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                             #                                              Object_Type=object_name,
+#                             #                                              Feature_Name=feature_name)
+#                             # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                             inter_dict = {}
+#                             # inter_dict["Feature_Id"] = feature_id
+#                             inter_dict["Feature_Name"] = feature_name
+#                             inter_list.append(inter_dict)
+#                         label_dict['SubMenu'] = inter_list
+#                         label_dict['Admin_Flag'] = 1
+#                         final_list.append(label_dict.copy())
+#                     else:
+#                         label_dict['SubMenu'] = []
+#                         label_dict['Admin_Flag'] = 1
+#                         final_list.append(label_dict.copy())
+#                 else:
+#                     if object_name in object_values_list:
+#                         perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                                Object_Type=object_name)
+#                         feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
+#                         if 'ALL' in feature_names_list:
+#                             features_data = Feature.objects.filter(Project_Version_Id=project_version,
+#                                                                    Migration_TypeId=mig_type, Object_Type=object_name)
+#                             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                             if feature_values:
+#                                 for feature_name in feature_values:
+#                                     # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                                     #                                              Object_Type=object_name,
+#                                     #                                              Feature_Name=feature_name)
+#                                     # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                                     inter_dict = {}
+#                                     # inter_dict["Feature_Id"] = feature_id
+#                                     inter_dict["Feature_Name"] = feature_name
+#                                     inter_list.append(inter_dict)
+#                                 label_dict['SubMenu'] = inter_list
+#                                 label_dict['Admin_Flag'] = 0
+#                                 final_list.append(label_dict.copy())
+#                             else:
+#                                 label_dict['SubMenu'] = []
+#                                 label_dict['Admin_Flag'] = 0
+#                                 final_list.append(label_dict.copy())
+#                         else:
+#                             for feature_i in feature_names_list:
+#                                 # features_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                                 #                                        Object_Type=object_name,
+#                                 #                                        Feature_Name=feature_i)
+#                                 # feature_id = features_data.values()[0]['Feature_Id']
+#                                 inter_dict = {}
+#                                 # inter_dict["Feature_Id"] = feature_id
+#                                 inter_dict["Feature_Name"] = feature_i
+#                                 inter_list.append(inter_dict)
+#                             label_dict['SubMenu'] = inter_list
+#                             label_dict['Admin_Flag'] = 0
+#                             final_list.append(label_dict.copy())
+#                     else:
+#                         label_dict['SubMenu'] = []
+#                         label_dict['Admin_Flag'] = 0
+#                         final_list.append(label_dict.copy())
+#     else:
+#         for object_name in object_names:
+#             inter_list = []
+#             label_dict['Label'] = object_name
+#             if object_name in object_values_list:
+#                 perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                        Object_Type=object_name)
+#                 feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
+#                 if 'ALL' in feature_names_list:
+#                     features_data = Feature.objects.filter(Project_Version_Id=project_version,
+#                                                            Migration_TypeId=mig_type, Object_Type=object_name)
+#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+#                     if feature_values:
+#                         for feature_name in feature_values:
+#                             # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+#                             #                                              Object_Type=object_name,
+#                             #                                              Feature_Name=feature_name)
+#                             # feature_id = feature_values_data.values()[0]['Feature_Id']
+#                             inter_dict = {}
+#                             # inter_dict["Feature_Id"] = feature_id
+#                             inter_dict["Feature_Name"] = feature_name
+#                             inter_list.append(inter_dict)
+#                         label_dict['SubMenu'] = inter_list
+#                         label_dict['Admin_Flag'] = 0
+#                         final_list.append(label_dict.copy())
+#                     else:
+#                         label_dict['SubMenu'] = []
+#                         label_dict['Admin_Flag'] = 0
+#                         final_list.append(label_dict.copy())
+#                 else:
+#                     for feature_i in feature_names_list:
+#                         # features_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,
+#                         #                                        Feature_Name=feature_i)
+#                         # feature_id = features_data.values()[0]['Feature_Id']
+#                         inter_dict = {}
+#                         # inter_dict["Feature_Id"] = feature_id
+#                         inter_dict["Feature_Name"] = feature_i
+#                         inter_list.append(inter_dict)
+#                     label_dict['SubMenu'] = inter_list
+#                     label_dict['Admin_Flag'] = 0
+#                     final_list.append(label_dict.copy())
+#             else:
+#                 label_dict['SubMenu'] = []
+#                 label_dict['Admin_Flag'] = 0
+#                 final_list.append(label_dict.copy())
+#     # print(final_list)
+#     for final_dict in final_list:
+#         submenu_list = final_dict['SubMenu']
+#         submenu_list_new = [i for n, i in enumerate(submenu_list) if i not in submenu_list[n + 1:]]
+#         final_dict['SubMenu'] = submenu_list_new
+#     return Response(final_list)
+
+
+
 @api_view(['POST'])
 def migration_user_view(request):
     email = request.data['User_Email']
@@ -4705,24 +5027,53 @@ def migration_user_view(request):
                                 label_dict['SubMenu'] = inter_list
                                 label_dict['Admin_Flag'] = 0
                                 final_list.append(label_dict.copy())
+                        else:
+                            label_dict['SubMenu'] = []
+                            label_dict['Admin_Flag'] = 0
+                            final_list.append(label_dict.copy())
         else:
             for object_name in object_names:
                 inter_list = []
                 label_dict['Label'] = object_name
-                features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
-                                                       Object_Type=object_name)
-                feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-                if feature_values:
-                    for feature_name in feature_values:
-                        # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=object_name,Feature_Name=feature_name)
-                        # feature_id = feature_values_data.values()[0]['Feature_Id']
-                        inter_dict = {}
-                        # inter_dict["Feature_Id"] = feature_id
-                        inter_dict["Feature_Name"] = feature_name
-                        inter_list.append(inter_dict)
-                    label_dict['SubMenu'] = inter_list
-                    label_dict['Admin_Flag'] = 0
-                    final_list.append(label_dict.copy())
+                if object_name in object_values_list:
+                    perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                           Object_Type=object_name)
+                    feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
+                    if 'ALL' in feature_names_list:
+                        features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                               Migration_TypeId=mig_type,
+                                                               Object_Type=object_name)
+                        feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+                        if feature_values:
+                            for feature_name in feature_values:
+                                # feature_values_data = Feature.objects.filter(Migration_TypeId=mig_type,
+                                #                                              Object_Type=object_name,
+                                #                                              Feature_Name=feature_name)
+                                # feature_id = feature_values_data.values()[0]['Feature_Id']
+                                inter_dict = {}
+                                # inter_dict["Feature_Id"] = feature_id
+                                inter_dict["Feature_Name"] = feature_name
+                                inter_list.append(inter_dict)
+                            label_dict['SubMenu'] = inter_list
+                            label_dict['Admin_Flag'] = 0
+                            final_list.append(label_dict.copy())
+                        else:
+                            label_dict['SubMenu'] = []
+                            label_dict['Admin_Flag'] = 0
+                            final_list.append(label_dict.copy())
+                    else:
+                        for feature_i in feature_names_list:
+                            # features_data = Feature.objects.filter(Migration_TypeId=mig_type,
+                            #                                        Object_Type=object_name,
+                            #                                        Feature_Name=feature_i)
+                            # feature_id = features_data.values()[0]['Feature_Id']
+                            inter_dict = {}
+                            # inter_dict["Feature_Id"] = feature_id
+                            inter_dict["Feature_Name"] = feature_i
+                            inter_list.append(inter_dict)
+                        label_dict['SubMenu'] = inter_list
+                        label_dict['Admin_Flag'] = 0
+                        final_list.append(label_dict.copy())
                 else:
                     label_dict['SubMenu'] = []
                     label_dict['Admin_Flag'] = 0
@@ -4902,7 +5253,6 @@ def migration_user_view(request):
                 label_dict['SubMenu'] = []
                 label_dict['Admin_Flag'] = 0
                 final_list.append(label_dict.copy())
-    # print(final_list)
     for final_dict in final_list:
         submenu_list = final_dict['SubMenu']
         submenu_list_new = [i for n, i in enumerate(submenu_list) if i not in submenu_list[n + 1:]]
@@ -5707,6 +6057,27 @@ def removesuperadmin(request):
 #     return Response(final_res)
 
 
+# @api_view(['GET', 'POST'])
+# def migrationlistperuser(request):
+#     email = request.data['email']
+#     project_version = request.data["Project_Version_Id"]
+#
+#     project_version_mig_types = migrations.objects.filter(Project_Version_Id=project_version).values(
+#         'Migration_TypeId').distinct()
+#
+#     user = Users.objects.get(email=email)
+#     user_mig_access = user.user_migrations
+#     user_mig_types_list = user_mig_access.split(',')
+#     user_mig_types_list = [x for x in user_mig_types_list if x != '']
+#     final_list = []
+#     interdict = {}
+#     for mig_type in project_version_mig_types:
+#         if mig_type['Migration_TypeId'] in user_mig_types_list:
+#             interdict['title'] = mig_type['Migration_TypeId']
+#             final_list.append(interdict.copy())
+#     return Response(final_list)
+
+
 @api_view(['GET', 'POST'])
 def migrationlistperuser(request):
     email = request.data['email']
@@ -5717,8 +6088,12 @@ def migrationlistperuser(request):
 
     user = Users.objects.get(email=email)
     user_mig_access = user.user_migrations
-    user_mig_types_list = user_mig_access.split(',')
-    user_mig_types_list = [x for x in user_mig_types_list if x != '']
+
+    if user_mig_access == '' or user_mig_access == None:
+        user_mig_types_list = []
+    else:
+        user_mig_types_list = user_mig_access.split(',')
+        user_mig_types_list = [x for x in user_mig_types_list if x != '']
     final_list = []
     interdict = {}
     for mig_type in project_version_mig_types:
@@ -6205,6 +6580,22 @@ def removeuseradmin(request):
     return Response('User admin removed successfully')
 
 
+# @api_view(['GET'])
+# def user_waiting_list(request):
+#     users = Users.objects.all()
+#     final_list = []
+#     inter_dict = {}
+#     for user_i in users.values():
+#         user_mig_value = user_i['user_migrations']
+#         user_registration_status = user_i['user_registration_status']
+#         if user_mig_value == '' or user_mig_value == None:
+#             if user_registration_status == 'Awaiting for admin approval':
+#                 inter_dict['Email'] = user_i['email']
+#                 inter_dict['MigrationTypes'] = ''
+#                 final_list.append(inter_dict.copy())
+#     return Response(final_list)
+
+
 @api_view(['GET'])
 def user_waiting_list(request):
     users = Users.objects.all()
@@ -6213,18 +6604,16 @@ def user_waiting_list(request):
     for user_i in users.values():
         user_mig_value = user_i['user_migrations']
         user_registration_status = user_i['user_registration_status']
-        if user_mig_value == '' or user_mig_value == None:
-            if user_registration_status == 'Awaiting for admin approval':
-                inter_dict['Email'] = user_i['email']
-                inter_dict['MigrationTypes'] = ''
-                final_list.append(inter_dict.copy())
+        inter_dict['Email'] = user_i['email']
+        inter_dict['MigrationTypes'] = user_mig_value
+        inter_dict['Status'] = user_registration_status
+        final_list.append(inter_dict.copy())
     return Response(final_list)
-
 
 @api_view(['GET'])
 def userslist_useradminpage(request):
-    user_objects = Users.objects.all()
-    serializer = usersserializer(user_objects, many=True)
+    user_object = Users.objects.filter(user_registration_status__in=('Awaiting for admin approval', 'Confirmed'))
+    serializer = usersserializer(user_object, many=True)
     return Response(serializer.data)
 
 
@@ -6233,3 +6622,30 @@ def migrationlist_useradmin(request):
     mig_objects = migrations.objects.values('Migration_TypeId').distinct()
     serializer = migrationuseradminserializer(mig_objects, many=True)
     return Response(serializer.data)
+
+
+@api_view(['POST'])
+def user_admin_actions(request):
+    email = request.data['email']
+    user_registration_status = request.data['user_registration_status']
+    user_object = Users.objects.get(email=email)
+    if user_registration_status == 'Confirmed':
+        user_object.user_registration_status = user_registration_status
+        user_object.save()
+
+        token = RefreshToken.for_user(user_object)
+        absurl = frontend_url + 'emailverification?' + str(token)
+        subject = 'Verify your email'
+        html_message = render_to_string('verifys.html', {'url': absurl})
+        plain_message = strip_tags(html_message)
+        from_email = EMAIL_HOST_USER
+        to = user_object.email
+
+        mail.send_mail(subject, plain_message, from_email,
+                       [to], html_message=html_message)
+        return Response('User confirmation successful and Email has been sent to user to verify email')
+    else:
+        user_object.user_registration_status = user_registration_status
+        user_object.save()
+        return Response('User has been rejected')
+

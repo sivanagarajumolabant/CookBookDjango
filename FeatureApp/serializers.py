@@ -216,6 +216,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add extra responses here
         data['username'] = self.user.username
         data['superadmin'] = self.user.is_superuser
+        data['useradmin'] = self.user.is_user_admin
         data['email'] = self.user.email
         user_email = data['email']
 

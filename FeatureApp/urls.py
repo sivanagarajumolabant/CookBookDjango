@@ -83,6 +83,7 @@ urlpatterns = [
                   path('removeuseradmin/', removeuseradmin),
                   path('userwaiting_list/', user_waiting_list),
                   path('userslist_useradmin/', userslist_useradminpage),
-                  path('migtypes_useradmin/', migrationlist_useradmin)
+                  path('migtypes_useradmin/', migrationlist_useradmin),
+                  path('useradminactions/', user_admin_actions)
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
