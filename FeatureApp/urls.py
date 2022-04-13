@@ -37,7 +37,7 @@ urlpatterns = [
                   path('tablesdata/', views.create_tablepage_featuresdata),
                   path('requestfndata/', views.get_Featurenames),
                   path('resendemail/', ResendVerifyEmail.as_view()),
-                  path('testing/', views.add_view),
+                  # path('testing/', views.add_view),
                   path('fvlist/', views.featurelistperuser),
 
                   path('migrationsscreate/', views.migrationsscreate, name='migrationsscreate'),

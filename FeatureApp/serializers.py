@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import *
 from datetime import date
-# from django.contrib.auth.models import User
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -14,20 +13,14 @@ from rest_framework.exceptions import AuthenticationFailed
 
 
 class SetNewPasswordSerializer(serializers.Serializer):
-    # password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password = serializers.CharField(min_length=6, max_length=68, write_only=True)
     token = serializers.CharField(min_length=1, write_only=True)
     uidb64 = serializers.CharField(min_length=1, write_only=True)
-
-    # password2 = serializers.CharField(write_only=True, required=True)
     class Meta:
         model = Users
         fields = ['password', 'token', 'uidb64']
 
     def validate(self, attrs):
-        # if attrs['password'] != attrs['password2']:
-        #     raise serializers.ValidationError({"password": "Password fields didn't match."})
-        # return attrs
         try:
             password = attrs.get('password')
             token = attrs.get('token')
@@ -93,7 +86,6 @@ class FeatureSerializer(serializers.ModelSerializer):
 
 
 class AttachementSerializer(serializers.ModelSerializer):
-    # Attachment = serializers.FileField()
     class Meta:
         model = Attachments
         fields = "__all__"
@@ -148,26 +140,9 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=self.validated_data['first_name'],
             last_name=self.validated_data['last_name']
         )
-
         user.set_password(self.validated_data['password'])
         user.is_active = False
         user.save()
-        # token = RefreshToken.for_user(user).access_token
-        # relative_link = reverse('email-verify')
-        # current_site = get_current_site(request)
-        # print(current_site,"currentsite")
-        # subject = 'welcome to GFG world'
-        # current_site = get_current_site(request=request)
-        # mail_subject = 'Activation link has been sent to your email id'
-        # message = {
-        #     'user': user,
-        #     # 'domain': current_site.domain,
-        #     'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-        #     'token': account_activation_token.make_token(user),
-        # }
-        # to_email = [user.email, ]
-        # email = EmailMessage(mail_subject, message, to=[to_email])
-        # email.send()
         return user
 
 
@@ -176,44 +151,12 @@ class viewlevelfeatures(serializers.ModelSerializer):
         model = Users
         fields = ('can_view',)
 
-
-# class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
-#     # @classmethod
-#     # def get_token(cls, user):
-#     #     token = super(MyTokenObtainPairSerializer, cls).get_token(user)
-#     #
-#     #     # admin_role =0
-#     #     # if user.is_admin:
-#     #     #     print("entering")
-#     #     #     admin_role =1
-#     #     # print(admin_role,"admin_role")
-#     #     # Add custom claims
-#     #     token['username'] = user.username
-#     #     return token
-#     def validate(self, attrs):
-#         data = super().validate(attrs)
-#         refresh = self.get_token(self.user)
-#         data['refresh'] = str(refresh)
-#         data['access'] = str(refresh.access_token)
-
-#         # Add extra responses here
-#         # data['username'] = self.user.username
-#         data['superadmin'] = self.user.is_superuser
-#         data['email']= self.user.email
-#         # data['groups'] = self.user.groups.values_list('name', flat=True)
-#         return data
-
-
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
     def validate(self, attrs):
         data = super().validate(attrs)
         refresh = self.get_token(self.user)
         data['refresh'] = str(refresh)
         data['access'] = str(refresh.access_token)
-
-        # Add extra responses here
         data['username'] = self.user.username
         data['superadmin'] = self.user.is_superuser
         data['useradmin'] = self.user.is_user_admin
@@ -234,56 +177,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                                                         Access_Type=dict['Access_Type'],
                                                         Object_Type=dict['Object_Type'])
                 approval_record.delete()
-                print("Expired")
-            else:
-                print("not expired")
         return data
-
-
-# class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-
-#     # @classmethod
-#     # def get_token(cls, user):
-#     #     token = super(MyTokenObtainPairSerializer, cls).get_token(user)
-#     #
-#     #     # admin_role =0
-#     #     # if user.is_admin:
-#     #     #     print("entering")
-#     #     #     admin_role =1
-#     #     # print(admin_role,"admin_role")
-#     #     # Add custom claims
-#     #     token['username'] = user.username
-#     #     return token
-#     def validate(self, attrs):
-#         data = super().validate(attrs)
-#         refresh = self.get_token(self.user)
-#         data['refresh'] = str(refresh)
-#         data['access'] = str(refresh.access_token)
-
-#         # Add extra responses here
-#         # data['username'] = self.user.username
-#         data['admin'] = self.user.is_superuser
-#         data['email']= self.user.email
-#         user_email = data['email']
-
-#         today_datetime = date.today()
-#         permission_data = Permissions.objects.filter(User_Email=user_email).values()
-#         for dict in permission_data:
-#             end_date = dict['End_Date']
-#             if end_date.strftime('%Y-%m-%d') < today_datetime.strftime('%Y-%m-%d'):
-#                 record = Permissions.objects.get(User_Email=dict['User_Email'], End_Date=end_date,
-#                                                  Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
-#                                                  Object_Type=dict['Object_Type'])
-#                 print(record)
-#                 record.delete()
-#                 approval_record = Approvals.objects.get(User_Email=dict['User_Email'],
-#                                                Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
-#                                                Object_Type=dict['Object_Type'])
-#                 approval_record.delete()
-#                 print("Expired")
-#             else:
-#                 print("not expired")
-#         return data
 
 class resendemailserializer(serializers.ModelSerializer):
     class Meta:
