@@ -80,7 +80,7 @@ urlpatterns = [
                   path('createuseradmin/', create_user_admin),
                   path('user_admin_permissions/', user_admin_permissions),
                   path('useradminlist/', useradminlist),
-                  path('removeuseradmin/', removeuseradmin),
+                  path('removeuseradmin/', removesuperadmin),
                   path('userwaiting_list/', user_waiting_list),
                   path('userslist_useradmin/', userslist_useradminpage),
                   path('migtypes_useradmin/', migrationlist_useradmin),

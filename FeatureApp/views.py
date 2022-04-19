@@ -882,6 +882,33 @@ def featurelistperuser(request):
     return Response(data2)
 
 
+# @api_view(['POST'])
+# def create_tablepage_featuresdata(request):
+#     Migration_TypeId = request.data['Migration_TypeId']
+#     Object_Type = request.data['Object_Type']
+#     Project_Version_Id = request.data['Project_Version_Id']
+#     feature_names = Feature.objects.values('Feature_Name').distinct()
+#     features = []
+#     for dict in feature_names:
+#         features.append(dict['Feature_Name'])
+#     final_list = []
+#     for feature in features:
+#         feature_versions = Feature.objects.filter(Feature_Name=feature, Project_Version_Id=Project_Version_Id)
+#         version_list = []
+#         for dict1 in feature_versions.values():
+#             version_list.append(dict1['Feature_Version_Id'])
+#         max_version = max(version_list)
+#         data = Feature.objects.filter(
+#             Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
+#             Feature_Version_Id=max_version, Project_Version_Id=Project_Version_Id)
+#         serializer = FeatureSerializer(data, many=True)
+#         final_list.append(serializer.data)
+#     final_output_list = []
+#     for final_dict in final_list:
+#         if final_dict:
+#             final_output_list.append(final_dict[0])
+#     return Response(final_output_list)
+
 @api_view(['POST'])
 def create_tablepage_featuresdata(request):
     Migration_TypeId = request.data['Migration_TypeId']
@@ -889,20 +916,23 @@ def create_tablepage_featuresdata(request):
     Project_Version_Id = request.data['Project_Version_Id']
     feature_names = Feature.objects.values('Feature_Name').distinct()
     features = []
-    for dict in feature_names:
-        features.append(dict['Feature_Name'])
-    final_list = []
-    for feature in features:
-        feature_versions = Feature.objects.filter(Feature_Name=feature, Project_Version_Id=Project_Version_Id)
-        version_list = []
-        for dict1 in feature_versions.values():
-            version_list.append(dict1['Feature_Version_Id'])
-        max_version = max(version_list)
-        data = Feature.objects.filter(
-            Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
-            Feature_Version_Id=max_version, Project_Version_Id=Project_Version_Id)
-        serializer = FeatureSerializer(data, many=True)
-        final_list.append(serializer.data)
+    if feature_names:
+        for dict in feature_names:
+            features.append(dict['Feature_Name'])
+        final_list = []
+    if features:
+        for feature in features:
+            feature_versions = Feature.objects.filter(Feature_Name=feature, Project_Version_Id=Project_Version_Id)
+            version_list = []
+            if feature_versions:
+                for dict1 in feature_versions.values():
+                    version_list.append(dict1['Feature_Version_Id'])
+                max_version = max(version_list)
+                data = Feature.objects.filter(
+                    Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
+                    Feature_Version_Id=max_version, Project_Version_Id=Project_Version_Id)
+                serializer = FeatureSerializer(data, many=True)
+                final_list.append(serializer.data)
     final_output_list = []
     for final_dict in final_list:
         if final_dict:
@@ -1932,9 +1962,9 @@ def removesuperadmin(request):
 @api_view(['GET', 'POST'])
 def migrationlistperuser(request):
     email = request.data['email']
-    project_version = request.data["Project_Version_Id"]
+    # project_version = request.data["Project_Version_Id"]
 
-    project_version_mig_types = migrations.objects.filter(Project_Version_Id=project_version).values(
+    project_version_mig_types = migrations.objects.values(
         'Migration_TypeId').distinct()
 
     user = Users.objects.get(email=email)
@@ -2103,9 +2133,31 @@ def approval_featurecreate(request):
         return Response("New versions won't be created until it has a previous version approved")
 
 
-@api_view(['GET'])
+# @api_view(['GET'])
+# def project_versions_list(request):
+#     project_versions = migrations.objects.values('Project_Version_Id').distinct()
+#     final_list = []
+#     version_list = []
+#     if project_versions:
+#         for dict in project_versions:
+#             version_list.append(dict['Project_Version_Id'])
+#         inter_dict = {}
+#         for i in version_list:
+#             inter_dict['title'] = 'V' + str(i)
+#             inter_dict['code'] = int(i)
+#             final_list.append(inter_dict.copy())
+#     else:
+#         inter_dict = {}
+#         inter_dict['title'] = 'V1'
+#         inter_dict['code'] = 1
+#         final_list.append(inter_dict.copy())
+#     return Response(final_list)
+
+
+@api_view(['GET','POST'])
 def project_versions_list(request):
-    project_versions = migrations.objects.values('Project_Version_Id').distinct()
+    migration_type = request.data['Migration_TypeId']
+    project_versions = migrations.objects.filter(Migration_TypeId = migration_type).values('Project_Version_Id').distinct()
     final_list = []
     version_list = []
     if project_versions:
@@ -2116,13 +2168,12 @@ def project_versions_list(request):
             inter_dict['title'] = 'V' + str(i)
             inter_dict['code'] = int(i)
             final_list.append(inter_dict.copy())
-    else:
-        inter_dict = {}
-        inter_dict['title'] = 'V1'
-        inter_dict['code'] = 1
-        final_list.append(inter_dict.copy())
+    # else:
+    #     inter_dict = {}
+    #     inter_dict['title'] = 'V1'
+    #     inter_dict['code'] = 1
+    #     final_list.append(inter_dict.copy())
     return Response(final_list)
-
 
 @api_view(['POST'])
 def create_project_version(request):
@@ -2292,12 +2343,16 @@ def useradminlist(request):
 
 
 @api_view(['POST'])
-def removeuseradmin(request):
+def removesuperadmin(request):
     email = request.data['email']
-    features = Users.objects.get(email=email)
-    features.is_user_admin = False
-    features.save()
-    return Response('User admin removed successfully')
+    user_object = Users.objects.get(email=email)
+    super_user_list = Users.objects.filter(is_superuser = True)
+    if len(super_user_list) > 2:
+        user_object.is_superuser = False
+        user_object.save()
+        return Response('super admin removed successfully')
+    else:
+        return Response('Super admin cannot be deleted as number of super admin users less than 2')
 
 @api_view(['GET'])
 def user_waiting_list(request):
