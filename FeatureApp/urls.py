@@ -58,11 +58,12 @@ urlpatterns = [
 
                   path('removeadminmigrations/', views.remove_admin_permission),
                   path('adminrmmigrationlist/', admin_rm_migration_list),
-                  path('adminsobjectslist/',admin_rm_object_list),
+                  path('adminsobjectslist/', admin_rm_object_list),
 
-                # header api's
+                  # header api's
                   path('createflagcheck/', create_check_list, name='create_check_list'),
-                  path('migrationlistperuser/', migrationlistperuser, name='migrationlistperuser'), # for header mig types list
+                  path('migrationlistperuser/', migrationlistperuser, name='migrationlistperuser'),
+                  # for header mig types list
                   path('usersfeaturelist/', views.migration_user_view, name='usersfeaturelist'),
 
                   path('adminlist/', views.admin_users_list, name='admin_users_list'),
@@ -84,6 +85,7 @@ urlpatterns = [
                   path('userwaiting_list/', user_waiting_list),
                   path('userslist_useradmin/', userslist_useradminpage),
                   path('migtypes_useradmin/', migrationlist_useradmin),
-                  path('useradminactions/', user_admin_actions)
+                  path('useradminactions/', user_admin_actions),
+                  path('deploy/', get_latest_feature_version_modules)
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

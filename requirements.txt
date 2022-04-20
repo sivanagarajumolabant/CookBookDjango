@@ -11,3 +11,4 @@ django-filter
 # import_module ==
 import_file
 #importlib == 1.0.4
+xlsxwriter
