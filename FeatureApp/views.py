@@ -2126,7 +2126,8 @@ def approval_featurecreate(request):
                         folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(
                             del_project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
                             del_feature_version)
-                        shutil.rmtree(folder_path)
+                        if os.path.exists(folder_path):
+                            shutil.rmtree(folder_path)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
