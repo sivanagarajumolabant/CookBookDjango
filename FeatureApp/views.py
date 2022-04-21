@@ -1,4 +1,4 @@
-import imp
+from azure.storage.blob import BlobServiceClient
 from django.shortcuts import render
 from rest_framework import viewsets, status
 import xlsxwriter
@@ -1024,6 +1024,7 @@ def migrationsscreate(request):
     Object_Type = request.data['Object_Type']
     project_version_limit = request.data['Project_Version_limit']
     feature_version_limit = request.data['Feature_Version_Limit']
+
     serializer = migrationcreateserializer(data=request.data)
     check_obj_type = migrations.objects.filter(Project_Version_Id=project_id, Migration_TypeId=migration_type,
                                                Object_Type=Object_Type.upper())
@@ -1952,13 +1953,13 @@ def createsuperadmin(request):
     return Response('super admin created successfully')
 
 
-@api_view(['POST'])
-def removesuperadmin(request):
-    email = request.data['email']
-    features = Users.objects.get(email=email)
-    features.is_superuser = False
-    features.save()
-    return Response('super admin removed successfully')
+# @api_view(['POST'])
+# def removesuperadmin(request):
+#     email = request.data['email']
+#     features = Users.objects.get(email=email)
+#     features.is_superuser = False
+#     features.save()
+#     return Response('super admin removed successfully')
 
 @api_view(['GET', 'POST'])
 def migrationlistperuser(request):
@@ -2166,7 +2167,9 @@ def project_versions_list(request):
         for dict in project_versions:
             version_list.append(dict['Project_Version_Id'])
         inter_dict = {}
+        version_list = [i for i in version_list if i!='null']
         for i in version_list:
+            print(i, type(i))
             inter_dict['title'] = 'V' + str(i)
             inter_dict['code'] = int(i)
             final_list.append(inter_dict.copy())
@@ -2177,130 +2180,140 @@ def project_versions_list(request):
     #     final_list.append(inter_dict.copy())
     return Response(final_list)
 
+
 @api_view(['POST'])
 def create_project_version(request):
-    prev_project_version = request.data['Project_Version_Id']
-    current_project_version = int(prev_project_version) + 1
+    migration = request.data['Migration_TypeId']
+    # prev_project_version = request.data['Project_Version_Id']
+    mig_data = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values('Project_Version_Id')
+    mig_project_versions_list = [dict['Project_Version_Id'] for dict in mig_data if dict['Project_Version_Id'] != '']
+    max_value  = max(mig_project_versions_list)
+    prev_project_version = max_value
+    current_project_version = int(max_value) + 1
 
-    migration_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version).values(
-        'Migration_TypeId').distinct()
-    migration_types_old_list = [dict['Migration_TypeId'] for dict in migration_types_old]
 
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    for migration in migration_types_old_list:
-        object_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version,
-                                                     Migration_TypeId=migration).values('Object_Type').distinct()
-        object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
 
-        migration_path = path + '/media/' + migration + '/' + 'Project_V' + str(current_project_version)
-        if not os.path.exists(migration_path):
-            os.makedirs(migration_path)
+    object_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version,
+                                                 Migration_TypeId=migration).values('Object_Type').distinct()
+    object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
 
-        project_version_limit = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values()[0][
-            'Project_Version_limit']
-        n = int(project_version_limit)
+    migration_path = path + '/media/' + migration + '/' + 'Project_V' + str(current_project_version)
+    if not os.path.exists(migration_path):
+        os.makedirs(migration_path)
 
-        project_versions_list = []
-        mig_copy_data = migrations.objects.filter(Migration_TypeId=migration)
-        project_versions = mig_copy_data.values('Project_Version_Id')
-        for i in project_versions:
-            project_versions_list.append(int(i['Project_Version_Id']))
-        project_versions_list = list(set(project_versions_list))
-        max_version = max(project_versions_list)
-        project_versions_list.append(int(max_version + 1))
+    project_version_limit = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values()[0][
+        'Project_Version_limit']
+    n = int(project_version_limit)
 
-        mig_copy_project_version_data = migrations.objects.filter(Project_Version_Id=prev_project_version,
-                                                                  Migration_TypeId=migration)
+    project_versions_list = []
+    mig_copy_data = migrations.objects.filter(Migration_TypeId=migration)
+    project_versions = mig_copy_data.values('Project_Version_Id')
+    for i in project_versions:
+        project_versions_list.append(int(i['Project_Version_Id']))
+    project_versions_list = list(set(project_versions_list))
+    max_version = max(project_versions_list)
+    project_versions_list.append(int(max_version + 1))
 
-        for dict in mig_copy_project_version_data.values():
-            migrations.objects.create(Project_Version_Id=current_project_version,
-                                      Migration_TypeId=dict['Migration_TypeId'],
-                                      Object_Type=dict['Object_Type'], Code=dict['Code'],
-                                      Project_Version_limit=dict['Project_Version_limit'],
-                                      Feature_Version_Limit=dict['Feature_Version_Limit'])
-        if max_version >= int(project_version_limit):
-            project_versions_list_del = project_versions_list[:-n or None]
-            for version in project_versions_list_del:
-                mig_del_data = migrations.objects.filter(Project_Version_Id=int(version))
-                mig_del_data.delete()
+    mig_copy_project_version_data = migrations.objects.filter(Project_Version_Id=prev_project_version,
+                                                              Migration_TypeId=migration)
 
-                feature_del_data = Feature.objects.filter(Project_Version_Id=int(version))
-                feature_del_data.delete()
+    for dict in mig_copy_project_version_data.values():
+        migrations.objects.create(Project_Version_Id=current_project_version,
+                                  Migration_TypeId=dict['Migration_TypeId'],
+                                  Object_Type=dict['Object_Type'], Code=dict['Code'],
+                                  Project_Version_limit=dict['Project_Version_limit'],
+                                  Feature_Version_Limit=dict['Feature_Version_Limit'])
+    if len(project_versions_list) > int(project_version_limit):
+        project_versions_list_del = project_versions_list[:-n or None]
+        for version in project_versions_list_del:
+            mig_del_data = migrations.objects.filter(Project_Version_Id=int(version), Migration_TypeId=migration)
+            mig_del_data.delete()
 
-                attachments_del_data = Attachments.objects.filter(Project_Version_Id=int(version))
-                attachments_del_data.delete()
+            feature_del_data = Feature.objects.filter(Project_Version_Id=int(version), Migration_TypeId=migration)
+            feature_del_data.delete()
 
-        for object_i in object_types_old_list:
-            feature_names_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
-                                                       Migration_TypeId=migration, Object_Type=object_i).values(
-                'Feature_Name').distinct()
-            feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
-            for feature in feature_names_old_list:
-                feature_versions_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
-                                                              Migration_TypeId=migration,
-                                                              Object_Type=object_i, Feature_Name=feature).values(
-                    'Feature_Version_Id').distinct()
-                feature_versions_old_list = [dict['Feature_Version_Id'] for dict in feature_versions_old if
-                                             dict['Feature_Version_Id'] != '']
-                if feature_versions_old_list:
-                    latest_version = max(feature_versions_old_list)
-                    feature_data2 = Feature.objects.filter(Project_Version_Id=prev_project_version,
-                                                           Migration_TypeId=migration, Object_Type=object_i,
-                                                           Feature_Name=feature,
-                                                           Feature_Version_Id=latest_version).last()
-                    attachment_feature_id_progress_old = feature_data2.Feature_Id
+            attachments_del_data = Attachments.objects.filter(Project_Version_Id=int(version),
+                                                              Attachment__contains=str(migration))
+            attachments_del_data.delete()
 
-                    feature_data2.Feature_Id = None
-                    feature_data2.Project_Version_Id = current_project_version
-                    feature_data2.Feature_Version_Id = 1
-                    feature_data2.Feature_Approval_Date = None
-                    feature_data2.save()
+            folder_path_del = path + '/media/' + migration + '/' + 'Project_V' + str(version)
+            shutil.rmtree(folder_path_del)
 
-                    latest_version_source = path + '/media/' + migration + '/' + 'Project_V' + str(
+    for object_i in object_types_old_list:
+        feature_names_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
+                                                   Migration_TypeId=migration, Object_Type=object_i).values(
+            'Feature_Name').distinct()
+        feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
+
+        for feature in feature_names_old_list:
+            feature_versions_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
+                                                          Migration_TypeId=migration,
+                                                          Object_Type=object_i, Feature_Name=feature).values(
+                'Feature_Version_Id').distinct()
+            feature_versions_old_list = [dict['Feature_Version_Id'] for dict in feature_versions_old if
+                                         dict['Feature_Version_Id'] != '']
+            if feature_versions_old_list:
+                latest_version = max(feature_versions_old_list)
+
+                feature_data2 = Feature.objects.filter(Project_Version_Id=prev_project_version,
+                                                       Migration_TypeId=migration, Object_Type=object_i,
+                                                       Feature_Name=feature,
+                                                       Feature_Version_Id=latest_version).last()
+                attachment_feature_id_progress_old = feature_data2.Feature_Id
+
+                feature_data2.Feature_Id = None
+                feature_data2.Project_Version_Id = current_project_version
+                feature_data2.Feature_Version_Id = 1
+                feature_data2.Feature_Approval_Date = None
+                feature_data2.save()
+
+                latest_version_source = path + '/media/' + migration + '/' + 'Project_V' + str(
+                    prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
+                    latest_version) + '/'
+                if not os.path.exists(latest_version_source):
+                    os.makedirs(latest_version_source)
+                latest_version_target = path + '/media/' + migration + '/' + 'Project_V' + str(
+                    current_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V1'
+                if not os.path.exists(latest_version_target):
+                    os.makedirs(latest_version_target)
+                shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
+
+                feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
+                                                               Migration_TypeId=migration, Object_Type=object_i,
+                                                               Feature_Name=feature,
+                                                               Feature_Version_Id=1)
+                attachment_feature_id_progress_new = feature_data_progress[0].Feature_Id
+
+                attachment_data_progress = Attachments.objects.filter(
+                    Feature_Id_id=attachment_feature_id_progress_old)
+                for dict in attachment_data_progress.values():
+                    att_type = dict['AttachmentType']
+                    filename = dict['filename']
+                    feature_version_id = 1
+                    attachment = dict['Attachment']
+                    attachment = attachment.replace('Project_V' + str(prev_project_version),
+                                                    'Project_V' + str(current_project_version))
+                    att_object2 = Attachments(Project_Version_Id=current_project_version,
+                                              Feature_Version_Id=feature_version_id,
+                                              AttachmentType=att_type, filename=filename,
+                                              Attachment=attachment,
+                                              Feature_Id_id=attachment_feature_id_progress_new)
+                    att_object2.save()
+
+                if len(feature_versions_old_list) > 1:
+                    version_del = max(feature_versions_old_list)
+                    del_feature = Feature.objects.get(Migration_TypeId=migration, Object_Type=object_i,
+                                                      Feature_Name=feature, Project_Version_Id=prev_project_version,
+                                                      Feature_Version_Id=version_del)
+                    feature_id = del_feature.Feature_Id
+                    del_feature.delete()
+                    attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
+                    attachments_data.delete()
+                    folder_path = path + '/media/' + migration + '/' + 'Project_V' + str(
                         prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
-                        latest_version) + '/'
-                    if not os.path.exists(latest_version_source):
-                        os.makedirs(latest_version_source)
-                    latest_version_target = path + '/media/' + migration + '/' + 'Project_V' + str(
-                        current_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V1'
-                    if not os.path.exists(latest_version_target):
-                        os.makedirs(latest_version_target)
-                    shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
-
-                    feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
-                                                                   Migration_TypeId=migration, Object_Type=object_i,
-                                                                   Feature_Name=feature,
-                                                                   Feature_Version_Id=1)
-                    attachment_feature_id_progress_new = feature_data_progress[0].Feature_Id
-
-                    attachment_data_progress = Attachments.objects.filter(
-                        Feature_Id_id=attachment_feature_id_progress_old)
-                    for dict in attachment_data_progress.values():
-                        att_type = dict['AttachmentType']
-                        filename = dict['filename']
-                        feature_version_id = 1
-                        attachment = dict['Attachment']
-                        attachment = attachment.replace('Project_V1', 'Project_V2')
-                        att_object2 = Attachments(Project_Version_Id=current_project_version,
-                                                  Feature_Version_Id=feature_version_id,
-                                                  AttachmentType=att_type, filename=filename,
-                                                  Attachment=attachment,
-                                                  Feature_Id_id=attachment_feature_id_progress_new)
-                        att_object2.save()
-
-                    if len(feature_versions_old_list) > 1:
-                        version_del = max(feature_versions_old_list)
-                        del_feature = Feature.objects.get(Migration_TypeId=migration, Object_Type=object_i,
-                                                          Feature_Name=feature, Project_Version_Id=prev_project_version,
-                                                          Feature_Version_Id=version_del)
-                        feature_id = del_feature.Feature_Id
-                        del_feature.delete()
-                        attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
-                        attachments_data.delete()
-                        folder_path = path + '/media/' + migration + '/' + 'Project_V' + str(
-                            prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
-                            version_del)
-                        shutil.rmtree(folder_path)
+                        version_del)
+                    shutil.rmtree(folder_path)
     return Response("New Project Version Created Successfully")
 
 
@@ -2343,6 +2356,14 @@ def useradminlist(request):
     serializer = useradminlistserializer(features, many=True)
     return Response(serializer.data)
 
+
+@api_view(['POST'])
+def removeuseradmin(request):
+    email = request.data['email']
+    features = Users.objects.get(email=email)
+    features.is_user_admin = False
+    features.save()
+    return Response('User admin removed successfully')
 
 @api_view(['POST'])
 def removesuperadmin(request):
@@ -2418,6 +2439,9 @@ def get_latest_feature_version_modules(request):
     approved_features_path = path + '/' + 'Conversion_Modules'
 
     if not os.path.exists(approved_features_path):
+        os.makedirs(approved_features_path)
+    else:
+        shutil.rmtree(approved_features_path)
         os.makedirs(approved_features_path)
     object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
     object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
@@ -2498,4 +2522,26 @@ def get_latest_feature_version_modules(request):
         workbook.close()
     else:
         return Response("No Modules Found for given Migration type")
+    file_share_copy()
     return Response("Modules Prepared for given Migration type")
+
+
+
+def file_share_copy():
+    connect_str = "DefaultEndpointsProtocol=https;AccountName=qmigcommon;AccountKey=4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw==;EndpointSuffix=core.windows.net"
+    container_name = "modules"
+    local_path = 'Conversion_Modules'
+    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+    container_client = blob_service_client.get_container_client(container_name)
+    myblobs = container_client.list_blobs(name_starts_with='Conversion_Modules')
+    if myblobs:
+        for blob in myblobs:
+            container_client.delete_blob(blob)
+    for r, d, f in os.walk(local_path):
+        if f:
+            for file in f:
+                file_path_on_azure = os.path.join(r, file)
+                file_path_on_local = os.path.join(r, file)
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
+                with open(file_path_on_local, "rb") as data:
+                    blob_client.upload_blob(data)
