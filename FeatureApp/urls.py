@@ -86,6 +86,9 @@ urlpatterns = [
                   path('userslist_useradmin/', userslist_useradminpage),
                   path('migtypes_useradmin/', migrationlist_useradmin),
                   path('useradminactions/', user_admin_actions),
-                  path('deploy/', get_latest_feature_version_modules)
+                  path('deploy/', get_latest_feature_version_modules),
+                  path('deletefromfileshare/', delete_folders_fromfileshare),
+                  path('export_to_fileshare/', export_to_fileshare),
+                  path('newmigtype_old/', migration_type_creation_based_on_old)
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
