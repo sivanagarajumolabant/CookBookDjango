@@ -89,6 +89,7 @@ urlpatterns = [
                   path('deploy/', get_latest_feature_version_modules),
                   path('deletefromfileshare/', delete_folders_fromfileshare),
                   path('export_to_fileshare/', export_to_fileshare),
-                  path('newmigtype_old/', migration_type_creation_based_on_old)
+                  path('newmigtype_old/', migration_type_creation_based_on_old),
+                  path('import_to_prod/', import_folders_prod)
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

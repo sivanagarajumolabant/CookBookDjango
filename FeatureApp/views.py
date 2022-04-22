@@ -7,7 +7,7 @@ from django.utils.encoding import force_text, smart_str
 from wsgiref.util import FileWrapper
 from .serializers import *
 from datetime import *
-from config.config import frontend_url
+from config.config import frontend_url, fileshare_connectionString
 from .models import *
 from rest_framework.decorators import api_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -1988,7 +1988,7 @@ def migrationlistperuser(request):
 
 @api_view(['GET'])
 def pdf_download(request):
-    file_path = 'media/Documents/PDF/instructions.pdf'
+    file_path = 'Documents/PDF/instructions.pdf'
     file_name = 'instructions.pdf'
     fl = open(file_path, 'rb')
     mime_type, _ = mimetypes.guess_type(file_path)
@@ -1999,7 +1999,7 @@ def pdf_download(request):
 
 @api_view(['GET'])
 def template_download(request):
-    file_path = 'media/Documents/Template/template.py'
+    file_path = 'Documents/Template/template.py'
     file_name = 'template.py'
     fl = open(file_path, 'rb')
     mime_type, _ = mimetypes.guess_type(file_path)
@@ -2528,7 +2528,7 @@ def get_latest_feature_version_modules(request):
 
 
 def file_share_copy():
-    connect_str = "DefaultEndpointsProtocol=https;AccountName=qmigcommon;AccountKey=4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw==;EndpointSuffix=core.windows.net"
+    connect_str = fileshare_connectionString
     container_name = "modules"
     local_path = 'Conversion_Modules'
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -2547,30 +2547,42 @@ def file_share_copy():
                     blob_client.upload_blob(data)
 
 
+# @api_view(['GET'])
+# def delete_folders_fromfileshare(request):
+#     connect_str = "DefaultEndpointsProtocol=https;AccountName=qmigcommon;AccountKey=4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw==;EndpointSuffix=core.windows.net"
+#     container_name = "modules"
+#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#     container_client = blob_service_client.get_container_client(container_name)
+#     myblobs_conversion = container_client.list_blobs(name_starts_with='Conversion_Modules')
+#     if myblobs_conversion:
+#         for blob in myblobs_conversion:
+#             container_client.delete_blob(blob)
+#     myblobs_media = container_client.list_blobs(name_starts_with='media')
+#     if myblobs_media:
+#         for blob in myblobs_media:
+#             container_client.delete_blob(blob)
+#     myblobs_module = container_client.list_blobs(name_starts_with='Modules')
+#     if myblobs_module:
+#         for blob in myblobs_module:
+#             container_client.delete_blob(blob)
+#     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
+
+
 @api_view(['GET'])
 def delete_folders_fromfileshare(request):
-    connect_str = "DefaultEndpointsProtocol=https;AccountName=qmigcommon;AccountKey=4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw==;EndpointSuffix=core.windows.net"
+    connect_str = fileshare_connectionString
     container_name = "modules"
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     container_client = blob_service_client.get_container_client(container_name)
-    myblobs_conversion = container_client.list_blobs(name_starts_with='Conversion_Modules')
-    if myblobs_conversion:
-        for blob in myblobs_conversion:
-            container_client.delete_blob(blob)
-    myblobs_media = container_client.list_blobs(name_starts_with='media')
-    if myblobs_media:
-        for blob in myblobs_media:
-            container_client.delete_blob(blob)
-    myblobs_module = container_client.list_blobs(name_starts_with='Modules')
-    if myblobs_module:
-        for blob in myblobs_module:
+    myblobs = container_client.list_blobs()
+    if myblobs:
+        for blob in myblobs:
             container_client.delete_blob(blob)
     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
 
-
 @api_view(['GET'])
 def export_to_fileshare(request):
-    connect_str = "DefaultEndpointsProtocol=https;AccountName=qmigcommon;AccountKey=4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw==;EndpointSuffix=core.windows.net"
+    connect_str = fileshare_connectionString
     container_name = "modules"
     local_path_media = 'media'
     local_path_module = 'Modules'
@@ -2643,3 +2655,36 @@ def migration_type_creation_based_on_old(request):
         os.makedirs(target_path)
     shutil.copytree(source_path, target_path, dirs_exist_ok=True)
     return Response("New Migration type created successfully based on given old migration type")
+
+
+@api_view(['GET'])
+def import_folders_prod(request):
+    connect_str = fileshare_connectionString
+    container_name = "modules"
+    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    local_path = path
+    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+    my_container = blob_service_client.get_container_client(container_name)
+    my_blobs_media = my_container.list_blobs(name_starts_with='media')
+    if my_blobs_media:
+        media_path = path + '/media/'
+        if os.path.exists(media_path):
+            shutil.rmtree(media_path)
+        for blob in my_blobs_media:
+            bytes = my_container.get_blob_client(blob).download_blob().readall()
+            download_file_path = os.path.join(local_path, blob.name)
+            os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
+            with open(download_file_path, "wb") as file:
+                file.write(bytes)
+    my_blobs_modules = my_container.list_blobs(name_starts_with='Modules')
+    if my_blobs_modules:
+        modules_path = path + '/Modules/'
+        if os.path.exists(modules_path):
+            shutil.rmtree(modules_path)
+        for blob in my_blobs_modules:
+            bytes = my_container.get_blob_client(blob).download_blob().readall()
+            download_file_path = os.path.join(local_path, blob.name)
+            os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
+            with open(download_file_path, "wb") as file:
+                file.write(bytes)
+    return Response("Folders imported successfully to local folder")
