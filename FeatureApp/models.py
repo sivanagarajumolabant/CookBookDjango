@@ -48,17 +48,24 @@ class Feature(models.Model):
     def __int__(self):
         return self.Feature_Id
 
+
 def user_directory_path(instance, filename):
-    path_file = 'media/' + instance.Feature_Id.Migration_TypeId + '/' + 'Project_V' + str(instance.Feature_Id.Project_Version_Id) + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + 'Feature_V' + str(instance.Feature_Id.Feature_Version_Id) + '/' + instance.AttachmentType + '/' + filename
+    path_file = 'media/' + instance.Feature_Id.Migration_TypeId + '/' + 'Project_V' + str(
+        instance.Feature_Id.Project_Version_Id) + '/' + instance.Feature_Id.Object_Type + '/' + instance.Feature_Id.Feature_Name + '/' + 'Feature_V' + str(
+        instance.Feature_Id.Feature_Version_Id) + '/' + instance.AttachmentType + '/' + filename
     if os.path.exists(path_file):
         os.remove(path_file)
     for row in Attachments.objects.all().reverse():
         if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
                                       Feature_Id_id=row.Feature_Id_id).count() > 1:
             row.delete()
-    return 'media/{0}/Project_V{1}/{2}/{3}/Feature_V{4}/{5}/{6}'.format(instance.Feature_Id.Migration_TypeId,instance.Feature_Id.Project_Version_Id, instance.Feature_Id.Object_Type,
-                                              instance.Feature_Id.Feature_Name,instance.Feature_Id.Feature_Version_Id,
-                                              instance.AttachmentType, filename)
+    return 'media/{0}/Project_V{1}/{2}/{3}/Feature_V{4}/{5}/{6}'.format(instance.Feature_Id.Migration_TypeId,
+                                                                        instance.Feature_Id.Project_Version_Id,
+                                                                        instance.Feature_Id.Object_Type,
+                                                                        instance.Feature_Id.Feature_Name,
+                                                                        instance.Feature_Id.Feature_Version_Id,
+                                                                        instance.AttachmentType, filename)
+
 
 class Attachments(models.Model):
     choices = [
@@ -74,7 +81,8 @@ class Attachments(models.Model):
     Feature_Id = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True)
     AttachmentType = models.CharField(max_length=50, blank=True, null=True, choices=choices)
     filename = models.CharField(max_length=100, blank=True, null=True)
-    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True, storage=CleanFileNameStorage(),max_length=500)
+    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True, storage=CleanFileNameStorage(),
+                                  max_length=500)
 
     def __int__(self):
         return self.Feature_Id.Feature_Id
@@ -103,4 +111,8 @@ class Permissions(models.Model):
     Expiry_date = models.DateField(null=True, blank=True)
 
 
-
+class Deploy(models.Model):
+    Migration_TypeId = models.CharField(max_length=100, null=True)
+    Deploy_Start_Time = models.DateTimeField(blank=True, null=True)
+    Deploy_End_Time = models.DateTimeField(blank=True, null=True)
+    Deployment_Status = models.CharField(max_length=50, default='Deploy in Progress')

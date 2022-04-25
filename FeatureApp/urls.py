@@ -90,6 +90,10 @@ urlpatterns = [
                   path('deletefromfileshare/', delete_folders_fromfileshare),
                   path('export_to_fileshare/', export_to_fileshare),
                   path('newmigtype_old/', migration_type_creation_based_on_old),
-                  path('import_to_prod/', import_folders_prod)
+                  path('import_to_prod/', import_folders_prod),
+                  path('usermigration_listperuser/', user_migration_listperuser),
+                  path('rm_user_admin_permissions/', remove_user_admin_permissions),
+                  path('deploy_status/', deploy_table),
+                  path('createdeploystatus/',create_deploy_record)
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -44,6 +44,7 @@ def featurelist(request):
     serializer = FeatureSerializer(features, many=True)
     return Response(serializer.data)
 
+
 @api_view(['POST'])
 def featurecreate(request):
     migration_type = request.data['Migration_TypeId']
@@ -74,6 +75,7 @@ def featuredropdownlist(request):
         Object_Type=obj_type, Migration_TypeId=migtype)
     serializer = FeaturedropdownSerializer(features, many=True)
     return Response(serializer.data)
+
 
 @api_view(['POST'])
 def feature_version_list(request):
@@ -203,6 +205,7 @@ def featuredetail(request, feature_name):
         final_list.append(response)
 
     return Response(final_list)
+
 
 @api_view(['GET', 'POST'])
 def feature_catalog_access_check(request):
@@ -410,6 +413,7 @@ def feature_catalog_access_check(request):
                 response = {'serializer': 'No Data', 'flag': flag, 'view_flag': view_flag}
     return Response(response)
 
+
 @api_view(['PUT'])
 def featureupdate(request, pk):
     feature_approval_status_request = request.data['Feature_version_approval_status']
@@ -525,6 +529,7 @@ def featuredelete(request, pk):
     features.delete()
     return Response('Deleted')
 
+
 @api_view(['POST'])
 def predessors(request):
     body_unicode = request.body.decode('utf-8')
@@ -559,10 +564,11 @@ def download_attachment(request):
     filter_values = list(filter_files.values_list())
     file_path = filter_values[0]
     fl = open(file_path[6], 'rb')
-    mime_type, _ = mimetypes.guess_type(file_path[4])
+    mime_type, _ = mimetypes.guess_type(file_path[6])
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
+
 
 @api_view(['POST'])
 def conversion(request):
@@ -940,6 +946,7 @@ def create_tablepage_featuresdata(request):
             final_output_list.append(final_dict[0])
     return Response(final_output_list)
 
+
 @api_view(['POST'])
 def get_Featurenames(request):
     Migration_TypeId = request.data['Migration_TypeId']
@@ -1017,6 +1024,7 @@ def get_Featurenames(request):
         final_output_list.append(final_dict[0])
     return Response(final_output_list, status=status.HTTP_200_OK)
 
+
 @api_view(['POST'])
 def migrationsscreate(request):
     project_id = request.data['Project_Version_Id']
@@ -1060,7 +1068,6 @@ def migrationviewlist(request):
     return Response(serializer.data)
 
 
-
 @api_view(['POST'])
 def objectviewtlist(request):
     Migration_TypeId = request.data['Migration_TypeId']
@@ -1069,6 +1076,7 @@ def objectviewtlist(request):
                                          Project_Version_Id=Project_Version_Id).exclude(Object_Type="")
     serializer = objectviewserializer(features, many=True)
     return Response(serializer.data)
+
 
 @api_view(['POST'])
 def approvalscreate(request):
@@ -1125,6 +1133,7 @@ def userslist(request):
     features = Users.objects.filter(is_verified=True)
     serializer = usersserializer(features, many=True)
     return Response(serializer.data)
+
 
 @api_view(['POST', 'GET'])
 def permissionscreate(request):
@@ -1222,6 +1231,7 @@ def permissionscreate(request):
     else:
         return Response("User already has permission")
 
+
 @api_view(['GET', 'POST'])
 def create_check_list(request):
     email = request.data['User_Email']
@@ -1258,6 +1268,7 @@ def create_check_list(request):
                 inter_dict['Create_Flag'] = 0
                 final_list.append(inter_dict.copy())
     return Response(final_list)
+
 
 @api_view(['POST'])
 def migration_user_view(request):
@@ -1543,6 +1554,7 @@ def migration_user_view(request):
         final_dict['SubMenu'] = submenu_list_new
     return Response(final_list)
 
+
 @api_view(['PUT'])
 def approvalsupdate(request, id):
     user_Email = request.data['User_Email']
@@ -1635,6 +1647,7 @@ def approvalsupdate(request, id):
         return Response(serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET', 'POST'])
 def admin_permissions(request):
     email = request.data['email']
@@ -1684,6 +1697,7 @@ def admin_permissions(request):
             else:
                 return Response("User already has this admin permission")
 
+
 @api_view(['GET', 'POST', 'PUT'])
 def remove_admin_permission(request):
     User_Email = request.data['User_Email']
@@ -1727,6 +1741,7 @@ def remove_admin_permission(request):
                             a.admin_migrations = admin_access_dict
                             a.save()
         return Response("Admin access removed")
+
 
 @api_view(['GET', 'POST'])
 def admin_rm_migration_list(request):
@@ -1807,7 +1822,7 @@ def admin_users_list(request):
     inter_dict = {}
     for user_i in users.values():
         admin_mig_value = user_i['admin_migrations']
-        if admin_mig_value == '' or admin_mig_value == None: 
+        if admin_mig_value == '' or admin_mig_value == None:
             continue
         else:
             inter_dict['Email'] = user_i['email']
@@ -1832,6 +1847,7 @@ def super_users_list(request):
             superuser_dict['Email'] = user_i['email']
             superuser_list.append(superuser_dict.copy())
     return Response(superuser_list)
+
 
 @api_view(['POST'])
 def grant_access_approve(request):
@@ -2081,7 +2097,8 @@ def approval_featurecreate(request):
     feature_versions_list_all = []
     feature_latest_versions_list = []
     for project_version_i in project_versions_list:
-        mig_feature_versions_data = Feature.objects.filter(Project_Version_Id=project_version_i,Object_Type = object_type,
+        mig_feature_versions_data = Feature.objects.filter(Project_Version_Id=project_version_i,
+                                                           Object_Type=object_type,
                                                            Migration_TypeId=migration_type,
                                                            Feature_Name=feature_name).values('Feature_Version_Id')
         f_versions_list_without_prefix = []
@@ -2157,17 +2174,18 @@ def approval_featurecreate(request):
 #     return Response(final_list)
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def project_versions_list(request):
     migration_type = request.data['Migration_TypeId']
-    project_versions = migrations.objects.filter(Migration_TypeId = migration_type).values('Project_Version_Id').distinct()
+    project_versions = migrations.objects.filter(Migration_TypeId=migration_type).values(
+        'Project_Version_Id').distinct()
     final_list = []
     version_list = []
     if project_versions:
         for dict in project_versions:
             version_list.append(dict['Project_Version_Id'])
         inter_dict = {}
-        version_list = [i for i in version_list if i!='null']
+        version_list = [i for i in version_list if i != 'null']
         for i in version_list:
             print(i, type(i))
             inter_dict['title'] = 'V' + str(i)
@@ -2187,10 +2205,9 @@ def create_project_version(request):
     # prev_project_version = request.data['Project_Version_Id']
     mig_data = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values('Project_Version_Id')
     mig_project_versions_list = [dict['Project_Version_Id'] for dict in mig_data if dict['Project_Version_Id'] != '']
-    max_value  = max(mig_project_versions_list)
+    max_value = max(mig_project_versions_list)
     prev_project_version = max_value
     current_project_version = int(max_value) + 1
-
 
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -2365,17 +2382,19 @@ def removeuseradmin(request):
     features.save()
     return Response('User admin removed successfully')
 
+
 @api_view(['POST'])
 def removesuperadmin(request):
     email = request.data['email']
     user_object = Users.objects.get(email=email)
-    super_user_list = Users.objects.filter(is_superuser = True)
+    super_user_list = Users.objects.filter(is_superuser=True)
     if len(super_user_list) > 2:
         user_object.is_superuser = False
         user_object.save()
         return Response('super admin removed successfully')
     else:
         return Response('Super admin cannot be deleted as number of super admin users less than 2')
+
 
 @api_view(['GET'])
 def user_waiting_list(request):
@@ -2390,6 +2409,7 @@ def user_waiting_list(request):
         inter_dict['Status'] = user_registration_status
         final_list.append(inter_dict.copy())
     return Response(final_list)
+
 
 @api_view(['GET'])
 def userslist_useradminpage(request):
@@ -2430,101 +2450,101 @@ def user_admin_actions(request):
         user_object.save()
         return Response('User has been rejected')
 
-
-@api_view(['GET','POST'])
-def get_latest_feature_version_modules(request):
-    migration = request.data['Migration_TypeId']
-
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    approved_features_path = path + '/' + 'Conversion_Modules'
-
-    if not os.path.exists(approved_features_path):
-        os.makedirs(approved_features_path)
-    else:
-        shutil.rmtree(approved_features_path)
-        os.makedirs(approved_features_path)
-    object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
-    object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-    if object_types_old_list:
-        excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
-        workbook = xlsxwriter.Workbook(excel_name)
-        for object_i in object_types_old_list:
-            feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
-                'Feature_Name').distinct()
-            feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
-
-            worksheet = workbook.add_worksheet(object_i)
-            f_names_list = []
-            keywords_list = []
-            level_list = []
-            predecessor_list = []
-            for feature in feature_names_old_list:
-                feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-                                                              Feature_Name=feature,
-                                                              Feature_version_approval_status='Approved').values(
-                    'Project_Version_Id', 'Feature_Version_Id')
-                feature_versions_old_list = []
-                for dict in feature_versions_old:
-                    feature_versions_old_list.append(
-                        str(dict['Project_Version_Id']) + '.' + str(dict['Feature_Version_Id']))
-
-                feature_versions_old_list = sorted(feature_versions_old_list, key=float)
-                if feature_versions_old_list:
-                    latest_version = max(feature_versions_old_list)
-                    prj_ver = latest_version.split('.')[0].strip()
-                    feat_ver = latest_version.split('.')[1].strip()
-                    latest_feature_data = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-                                                                 Feature_Name=feature, Project_Version_Id=prj_ver,
-                                                                 Feature_Version_Id=feat_ver).values()
-
-                    feature_name = latest_feature_data[0]['Feature_Name']
-                    keywords = latest_feature_data[0]['Keywords']
-                    level = latest_feature_data[0]['Level']
-                    predecessor = latest_feature_data[0]['Sequence']
-
-                    f_names_list.append(feature_name)
-                    keywords_list.append(keywords)
-                    level_list.append(level)
-                    predecessor_list.append(predecessor)
-                    latest_version_feature_id = latest_feature_data[0]['Feature_Id']
-                    module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
-                    module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
-                    if not os.path.exists(module_approved_path):
-                        os.makedirs(module_approved_path)
-                    attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,AttachmentType='Conversion')
-                    if attachments_data:
-                        attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
-                        attachment_module = os.listdir(attachment_module_path)[0]
-                        if attachment_module:
-                            shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
-                    elif os.path.isdir(module_path):
-                        module = os.listdir(module_path)[0]
-                        if module:
-                            shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
-                    else:
-                        print("No module found")
-            row_length = len(f_names_list)
-            serial_list = [i for i in range(1, row_length + 1)]
-            data_dictionary = {'Serial No.': serial_list,
-                               'Feature Name': f_names_list,
-                               'Keywords': keywords_list,
-                               'Level': level_list,
-                               'Predecessor': predecessor_list}
-            col_num = 0
-            format = workbook.add_format({'bold': True, 'border': 1})
-            format.set_align('center')
-            format2 = workbook.add_format({'border': 1})
-            for key, value in data_dictionary.items():
-                worksheet.write(0, col_num, key, format)
-                worksheet.write_column(1, col_num, value, format2)
-                col_num += 1
-            worksheet.set_column(1, 4, 35)
-        workbook.close()
-    else:
-        return Response("No Modules Found for given Migration type")
-    file_share_copy()
-    return Response("Modules Prepared for given Migration type")
-
+#
+# @api_view(['GET', 'POST'])
+# def get_latest_feature_version_modules(request):
+#     migration = request.data['Migration_TypeId']
+#
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     approved_features_path = path + '/' + 'Conversion_Modules'
+#
+#     if not os.path.exists(approved_features_path):
+#         os.makedirs(approved_features_path)
+#     else:
+#         shutil.rmtree(approved_features_path)
+#         os.makedirs(approved_features_path)
+#     object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
+#     object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
+#     if object_types_old_list:
+#         excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
+#         workbook = xlsxwriter.Workbook(excel_name)
+#         for object_i in object_types_old_list:
+#             feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
+#                 'Feature_Name').distinct()
+#             feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
+#
+#             worksheet = workbook.add_worksheet(object_i)
+#             f_names_list = []
+#             keywords_list = []
+#             level_list = []
+#             predecessor_list = []
+#             for feature in feature_names_old_list:
+#                 feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
+#                                                               Feature_Name=feature,
+#                                                               Feature_version_approval_status='Approved').values(
+#                     'Project_Version_Id', 'Feature_Version_Id')
+#                 feature_versions_old_list = []
+#                 for dict in feature_versions_old:
+#                     feature_versions_old_list.append(
+#                         str(dict['Project_Version_Id']) + '.' + str(dict['Feature_Version_Id']))
+#
+#                 feature_versions_old_list = sorted(feature_versions_old_list, key=float)
+#                 if feature_versions_old_list:
+#                     latest_version = max(feature_versions_old_list)
+#                     prj_ver = latest_version.split('.')[0].strip()
+#                     feat_ver = latest_version.split('.')[1].strip()
+#                     latest_feature_data = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
+#                                                                  Feature_Name=feature, Project_Version_Id=prj_ver,
+#                                                                  Feature_Version_Id=feat_ver).values()
+#
+#                     feature_name = latest_feature_data[0]['Feature_Name']
+#                     keywords = latest_feature_data[0]['Keywords']
+#                     level = latest_feature_data[0]['Level']
+#                     predecessor = latest_feature_data[0]['Sequence']
+#
+#                     f_names_list.append(feature_name)
+#                     keywords_list.append(keywords)
+#                     level_list.append(level)
+#                     predecessor_list.append(predecessor)
+#                     latest_version_feature_id = latest_feature_data[0]['Feature_Id']
+#                     module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
+#                     module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
+#                     if not os.path.exists(module_approved_path):
+#                         os.makedirs(module_approved_path)
+#                     attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
+#                                                                   AttachmentType='Conversion')
+#                     if attachments_data:
+#                         attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
+#                         attachment_module = os.listdir(attachment_module_path)[0]
+#                         if attachment_module:
+#                             shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
+#                     elif os.path.isdir(module_path):
+#                         module = os.listdir(module_path)[0]
+#                         if module:
+#                             shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
+#                     else:
+#                         print("No module found")
+#             row_length = len(f_names_list)
+#             serial_list = [i for i in range(1, row_length + 1)]
+#             data_dictionary = {'Serial No.': serial_list,
+#                                'Feature Name': f_names_list,
+#                                'Keywords': keywords_list,
+#                                'Level': level_list,
+#                                'Predecessor': predecessor_list}
+#             col_num = 0
+#             format = workbook.add_format({'bold': True, 'border': 1})
+#             format.set_align('center')
+#             format2 = workbook.add_format({'border': 1})
+#             for key, value in data_dictionary.items():
+#                 worksheet.write(0, col_num, key, format)
+#                 worksheet.write_column(1, col_num, value, format2)
+#                 col_num += 1
+#             worksheet.set_column(1, 4, 35)
+#         workbook.close()
+#     else:
+#         return Response("No Modules Found for given Migration type")
+#     file_share_copy()
+#     return Response("Modules Prepared for given Migration type")
 
 
 def file_share_copy():
@@ -2580,6 +2600,7 @@ def delete_folders_fromfileshare(request):
             container_client.delete_blob(blob)
     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
 
+
 @api_view(['GET'])
 def export_to_fileshare(request):
     connect_str = fileshare_connectionString
@@ -2615,8 +2636,7 @@ def export_to_fileshare(request):
     return Response("Folders exported successfully to azure fileshare")
 
 
-
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def migration_type_creation_based_on_old(request):
     old_migration_type = request.data['Migration_TypeId']
     new_migration_type = request.data['New_Migration_Type']
@@ -2624,30 +2644,36 @@ def migration_type_creation_based_on_old(request):
     for dict in mig_data_old.values():
         migrations.objects.create(Project_Version_Id=dict['Project_Version_Id'],
                                   Migration_TypeId=new_migration_type,
-                                  Object_Type=dict['Object_Type'], Code=new_migration_type.replace(' ','_'),
+                                  Object_Type=dict['Object_Type'], Code=new_migration_type.replace(' ', '_'),
                                   Project_Version_limit=dict['Project_Version_limit'],
                                   Feature_Version_Limit=dict['Feature_Version_Limit'])
     features_data_old = Feature.objects.filter(Migration_TypeId=old_migration_type)
     for dict in features_data_old.values():
-        Feature.objects.create(Migration_TypeId = new_migration_type,Feature_Id = None,
-                               Project_Version_Id = dict['Project_Version_Id'],Feature_Version_Id = dict['Feature_Version_Id'],
-                               Object_Type = dict['Object_Type'],Feature_Name = dict['Feature_Name'],
-                               Feature_version_approval_status = dict['Feature_version_approval_status'],
-                               Level = dict['Level'],Keywords = dict['Keywords'],Estimations = dict['Estimations'],
-                               Sequence = dict['Sequence'],Source_FeatureDescription = dict['Source_FeatureDescription'],
-                               Source_Code = dict['Source_Code'],Conversion_Code = dict['Conversion_Code'],
-                               Target_FeatureDescription = dict['Target_FeatureDescription'],Target_Expected_Output = dict['Target_Expected_Output'],
-                               Target_ActualCode = dict['Target_ActualCode'],Feature_Approval_Date = dict['Feature_Approval_Date'])
+        Feature.objects.create(Migration_TypeId=new_migration_type, Feature_Id=None,
+                               Project_Version_Id=dict['Project_Version_Id'],
+                               Feature_Version_Id=dict['Feature_Version_Id'],
+                               Object_Type=dict['Object_Type'], Feature_Name=dict['Feature_Name'],
+                               Feature_version_approval_status=dict['Feature_version_approval_status'],
+                               Level=dict['Level'], Keywords=dict['Keywords'], Estimations=dict['Estimations'],
+                               Sequence=dict['Sequence'], Source_FeatureDescription=dict['Source_FeatureDescription'],
+                               Source_Code=dict['Source_Code'], Conversion_Code=dict['Conversion_Code'],
+                               Target_FeatureDescription=dict['Target_FeatureDescription'],
+                               Target_Expected_Output=dict['Target_Expected_Output'],
+                               Target_ActualCode=dict['Target_ActualCode'],
+                               Feature_Approval_Date=dict['Feature_Approval_Date'])
     attachment_data_old = Attachments.objects.filter(Attachment__contains=str(old_migration_type))
     for dict in attachment_data_old.values():
         object_type = dict['Attachment'].split('/')[3]
         feature_name = dict['Attachment'].split('/')[4]
-        Attachments.objects.create(Project_Version_Id = dict['Project_Version_Id'],Feature_Version_Id = dict['Feature_Version_Id'],
-                                   AttachmentType = dict['AttachmentType'],filename = dict['filename'],
-                                   Attachment = dict['Attachment'].replace(old_migration_type,new_migration_type),
-                                   Feature_Id = Feature.objects.get(Migration_TypeId = new_migration_type,Project_Version_Id = dict['Project_Version_Id'],
-                                                            Feature_Version_Id = dict['Feature_Version_Id'],Object_Type = object_type,
-                                                            Feature_Name = feature_name))
+        Attachments.objects.create(Project_Version_Id=dict['Project_Version_Id'],
+                                   Feature_Version_Id=dict['Feature_Version_Id'],
+                                   AttachmentType=dict['AttachmentType'], filename=dict['filename'],
+                                   Attachment=dict['Attachment'].replace(old_migration_type, new_migration_type),
+                                   Feature_Id=Feature.objects.get(Migration_TypeId=new_migration_type,
+                                                                  Project_Version_Id=dict['Project_Version_Id'],
+                                                                  Feature_Version_Id=dict['Feature_Version_Id'],
+                                                                  Object_Type=object_type,
+                                                                  Feature_Name=feature_name))
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     source_path = path + '/media/' + old_migration_type + '/'
     target_path = path + '/media/' + new_migration_type + '/'
@@ -2688,3 +2714,158 @@ def import_folders_prod(request):
             with open(download_file_path, "wb") as file:
                 file.write(bytes)
     return Response("Folders imported successfully to local folder")
+
+
+@api_view(['POST'])
+def user_migration_listperuser(request):
+    email = request.data['User_Email']
+    user_object = Users.objects.get(email=email)
+    user_admin_access = user_object.user_migrations
+    final_list = []
+    if user_admin_access == '' or user_admin_access == None:
+        return Response(final_list)
+    else:
+        user_admin_access_list = user_admin_access.split(',')
+        user_admin_access_list = [x for x in user_admin_access_list if x != '']
+        inter_dict = {}
+        for mig in user_admin_access_list:
+            inter_dict['Migration_TypeId'] = mig
+            final_list.append(inter_dict.copy())
+        return Response(final_list)
+
+
+@api_view(['POST'])
+def remove_user_admin_permissions(request):
+    email = request.data['User_Email']
+    mig_type = request.data['Migration_TypeId']
+    user_object = Users.objects.get(email = email)
+    user_admin_access = user_object.user_migrations
+    if mig_type in user_admin_access:
+        user_admin_access = user_admin_access.replace(mig_type + ',', '')
+        user_object.user_migrations = user_admin_access
+        user_object.save()
+        appr_data = Approvals.objects.filter(User_Email=email,Migration_TypeId=mig_type)
+        appr_data.delete()
+        perm_data = Permissions.objects.filter(User_Email=email,Migration_TypeId=mig_type)
+        perm_data.delete()
+    return Response("Migration Type Removed from User Migrations")
+
+
+@api_view(['GET','POST'])
+def get_latest_feature_version_modules(request):
+    migration = request.data['Migration_TypeId']
+    if migration != 'undefined':
+        # deploy_start_time = datetime.now()
+        # Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
+
+        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        approved_features_path = path + '/' + 'Conversion_Modules'
+        if not os.path.exists(approved_features_path):
+            os.makedirs(approved_features_path)
+        else:
+            shutil.rmtree(approved_features_path)
+            os.makedirs(approved_features_path)
+        object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
+        object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
+        if object_types_old_list:
+            excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
+            workbook = xlsxwriter.Workbook(excel_name)
+            for object_i in object_types_old_list:
+                feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
+                    'Feature_Name').distinct()
+                feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
+
+                worksheet = workbook.add_worksheet(object_i)
+                f_names_list = []
+                keywords_list = []
+                level_list = []
+                predecessor_list = []
+                for feature in feature_names_old_list:
+                    feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
+                                                                  Feature_Name=feature,
+                                                                  Feature_version_approval_status='Approved').values(
+                        'Project_Version_Id', 'Feature_Version_Id')
+                    feature_versions_old_list = []
+                    for dict in feature_versions_old:
+                        feature_versions_old_list.append(
+                            str(dict['Project_Version_Id']) + '.' + str(dict['Feature_Version_Id']))
+
+                    feature_versions_old_list = sorted(feature_versions_old_list, key=float)
+                    if feature_versions_old_list:
+                        latest_version = max(feature_versions_old_list)
+                        prj_ver = latest_version.split('.')[0].strip()
+                        feat_ver = latest_version.split('.')[1].strip()
+                        latest_feature_data = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
+                                                                     Feature_Name=feature, Project_Version_Id=prj_ver,
+                                                                     Feature_Version_Id=feat_ver).values()
+
+                        feature_name = latest_feature_data[0]['Feature_Name']
+                        keywords = latest_feature_data[0]['Keywords']
+                        level = latest_feature_data[0]['Level']
+                        predecessor = latest_feature_data[0]['Sequence']
+
+                        f_names_list.append(feature_name)
+                        keywords_list.append(keywords)
+                        level_list.append(level)
+                        predecessor_list.append(predecessor)
+                        latest_version_feature_id = latest_feature_data[0]['Feature_Id']
+                        module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
+                        module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
+                        if not os.path.exists(module_approved_path):
+                            os.makedirs(module_approved_path)
+                        attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,AttachmentType='Conversion')
+                        if attachments_data:
+                            attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
+                            attachment_module = os.listdir(attachment_module_path)[0]
+                            if attachment_module:
+                                shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
+                        elif os.path.isdir(module_path):
+                            module = os.listdir(module_path)[0]
+                            if module:
+                                shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
+                        else:
+                            print("No module found")
+                row_length = len(f_names_list)
+                serial_list = [i for i in range(1, row_length + 1)]
+                data_dictionary = {'Serial No.': serial_list,
+                                   'Feature Name': f_names_list,
+                                   'Keywords': keywords_list,
+                                   'Level': level_list,
+                                   'Predecessor': predecessor_list}
+                col_num = 0
+                format = workbook.add_format({'bold': True, 'border': 1})
+                format.set_align('center')
+                format2 = workbook.add_format({'border': 1})
+                for key, value in data_dictionary.items():
+                    worksheet.write(0, col_num, key, format)
+                    worksheet.write_column(1, col_num, value, format2)
+                    col_num += 1
+                worksheet.set_column(1, 4, 35)
+            workbook.close()
+            file_share_copy()
+        else:
+            return Response("No Modules Found for given Migration type")
+        deploy_object = Deploy.objects.get(Migration_TypeId=migration, Deployment_Status='Deploy in Progress')
+        deploy_object.Deploy_End_Time = datetime.now()
+        deploy_object.Deployment_Status = 'Completed'
+        deploy_object.save()
+        return Response("Modules Prepared for given Migration type")
+    else:
+        return Response("Please Select Migration Type for Deploy")
+
+
+@api_view(['GET'])
+def deploy_table(request):
+    deploy_data = Deploy.objects.all()
+    serializer = deployserializer(deploy_data, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET','POST'])
+def create_deploy_record(request):
+    migration = request.data['Migration_TypeId']
+    if migration != 'undefined':
+        deploy_start_time = datetime.now()
+        Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
+    return Response("Record created in deploy table")
+

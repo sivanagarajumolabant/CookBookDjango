@@ -16,6 +16,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(min_length=6, max_length=68, write_only=True)
     token = serializers.CharField(min_length=1, write_only=True)
     uidb64 = serializers.CharField(min_length=1, write_only=True)
+
     class Meta:
         model = Users
         fields = ['password', 'token', 'uidb64']
@@ -151,6 +152,7 @@ class viewlevelfeatures(serializers.ModelSerializer):
         model = Users
         fields = ('can_view',)
 
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -178,6 +180,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                                                         Object_Type=dict['Object_Type'])
                 approval_record.delete()
         return data
+
 
 class resendemailserializer(serializers.ModelSerializer):
     class Meta:
@@ -219,3 +222,9 @@ class migrationuseradminserializer(serializers.ModelSerializer):
     class Meta:
         model = migrations
         fields = ('Migration_TypeId',)
+
+
+class deployserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deploy
+        fields = '__all__'
