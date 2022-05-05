@@ -7,7 +7,7 @@ from django.utils.encoding import force_text, smart_str
 from wsgiref.util import FileWrapper
 from .serializers import *
 from datetime import *
-from config.config import frontend_url, fileshare_connectionString
+from config.config import frontend_url, fileshare_connectionString, container_name_var
 from .models import *
 from rest_framework.decorators import api_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -2547,24 +2547,46 @@ def user_admin_actions(request):
 #     return Response("Modules Prepared for given Migration type")
 
 
+# def file_share_copy():
+#     connect_str = fileshare_connectionString
+#     container_name = "modules"
+#     local_path = 'Conversion_Modules'
+#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#     container_client = blob_service_client.get_container_client(container_name)
+#     myblobs = container_client.list_blobs(name_starts_with='Conversion_Modules')
+#     if myblobs:
+#         for blob in myblobs:
+#             container_client.delete_blob(blob)
+#     for r, d, f in os.walk(local_path):
+#         if f:
+#             for file in f:
+#                 file_path_on_azure = os.path.join(r, file)
+#                 file_path_on_local = os.path.join(r, file)
+#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
+#                 with open(file_path_on_local, "rb") as data:
+#                     blob_client.upload_blob(data)
+
 def file_share_copy():
     connect_str = fileshare_connectionString
-    container_name = "modules"
+    container_name = container_name_var
     local_path = 'Conversion_Modules'
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     container_client = blob_service_client.get_container_client(container_name)
     myblobs = container_client.list_blobs(name_starts_with='Conversion_Modules')
     if myblobs:
         for blob in myblobs:
+            blob_service_client = BlobServiceClient.from_connection_string(connect_str)
             container_client.delete_blob(blob)
     for r, d, f in os.walk(local_path):
         if f:
             for file in f:
                 file_path_on_azure = os.path.join(r, file)
                 file_path_on_local = os.path.join(r, file)
+                blob_service_client = BlobServiceClient.from_connection_string(connect_str)
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
                 with open(file_path_on_local, "rb") as data:
                     blob_client.upload_blob(data)
+
 
 
 # @api_view(['GET'])
@@ -2587,24 +2609,74 @@ def file_share_copy():
 #             container_client.delete_blob(blob)
 #     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
 
+#
+# @api_view(['GET'])
+# def delete_folders_fromfileshare(request):
+#     connect_str = fileshare_connectionString
+#     container_name = container_name_var
+#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#     container_client = blob_service_client.get_container_client(container_name)
+#     myblobs = container_client.list_blobs()
+#     if myblobs:
+#         for blob in myblobs:
+#             container_client.delete_blob(blob)
+#     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
+
 
 @api_view(['GET'])
 def delete_folders_fromfileshare(request):
     connect_str = fileshare_connectionString
-    container_name = "modules"
+    container_name = container_name_var
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     container_client = blob_service_client.get_container_client(container_name)
     myblobs = container_client.list_blobs()
     if myblobs:
         for blob in myblobs:
+            blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+            container_client = blob_service_client.get_container_client(container_name)
             container_client.delete_blob(blob)
     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
+
+
+# @api_view(['GET'])
+# def export_to_fileshare(request):
+#     connect_str = fileshare_connectionString
+#     container_name = "modules"
+#     local_path_media = 'media'
+#     local_path_module = 'Modules'
+#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#     container_client = blob_service_client.get_container_client(container_name)
+#     myblobs_media = container_client.list_blobs(name_starts_with='media')
+#     if myblobs_media:
+#         for blob in myblobs_media:
+#             container_client.delete_blob(blob)
+#     for r, d, f in os.walk(local_path_media):
+#         if f:
+#             for file in f:
+#                 file_path_on_azure = os.path.join(r, file)
+#                 file_path_on_local = os.path.join(r, file)
+#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
+#                 with open(file_path_on_local, "rb") as data:
+#                     blob_client.upload_blob(data)
+#     myblobs_module = container_client.list_blobs(name_starts_with='Modules')
+#     if myblobs_module:
+#         for blob in myblobs_module:
+#             container_client.delete_blob(blob)
+#     for r, d, f in os.walk(local_path_module):
+#         if f:
+#             for file in f:
+#                 file_path_on_azure = os.path.join(r, file)
+#                 file_path_on_local = os.path.join(r, file)
+#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
+#                 with open(file_path_on_local, "rb") as data:
+#                     blob_client.upload_blob(data)
+#     return Response("Folders exported successfully to azure fileshare")
 
 
 @api_view(['GET'])
 def export_to_fileshare(request):
     connect_str = fileshare_connectionString
-    container_name = "modules"
+    container_name = container_name_var
     local_path_media = 'media'
     local_path_module = 'Modules'
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -2746,10 +2818,42 @@ def migration_type_creation_based_on_old(request):
     shutil.copytree(source_path, target_path, dirs_exist_ok=True)
     return Response("New Migration type created successfully based on given old migration type")
 
+# @api_view(['GET'])
+# def import_folders_prod(request):
+#     connect_str = fileshare_connectionString
+#     container_name = "modules"
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     local_path = path
+#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#     my_container = blob_service_client.get_container_client(container_name)
+#     my_blobs_media = my_container.list_blobs(name_starts_with='media')
+#     if my_blobs_media:
+#         media_path = path + '/media/'
+#         if os.path.exists(media_path):
+#             shutil.rmtree(media_path)
+#         for blob in my_blobs_media:
+#             bytes = my_container.get_blob_client(blob).download_blob().readall()
+#             download_file_path = os.path.join(local_path, blob.name)
+#             os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
+#             with open(download_file_path, "wb") as file:
+#                 file.write(bytes)
+#     my_blobs_modules = my_container.list_blobs(name_starts_with='Modules')
+#     if my_blobs_modules:
+#         modules_path = path + '/Modules/'
+#         if os.path.exists(modules_path):
+#             shutil.rmtree(modules_path)
+#         for blob in my_blobs_modules:
+#             bytes = my_container.get_blob_client(blob).download_blob().readall()
+#             download_file_path = os.path.join(local_path, blob.name)
+#             os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
+#             with open(download_file_path, "wb") as file:
+#                 file.write(bytes)
+#     return Response("Folders imported successfully to local folder")
+
 @api_view(['GET'])
 def import_folders_prod(request):
     connect_str = fileshare_connectionString
-    container_name = "modules"
+    container_name =container_name_var
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     local_path = path
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -2760,6 +2864,8 @@ def import_folders_prod(request):
         if os.path.exists(media_path):
             shutil.rmtree(media_path)
         for blob in my_blobs_media:
+            blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+            my_container = blob_service_client.get_container_client(container_name)
             bytes = my_container.get_blob_client(blob).download_blob().readall()
             download_file_path = os.path.join(local_path, blob.name)
             os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
@@ -2771,6 +2877,8 @@ def import_folders_prod(request):
         if os.path.exists(modules_path):
             shutil.rmtree(modules_path)
         for blob in my_blobs_modules:
+            blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+            my_container = blob_service_client.get_container_client(container_name)
             bytes = my_container.get_blob_client(blob).download_blob().readall()
             download_file_path = os.path.join(local_path, blob.name)
             os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
