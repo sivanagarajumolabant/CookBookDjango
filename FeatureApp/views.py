@@ -246,7 +246,32 @@ def featuredetail(request, feature_name):
         EDIT = 0
         latest_flag = 0
         if int(f_project_version) < int(max_project_version):
-            EDIT = 0
+            if mig_type in admin_access_dict.keys():
+                if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
+                    EDIT = 1
+                else:
+
+                    perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                            Object_Type='ALL')
+                    if perm_data3:
+                        data3_access = perm_data3.values()[0]['Access_Type']
+                        if data3_access in ('Edit', 'ALL'):
+                            EDIT = 1
+                    perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                            Object_Type=obj_type, Feature_Name='ALL')
+                    if perm_data2:
+                        data2_access = perm_data2.values()[0]['Access_Type']
+                        if data2_access in ('Edit', 'ALL'):
+                            EDIT = 1
+                    perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                            Object_Type=obj_type, Feature_Name=feature_name)
+                    if perm_data1:
+                        data1_access = perm_data1.values()[0]['Access_Type']
+                        if data1_access in ('Edit', 'ALL'):
+                            EDIT = 1
+                    if not perm_data1 and perm_data2 and perm_data3:
+                        EDIT = 0
+            latest_flag = 1
         elif int(f_project_version) == int(max_project_version) :
             if mig_type in admin_access_dict.keys():
                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
