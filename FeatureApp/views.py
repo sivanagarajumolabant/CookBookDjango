@@ -347,8 +347,189 @@ def feature_version_list(request):
 #         final_list.append(response)
 #     return Response(final_list)
 
+# @api_view(['POST'])
+# def featuredetail(request, feature_name):
+#     email = request.data['User_Email']
+#     mig_type = request.data['Migration_Type']
+#     obj_type = request.data['Object_Type']
+#     Project_Version_Id = request.data['Project_Version_Id']
+#     mig_data = migrations.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type)
+#     project_versions_list = []
+#     for dict in mig_data.values():
+#         project_versions_list.append(dict['Project_Version_Id'])
+#     max_project_version = max(project_versions_list)
+#     user = Users.objects.filter(email=email)
+#
+#     user_values = list(user.values())
+#     admin_access = user_values[0]['admin_migrations']
+#     if admin_access == '' or admin_access == None:
+#         admin_access_dict = {}
+#     else:
+#         admin_access = admin_access.replace("\'", "\"")
+#         admin_access_dict = json.loads(admin_access)
+#
+#     final_list = []
+#     version_list = []
+#     features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name,
+#                                       Project_Version_Id=Project_Version_Id)
+#     for dict in features.values():
+#         version_list.append(dict['Feature_Version_Id'])
+#     max_version = max(version_list)
+#
+#     for obj in features:
+#         mig_type = obj.Migration_TypeId
+#         obj_type = obj.Object_Type
+#         feature_name = obj.Feature_Name
+#         feature_id = obj.Feature_Id
+#         feature_version_id = obj.Feature_Version_Id
+#         f_approval = obj.Feature_version_approval_status
+#         f_project_version = obj.Project_Version_Id
+#         EDIT = 0
+#         latest_flag = 0
+#         if int(f_project_version) < int(max_project_version):
+#             if mig_type in admin_access_dict.keys():
+#                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
+#                     EDIT = 1
+#                 else:
+#
+#                     perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                             Object_Type='ALL')
+#                     if perm_data3:
+#                         data3_access = perm_data3.values()[0]['Access_Type']
+#                         if data3_access in ('Edit', 'ALL'):
+#                             EDIT = 1
+#
+#                     perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                             Object_Type=obj_type, Feature_Name='ALL')
+#                     if perm_data2:
+#                         data2_access = perm_data2.values()[0]['Access_Type']
+#                         if data2_access in ('Edit', 'ALL'):
+#                             EDIT = 1
+#                     perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                             Object_Type=obj_type, Feature_Name=feature_name)
+#                     if perm_data1:
+#                         data1_access = perm_data1.values()[0]['Access_Type']
+#                         if data1_access in ('Edit', 'ALL'):
+#                             EDIT = 1
+#
+#                     if not perm_data1 and perm_data2 and perm_data3:
+#                         EDIT = 0
+#                 if feature_version_id < max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 elif feature_version_id == max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 else:
+#                     latest_flag = 1
+#             else:
+#                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
+#                 if perm_data3:
+#                     data3_access = perm_data3.values()[0]['Access_Type']
+#                     if data3_access in ('Edit', 'ALL'):
+#                         EDIT = 1
+#                 perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                         Object_Type=obj_type,
+#                                                         Feature_Name='ALL')
+#                 if perm_data2:
+#                     data2_access = perm_data2.values()[0]['Access_Type']
+#                     if data2_access in ('Edit', 'ALL'):
+#                         EDIT = 1
+#                 perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                         Object_Type=obj_type,
+#                                                         Feature_Name=feature_name)
+#                 if perm_data1:
+#                     data1_access = perm_data1.values()[0]['Access_Type']
+#                     if data1_access in ('Edit', 'ALL'):
+#                         EDIT = 1
+#                 if not perm_data1 and perm_data2 and perm_data3:
+#                     EDIT = 0
+#                 if feature_version_id < max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 elif feature_version_id == max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 else:
+#                     latest_flag = 1
+#
+#         elif int(f_project_version) == int(max_project_version) :
+#             if mig_type in admin_access_dict.keys():
+#                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
+#                     EDIT = 1
+#                 else:
+#
+#                     perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
+#                     if perm_data3:
+#                         data3_access = perm_data3.values()[0]['Access_Type']
+#                         if data3_access in ('Edit', 'ALL'):
+#                             EDIT = 1
+#
+#                     perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                             Object_Type=obj_type, Feature_Name='ALL')
+#                     if perm_data2:
+#                         data2_access = perm_data2.values()[0]['Access_Type']
+#                         if data2_access in ('Edit', 'ALL'):
+#                             EDIT = 1
+#                     perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+#                                                             Object_Type=obj_type, Feature_Name=feature_name)
+#                     if perm_data1:
+#                         data1_access = perm_data1.values()[0]['Access_Type']
+#                         if data1_access in ('Edit', 'ALL'):
+#                             EDIT = 1
+#
+#                     if not perm_data1 and perm_data2 and perm_data3:
+#                         EDIT = 0
+#                 if feature_version_id < max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 elif feature_version_id == max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 else:
+#                     latest_flag = 1
+#             else:
+#                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
+#                 if perm_data3:
+#                     data3_access = perm_data3.values()[0]['Access_Type']
+#                     if data3_access in ('Edit', 'ALL'):
+#                         EDIT = 1
+#                 perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                                         Feature_Name='ALL')
+#                 if perm_data2:
+#                     data2_access = perm_data2.values()[0]['Access_Type']
+#                     if data2_access in ('Edit', 'ALL'):
+#                         EDIT = 1
+#                 perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
+#                                                         Feature_Name=feature_name)
+#                 if perm_data1:
+#                     data1_access = perm_data1.values()[0]['Access_Type']
+#                     if data1_access in ('Edit', 'ALL'):
+#                         EDIT = 1
+#                 if not perm_data1 and perm_data2 and perm_data3:
+#                     EDIT = 0
+#
+#                 if feature_version_id < max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 elif feature_version_id == max_version and f_approval == 'Approved':
+#                     latest_flag = 0
+#                 else:
+#                     latest_flag = 1
+#
+#         if feature_version_id < max_version and f_approval == 'Approved':
+#             max_flag = 0
+#         elif feature_version_id == max_version and f_approval == 'Approved':
+#             max_flag = 1
+#         elif feature_version_id == max_version:
+#             if f_approval == 'In Progress' or f_approval == 'Awaiting Approval':
+#                 max_flag = 1
+#         else:
+#             max_flag = 0
+#
+#         feature = Feature.objects.get(Feature_Id=feature_id)
+#         serializer = FeatureSerializer(feature, many=False)
+#         response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag, 'serializer': serializer.data}
+#         final_list.append(response)
+#     return Response(final_list)
+
+
 @api_view(['POST'])
 def featuredetail(request, feature_name):
+    print(request.data)
     email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
     obj_type = request.data['Object_Type']
@@ -386,6 +567,7 @@ def featuredetail(request, feature_name):
         f_project_version = obj.Project_Version_Id
         EDIT = 0
         latest_flag = 0
+        max_project_flag = 0
         if int(f_project_version) < int(max_project_version):
             if mig_type in admin_access_dict.keys():
                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
@@ -448,7 +630,7 @@ def featuredetail(request, feature_name):
                     latest_flag = 0
                 else:
                     latest_flag = 1
-
+            max_project_flag = 0
         elif int(f_project_version) == int(max_project_version) :
             if mig_type in admin_access_dict.keys():
                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
@@ -509,7 +691,7 @@ def featuredetail(request, feature_name):
                     latest_flag = 0
                 else:
                     latest_flag = 1
-
+            max_project_flag = 1
         if feature_version_id < max_version and f_approval == 'Approved':
             max_flag = 0
         elif feature_version_id == max_version and f_approval == 'Approved':
@@ -522,11 +704,10 @@ def featuredetail(request, feature_name):
 
         feature = Feature.objects.get(Feature_Id=feature_id)
         serializer = FeatureSerializer(feature, many=False)
-        response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag, 'serializer': serializer.data}
+        response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag,'Max_Project_Flag': max_project_flag, 'serializer': serializer.data}
         final_list.append(response)
+    print(final_list)
     return Response(final_list)
-
-
 
 @api_view(['GET', 'POST'])
 def feature_catalog_access_check(request):
@@ -2771,6 +2952,7 @@ def user_admin_actions(request):
         user_object.save()
         return Response('User has been rejected')
 
+
 #
 # @api_view(['GET', 'POST'])
 # def get_latest_feature_version_modules(request):
@@ -2907,7 +3089,6 @@ def file_share_copy():
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
                 with open(file_path_on_local, "rb") as data:
                     blob_client.upload_blob(data)
-
 
 
 # @api_view(['GET'])
@@ -3139,6 +3320,7 @@ def migration_type_creation_based_on_old(request):
     shutil.copytree(source_path, target_path, dirs_exist_ok=True)
     return Response("New Migration type created successfully based on given old migration type")
 
+
 # @api_view(['GET'])
 # def import_folders_prod(request):
 #     connect_str = fileshare_connectionString
@@ -3174,7 +3356,7 @@ def migration_type_creation_based_on_old(request):
 @api_view(['GET'])
 def import_folders_prod(request):
     connect_str = fileshare_connectionString
-    container_name =container_name_var
+    container_name = container_name_var
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     local_path = path
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -3230,15 +3412,15 @@ def user_migration_listperuser(request):
 def remove_user_admin_permissions(request):
     email = request.data['User_Email']
     mig_type = request.data['Migration_TypeId']
-    user_object = Users.objects.get(email = email)
+    user_object = Users.objects.get(email=email)
     user_admin_access = user_object.user_migrations
     if mig_type in user_admin_access:
         user_admin_access = user_admin_access.replace(mig_type + ',', '')
         user_object.user_migrations = user_admin_access
         user_object.save()
-        appr_data = Approvals.objects.filter(User_Email=email,Migration_TypeId=mig_type)
+        appr_data = Approvals.objects.filter(User_Email=email, Migration_TypeId=mig_type)
         appr_data.delete()
-        perm_data = Permissions.objects.filter(User_Email=email,Migration_TypeId=mig_type)
+        perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type)
         perm_data.delete()
     return Response("Migration Type Removed from User Migrations")
 
@@ -3346,7 +3528,7 @@ def remove_user_admin_permissions(request):
 #         return Response("Please Select Migration Type for Deploy")
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def get_latest_feature_version_modules(request):
     migration = request.data['Migration_TypeId']
     print(migration, '===============')
@@ -3359,8 +3541,8 @@ def get_latest_feature_version_modules(request):
         if not os.path.exists(approved_features_path):
             os.makedirs(approved_features_path)
         # else:
-            # shutil.rmtree(approved_features_path)
-            # os.makedirs(approved_features_path)
+        # shutil.rmtree(approved_features_path)
+        # os.makedirs(approved_features_path)
         object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
         print(object_types_old, '-----------------')
         object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
@@ -3371,7 +3553,8 @@ def get_latest_feature_version_modules(request):
             for object_i in object_types_old_list:
                 feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
                     'Feature_Name').distinct()
-                feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
+                feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if
+                                          dict['Feature_Name'] != '']
 
                 worksheet = workbook.add_worksheet(object_i)
                 f_names_list = []
@@ -3411,7 +3594,8 @@ def get_latest_feature_version_modules(request):
                         module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
                         if not os.path.exists(module_approved_path):
                             os.makedirs(module_approved_path)
-                        attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,AttachmentType='Conversion')
+                        attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
+                                                                      AttachmentType='Conversion')
                         if attachments_data:
                             attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
                             attachment_module = os.listdir(attachment_module_path)[0]
@@ -3459,11 +3643,10 @@ def deploy_table(request):
     return Response(serializer.data)
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def create_deploy_record(request):
     migration = request.data['Migration_TypeId']
     if migration != 'undefined':
         deploy_start_time = datetime.now()
-        Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
+        Deploy.objects.create(Migration_TypeId=migration, Deploy_Start_Time=deploy_start_time)
     return Response("Record created in deploy table")
-
