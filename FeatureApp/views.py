@@ -3528,10 +3528,117 @@ def remove_user_admin_permissions(request):
 #         return Response("Please Select Migration Type for Deploy")
 
 
-@api_view(['GET', 'POST'])
+# @api_view(['GET', 'POST'])
+# def get_latest_feature_version_modules(request):
+#     migration = request.data['Migration_TypeId']
+#     print(migration, '===============')
+#     if migration != 'undefined':
+#         # deploy_start_time = datetime.now()
+#         # Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
+#
+#         path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#         approved_features_path = path + '/' + 'Conversion_Modules'
+#         if not os.path.exists(approved_features_path):
+#             os.makedirs(approved_features_path)
+#         # else:
+#         # shutil.rmtree(approved_features_path)
+#         # os.makedirs(approved_features_path)
+#         object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
+#         print(object_types_old, '-----------------')
+#         object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
+#         print(object_types_old_list, '=============')
+#         if object_types_old_list:
+#             excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
+#             workbook = xlsxwriter.Workbook(excel_name)
+#             for object_i in object_types_old_list:
+#                 feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
+#                     'Feature_Name').distinct()
+#                 feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if
+#                                           dict['Feature_Name'] != '']
+#
+#                 worksheet = workbook.add_worksheet(object_i)
+#                 f_names_list = []
+#                 keywords_list = []
+#                 level_list = []
+#                 predecessor_list = []
+#                 for feature in feature_names_old_list:
+#                     feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
+#                                                                   Feature_Name=feature,
+#                                                                   Feature_version_approval_status='Approved').values(
+#                         'Project_Version_Id', 'Feature_Version_Id')
+#                     feature_versions_old_list = []
+#                     for dict in feature_versions_old:
+#                         feature_versions_old_list.append(
+#                             str(dict['Project_Version_Id']) + '.' + str(dict['Feature_Version_Id']))
+#
+#                     feature_versions_old_list = sorted(feature_versions_old_list, key=float)
+#                     if feature_versions_old_list:
+#                         latest_version = max(feature_versions_old_list)
+#                         prj_ver = latest_version.split('.')[0].strip()
+#                         feat_ver = latest_version.split('.')[1].strip()
+#                         latest_feature_data = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
+#                                                                      Feature_Name=feature, Project_Version_Id=prj_ver,
+#                                                                      Feature_Version_Id=feat_ver).values()
+#
+#                         feature_name = latest_feature_data[0]['Feature_Name']
+#                         keywords = latest_feature_data[0]['Keywords']
+#                         level = latest_feature_data[0]['Level']
+#                         predecessor = latest_feature_data[0]['Sequence']
+#
+#                         f_names_list.append(feature_name)
+#                         keywords_list.append(keywords)
+#                         level_list.append(level)
+#                         predecessor_list.append(predecessor)
+#                         latest_version_feature_id = latest_feature_data[0]['Feature_Id']
+#                         module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
+#                         module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
+#                         if not os.path.exists(module_approved_path):
+#                             os.makedirs(module_approved_path)
+#                         attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
+#                                                                       AttachmentType='Conversion')
+#                         if attachments_data:
+#                             attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
+#                             attachment_module = os.listdir(attachment_module_path)[0]
+#                             if attachment_module:
+#                                 shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
+#                         elif os.path.isdir(module_path):
+#                             module = os.listdir(module_path)[0]
+#                             if module:
+#                                 shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
+#                         else:
+#                             print("No module found")
+#                 row_length = len(f_names_list)
+#                 serial_list = [i for i in range(1, row_length + 1)]
+#                 data_dictionary = {'Serial No.': serial_list,
+#                                    'Feature Name': f_names_list,
+#                                    'Keywords': keywords_list,
+#                                    'Level': level_list,
+#                                    'Predecessor': predecessor_list}
+#                 col_num = 0
+#                 format = workbook.add_format({'bold': True, 'border': 1})
+#                 format.set_align('center')
+#                 format2 = workbook.add_format({'border': 1})
+#                 for key, value in data_dictionary.items():
+#                     worksheet.write(0, col_num, key, format)
+#                     worksheet.write_column(1, col_num, value, format2)
+#                     col_num += 1
+#                 worksheet.set_column(1, 4, 35)
+#             workbook.close()
+#             file_share_copy()
+#         else:
+#             return Response("No Modules Found for given Migration type")
+#         deploy_object = Deploy.objects.get(Migration_TypeId=migration, Deployment_Status='Deploy in Progress')
+#         deploy_object.Deploy_End_Time = datetime.now()
+#         deploy_object.Deployment_Status = 'Completed'
+#         deploy_object.save()
+#         return Response("Modules Prepared for given Migration type")
+#     else:
+#         return Response("Please Select Migration Type for Deploy")
+
+
+@api_view(['GET','POST'])
 def get_latest_feature_version_modules(request):
     migration = request.data['Migration_TypeId']
-    print(migration, '===============')
     if migration != 'undefined':
         # deploy_start_time = datetime.now()
         # Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
@@ -3540,27 +3647,25 @@ def get_latest_feature_version_modules(request):
         approved_features_path = path + '/' + 'Conversion_Modules'
         if not os.path.exists(approved_features_path):
             os.makedirs(approved_features_path)
-        # else:
-        # shutil.rmtree(approved_features_path)
-        # os.makedirs(approved_features_path)
+        else:
+            shutil.rmtree(approved_features_path)
+            os.makedirs(approved_features_path)
         object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
-        print(object_types_old, '-----------------')
         object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-        print(object_types_old_list, '=============')
         if object_types_old_list:
             excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
             workbook = xlsxwriter.Workbook(excel_name)
             for object_i in object_types_old_list:
                 feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
                     'Feature_Name').distinct()
-                feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if
-                                          dict['Feature_Name'] != '']
+                feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
 
                 worksheet = workbook.add_worksheet(object_i)
                 f_names_list = []
                 keywords_list = []
                 level_list = []
                 predecessor_list = []
+                estimation_list =[]
                 for feature in feature_names_old_list:
                     feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
                                                                   Feature_Name=feature,
@@ -3584,18 +3689,19 @@ def get_latest_feature_version_modules(request):
                         keywords = latest_feature_data[0]['Keywords']
                         level = latest_feature_data[0]['Level']
                         predecessor = latest_feature_data[0]['Sequence']
+                        estimation = latest_feature_data[0]['Estimations']
 
                         f_names_list.append(feature_name)
                         keywords_list.append(keywords)
                         level_list.append(level)
                         predecessor_list.append(predecessor)
+                        estimation_list.append(int(estimation))
                         latest_version_feature_id = latest_feature_data[0]['Feature_Id']
                         module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
                         module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
                         if not os.path.exists(module_approved_path):
                             os.makedirs(module_approved_path)
-                        attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
-                                                                      AttachmentType='Conversion')
+                        attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,AttachmentType='Conversion')
                         if attachments_data:
                             attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
                             attachment_module = os.listdir(attachment_module_path)[0]
@@ -3613,7 +3719,8 @@ def get_latest_feature_version_modules(request):
                                    'Feature Name': f_names_list,
                                    'Keywords': keywords_list,
                                    'Level': level_list,
-                                   'Predecessor': predecessor_list}
+                                   'Predecessor': predecessor_list,
+                                   'Estimation': estimation_list}
                 col_num = 0
                 format = workbook.add_format({'bold': True, 'border': 1})
                 format.set_align('center')
@@ -3634,7 +3741,6 @@ def get_latest_feature_version_modules(request):
         return Response("Modules Prepared for given Migration type")
     else:
         return Response("Please Select Migration Type for Deploy")
-
 
 @api_view(['GET'])
 def deploy_table(request):
