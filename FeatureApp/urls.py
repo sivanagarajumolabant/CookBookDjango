@@ -23,7 +23,7 @@ urlpatterns = [
                   path('attlist', views.att_list),
                   path('sourcedesc/<int:id>', views.Sourcedescription),
                   path('targetdesc/<int:id>', views.Targetdescription),
-                  path('convatt/<int:id>', views.Conversion),
+                  # path('convatt/<int:id>', views.Conversion),
                   path('codefiles/<int:id>', views.attachentsqlcodefiles),
                   path('attdelete', views.attachment_delete),
                   path('convertfiles', views.feature_conversion_files),
