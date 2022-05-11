@@ -969,13 +969,13 @@ def Targetdescription(request, id):
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
-#
-# @api_view(['GET'])
-# def Conversion(request, id):
-#     features = Attachments.objects.filter(
-#         Feature_Id=id, AttachmentType='Conversion')
-#     serializer = AttachementSerializer(features, many=True)
-#     return Response(serializer.data)
+
+@api_view(['GET'])
+def Conversion(request, id):
+    features = Attachments.objects.filter(
+        Feature_Id=id, AttachmentType='Conversion')
+    serializer = AttachementSerializer(features, many=True)
+    return Response(serializer.data)
 
 
 @api_view(['POST'])
