@@ -969,13 +969,13 @@ def Targetdescription(request, id):
     serializer = AttachementSerializer(features, many=True)
     return Response(serializer.data)
 
-
-@api_view(['GET'])
-def Conversion(request, id):
-    features = Attachments.objects.filter(
-        Feature_Id=id, AttachmentType='Conversion')
-    serializer = AttachementSerializer(features, many=True)
-    return Response(serializer.data)
+#
+# @api_view(['GET'])
+# def Conversion(request, id):
+#     features = Attachments.objects.filter(
+#         Feature_Id=id, AttachmentType='Conversion')
+#     serializer = AttachementSerializer(features, many=True)
+#     return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -1072,6 +1072,39 @@ def download_attachment(request):
     return response
 
 
+# @api_view(['POST'])
+# def conversion(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     feature_name = body_data['featurename']
+#     python_code = body_data['convcode']
+#     source_code = body_data['sourcecode']
+#     migration_typeid = body_data['migration_typeid']
+#     object_type = body_data['object_type']
+#     project_id = body_data['Project_Version_Id']
+#     feature_version_id = body_data['Feature_Version_Id']
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#
+#     if python_code != '':
+#         module_path = path + '/' + 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
+#             project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
+#         sys.path.append(module_path)
+#         if not os.path.exists(module_path):
+#             os.makedirs(module_path)
+#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
+#         file_path = module_path + '/' + str(feature_name).strip() + '.py'
+#         sys.path.insert(0, file_path)
+#         with open(file_path, 'w') as f:
+#             f.write(python_code)
+#         module = import_file(file_path)
+#         data = getattr(module, str(feature_name).strip())
+#         executableoutput = data(source_code)
+#         return Response(executableoutput, status=status.HTTP_200_OK)
+#     else:
+#         return Response('Please add the conversion code in conversion module')
+
+
 @api_view(['POST'])
 def conversion(request):
     body_unicode = request.body.decode('utf-8')
@@ -1083,6 +1116,7 @@ def conversion(request):
     object_type = body_data['object_type']
     project_id = body_data['Project_Version_Id']
     feature_version_id = body_data['Feature_Version_Id']
+    schema = ''
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
     if python_code != '':
@@ -1099,7 +1133,7 @@ def conversion(request):
             f.write(python_code)
         module = import_file(file_path)
         data = getattr(module, str(feature_name).strip())
-        executableoutput = data(source_code)
+        executableoutput = data(source_code,schema)
         return Response(executableoutput, status=status.HTTP_200_OK)
     else:
         return Response('Please add the conversion code in conversion module')
@@ -1176,6 +1210,95 @@ def create_and_append_sqlfile_single(path_of_file_sql, data):
         f.write("{}\n\n\n\n".format(data))
 
 
+# @api_view(['POST'])
+# def feature_conversion_files(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     feature_id = body_data['Feature_Id']
+#     attach_type = body_data['AttachmentType']
+#     feature = body_data['Feature_Name']
+#     migid = body_data['Migration_TypeId']
+#     objtype = body_data['Object_Type']
+#     conversion_code = body_data['convcode']
+#     project_id = body_data['Project_Version_Id']
+#     feature_version_Id = body_data['Feature_Version_Id']
+#
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
+#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+#         feature_version_Id) + '/' + 'Actualtargetcode' + '/'
+#     if not os.path.exists(output_path):
+#         os.makedirs(output_path)
+#     module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
+#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+#         feature_version_Id) + '/' + 'Conversion' + '/'
+#
+#     if not os.path.exists(module_path):
+#         os.makedirs(module_path)
+#     sys.path.append(module_path)
+#
+#     module_path_files = os.listdir(module_path)
+#     module_path_files = [x for x in module_path_files if x != '__pycache__']
+#
+#     if module_path_files:
+#         module_file = module_path_files[0]
+#         file_path = module_path + '/' + module_file
+#         with open(file_path) as f:
+#             python_code = f.read()
+#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', python_code)
+#         with open(file_path, "w") as f:
+#             f.write(python_code)
+#     else:
+#         if conversion_code != '':
+#             module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
+#                 project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+#                 feature_version_Id) + '/'
+#             if not os.path.exists(module_path_raw):
+#                 os.makedirs(module_path_raw)
+#             conversion_code = conversion_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+#             conversion_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
+#             file_path = module_path_raw + '/' + str(feature).strip() + '.py'
+#             if os.path.isfile(file_path):
+#                 os.remove(file_path)
+#             with open(file_path, 'w') as f:
+#                 f.write(conversion_code)
+#         else:
+#             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#     sys.path.insert(0, file_path)
+#
+#     filter_files = Attachments.objects.filter(
+#         Feature_Id=feature_id, AttachmentType=attach_type)
+#     filter_values = list(filter_files.values_list())
+#
+#     if filter_values:
+#         for file in filter_values:
+#             with open(file[6], 'r', encoding='utf-8') as f:
+#                 read_text = f.read()
+#             a = import_file(file_path)
+#             function_call = getattr(a, str(feature).strip())
+#             output = function_call(read_text)
+#             if os.path.isfile(output_path + file[5]):
+#                 os.remove(output_path + file[5])
+#             create_and_append_sqlfile_single(output_path + file[5], output)
+#             target_filename = file[5]
+#             target_filepath = output_path + file[5]
+#             split_media = 'media' + target_filepath.split('media')[1]
+#             target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
+#                                         AttachmentType='Actualtargetcode', filename=target_filename,
+#                                         Attachment=split_media, Feature_Id_id=feature_id)
+#             target_object.save()
+#         for row in Attachments.objects.all().reverse():
+#             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+#                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
+#                 row.delete()
+#         serializer = ConversionfilesSerializer(filter_files, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     else:
+#         return Response("Please Add Source Code Attachment")
+
+
 @api_view(['POST'])
 def feature_conversion_files(request):
     body_unicode = request.body.decode('utf-8')
@@ -1188,7 +1311,7 @@ def feature_conversion_files(request):
     conversion_code = body_data['convcode']
     project_id = body_data['Project_Version_Id']
     feature_version_Id = body_data['Feature_Version_Id']
-
+    schema = ''
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
@@ -1198,7 +1321,6 @@ def feature_conversion_files(request):
     module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
         feature_version_Id) + '/' + 'Conversion' + '/'
-
     if not os.path.exists(module_path):
         os.makedirs(module_path)
     sys.path.append(module_path)
@@ -1244,7 +1366,7 @@ def feature_conversion_files(request):
                 read_text = f.read()
             a = import_file(file_path)
             function_call = getattr(a, str(feature).strip())
-            output = function_call(read_text)
+            output = function_call(read_text,schema)
             if os.path.isfile(output_path + file[5]):
                 os.remove(output_path + file[5])
             create_and_append_sqlfile_single(output_path + file[5], output)
@@ -1263,7 +1385,6 @@ def feature_conversion_files(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     else:
         return Response("Please Add Source Code Attachment")
-
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
