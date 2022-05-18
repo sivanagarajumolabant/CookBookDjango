@@ -44,6 +44,12 @@ class Feature(models.Model):
     Target_Expected_Output = models.TextField(blank=True, null=True)
     Target_ActualCode = models.TextField(blank=True, null=True)
     Feature_Approval_Date = models.DateField(blank=True, null=True)
+    Feature_Created_by = models.CharField(max_length=100, null=True, blank=True)
+    Feature_Created_at = models.DateField(auto_now_add=True)
+    Last_Modified_by = models.CharField(max_length=100, null=True, blank=True)
+    Last_Modified_at = models.DateField(null=True, blank=True)
+    Feature_Requested_By = models.CharField(max_length=100, null=True, blank=True)
+    Feature_Requested_Date = models.DateField(null=True, blank=True)
 
     def __int__(self):
         return self.Feature_Id

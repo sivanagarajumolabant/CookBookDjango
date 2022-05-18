@@ -51,6 +51,7 @@ urlpatterns = [
 
                   path('approvalsupdate/<int:id>', views.approvalsupdate, name='approvalsupdate'),
                   path('permissionslist/', views.permissionslist, name='permissionslist'),
+                  path('permissions_edit_rm/',views.permission_edit_remove),
                   # path('sourcecode/<int:id>',views.Sourcecode),
                   # path('atargetcode/<int:id>',views.Actualtargetcode),
                   # path('etargetcode/<int:id>',views.Expectedconversion),

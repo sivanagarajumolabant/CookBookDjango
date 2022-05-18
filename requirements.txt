@@ -13,3 +13,5 @@ import_file
 #importlib == 1.0.4
 xlsxwriter
 azure-storage-blob
+azure-storage
+azure-servicebus
