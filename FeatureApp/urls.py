@@ -7,8 +7,8 @@ from .views import *
 
 urlpatterns = [
                   path('fcreate', views.featurecreate),
-                  path('fdelete/<int:pk>', views.featuredelete),
-                  path('fupdate/<int:pk>', views.featureupdate),
+                  path('fdelete/', views.featuredelete),
+                  path('fdelete/<str:feature_name>', views.featuredelete),
                   path('fversions/', views.feature_version_list),
                   path('flist', views.featurelist),
                   path('fdetail/<str:feature_name>', views.featuredetail),

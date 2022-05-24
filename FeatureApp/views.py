@@ -1020,17 +1020,48 @@ def Attcahmentupdate(request, pk):
     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['DELETE'])
-def featuredelete(request, pk):
-    features = Feature.objects.filter(Feature_Id=pk)
-    feature_name = features.values('Feature_Name')[0]['Feature_Name']
+# @api_view(['DELETE'])
+# def featuredelete(request, pk):
+#     features = Feature.objects.filter(Feature_Id=pk)
+#     feature_name = features.values('Feature_Name')[0]['Feature_Name']
+#     appr_data = Approvals.objects.filter(Feature_Name=feature_name)
+#     perm_data = Permissions.objects.filter(Feature_Name=feature_name)
+#     appr_data.delete()
+#     perm_data.delete()
+#     features.delete()
+#     return Response('Deleted')
+
+
+@api_view(['DELETE','POST'])
+def featuredelete(request, feature_name):
+    Project_Version_Id = request.data['Project_Version_Id']
+    migration_typeid = request.data['Migration_TypeId']
+    object_type = request.data['Object_Type']
+
+    features = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Feature_Name = feature_name)
+    feature_id_list = []
+    for dict in features.values():
+        feature_id_list.append(dict['Feature_Id'])
+    for id in feature_id_list:
+        att_data = Attachments.objects.filter(Project_Version_Id=Project_Version_Id,Feature_Id_id = id)
+        if att_data:
+            att_data.delete()
     appr_data = Approvals.objects.filter(Feature_Name=feature_name)
     perm_data = Permissions.objects.filter(Feature_Name=feature_name)
     appr_data.delete()
     perm_data.delete()
     features.delete()
-    return Response('Deleted')
+    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    attachments_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
+        Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
 
+    if os.path.exists(attachments_path):
+        shutil.rmtree(attachments_path)
+    # modules_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
+    #     Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
+    # if os.listdir(modules_path):
+    #     shutil.rmtree(modules_path)
+    return Response('Deleted')
 
 @api_view(['POST'])
 def predessors(request):
@@ -1119,7 +1150,11 @@ def conversion(request):
     schema = ''
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-    if python_code != '':
+    conversion_file_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(project_id) + '/' + object_type +'/' + feature_name + '/' + 'Feature_V' + str(feature_version_id) + '/' + 'Conversion/'
+    conversion_file = None
+    if os.path.exists(conversion_file_path):
+        conversion_file = os.listdir(conversion_file_path)
+    if python_code != 'r@rawstringstart\'\'@rawstringend':
         module_path = path + '/' + 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
             project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
         sys.path.append(module_path)
@@ -1135,8 +1170,49 @@ def conversion(request):
         data = getattr(module, str(feature_name).strip())
         executableoutput = data(source_code,schema)
         return Response(executableoutput, status=status.HTTP_200_OK)
+    elif conversion_file:
+
+        file_path = conversion_file_path + '/' + conversion_file[0]
+        sys.path.insert(0, file_path)
+        module = import_file(file_path)
+        data = getattr(module, str(feature_name).strip())
+        executableoutput = data(source_code, schema)
+        return Response(executableoutput, status=status.HTTP_200_OK)
     else:
-        return Response('Please add the conversion code in conversion module')
+        return Response('No Conversion Module, please add Conversion Module before Convert')
+
+# @api_view(['POST'])
+# def conversion(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     feature_name = body_data['featurename']
+#     python_code = body_data['convcode']
+#     source_code = body_data['sourcecode']
+#     migration_typeid = body_data['migration_typeid']
+#     object_type = body_data['object_type']
+#     project_id = body_data['Project_Version_Id']
+#     feature_version_id = body_data['Feature_Version_Id']
+#     schema = ''
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#
+#     if python_code != '':
+#         module_path = path + '/' + 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
+#             project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
+#         sys.path.append(module_path)
+#         if not os.path.exists(module_path):
+#             os.makedirs(module_path)
+#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
+#         file_path = module_path + '/' + str(feature_name).strip() + '.py'
+#         sys.path.insert(0, file_path)
+#         with open(file_path, 'w') as f:
+#             f.write(python_code)
+#         module = import_file(file_path)
+#         data = getattr(module, str(feature_name).strip())
+#         executableoutput = data(source_code,schema)
+#         return Response(executableoutput, status=status.HTTP_200_OK)
+#     else:
+#         return Response('Please add the conversion code in conversion module')
 
 
 @api_view(['GET'])
@@ -3055,6 +3131,11 @@ def approval_featurecreate(request):
                             del_feature_version)
                         if os.path.exists(folder_path):
                             shutil.rmtree(folder_path)
+            for row in Feature.objects.all().reverse():
+                if Feature.objects.filter(Migration_TypeId=row.Migration_TypeId, Feature_Name=row.Feature_Name,
+                                          Project_Version_Id=row.Project_Version_Id,
+                                          Feature_Version_Id=row.Feature_Version_Id).count() > 1:
+                    row.delete()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
