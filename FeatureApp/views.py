@@ -631,13 +631,14 @@ def featuredetail(request, feature_name):
                 else:
                     latest_flag = 1
             max_project_flag = 0
-        elif int(f_project_version) == int(max_project_version) :
+        elif int(f_project_version) == int(max_project_version):
             if mig_type in admin_access_dict.keys():
                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
                     EDIT = 1
                 else:
 
-                    perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
+                    perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                            Object_Type='ALL')
                     if perm_data3:
                         data3_access = perm_data3.values()[0]['Access_Type']
                         if data3_access in ('Edit', 'ALL'):
@@ -670,13 +671,15 @@ def featuredetail(request, feature_name):
                     data3_access = perm_data3.values()[0]['Access_Type']
                     if data3_access in ('Edit', 'ALL'):
                         EDIT = 1
-                perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                        Object_Type=obj_type,
                                                         Feature_Name='ALL')
                 if perm_data2:
                     data2_access = perm_data2.values()[0]['Access_Type']
                     if data2_access in ('Edit', 'ALL'):
                         EDIT = 1
-                perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
+                perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                        Object_Type=obj_type,
                                                         Feature_Name=feature_name)
                 if perm_data1:
                     data1_access = perm_data1.values()[0]['Access_Type']
@@ -704,10 +707,12 @@ def featuredetail(request, feature_name):
 
         feature = Feature.objects.get(Feature_Id=feature_id)
         serializer = FeatureSerializer(feature, many=False)
-        response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag,'Max_Project_Flag': max_project_flag, 'serializer': serializer.data}
+        response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag,
+                    'Max_Project_Flag': max_project_flag, 'serializer': serializer.data}
         final_list.append(response)
     print(final_list)
     return Response(final_list)
+
 
 @api_view(['GET', 'POST'])
 def feature_catalog_access_check(request):
@@ -978,6 +983,25 @@ def Conversion(request, id):
     return Response(serializer.data)
 
 
+# @api_view(['POST'])
+# def attachment_delete(request):
+#     file_name = request.data['file_name']
+#     migration_typeid = request.data['migration_typeid']
+#     object_type = request.data['object_type']
+#     AttachmentType = request.data['AttachmentType']
+#     id = request.data['id']
+#     featurename = request.data['fname']
+#     attachment = Attachments.objects.get(id=id)
+#     project_id = attachment.Project_Version_Id
+#     feature_version_id = attachment.Feature_Version_Id
+#     attachment.delete()
+#     fl_path = MEDIA_ROOT + '/media/' + migration_typeid + '/' + 'Project_V' + str(
+#         project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
+#         feature_version_id) + '/' + AttachmentType + '/'
+#     filename = fl_path + file_name
+#     os.remove(filename)
+#     return Response('Deleted')
+
 @api_view(['POST'])
 def attachment_delete(request):
     file_name = request.data['file_name']
@@ -995,7 +1019,37 @@ def attachment_delete(request):
         feature_version_id) + '/' + AttachmentType + '/'
     filename = fl_path + file_name
     os.remove(filename)
+    fileshare_path = 'media/' + migration_typeid + '/' + 'Project_V' + str(
+        project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
+        feature_version_id) + '/' + AttachmentType + '/' + str(file_name)
+    connstr = fileshare_connectionString
+    container = container_name_var
+    blob_service_client = BlobServiceClient.from_connection_string(connstr)
+    my_container = blob_service_client.get_container_client(container)
+    my_container.delete_blobs(fileshare_path)
     return Response('Deleted')
+
+
+# @api_view(['POST'])
+# def Attcahmentupdate(request, pk):
+#     feature = Feature.objects.get(Feature_Id=pk)
+#     AttachmentType = request.data['AttachmentType']
+#     Attachment = request.FILES['Attachment']
+#     filename = request.data['filename']
+#     project_id = feature.Project_Version_Id
+#     feature_version_id = feature.Feature_Version_Id
+#     dictionary = {"Feature_Id": feature, 'Project_Version_Id': project_id, 'Feature_Version_Id': feature_version_id,
+#                   'AttachmentType': AttachmentType, "filename": filename,
+#                   "Attachment": Attachment}
+#     attachements = AttachementSerializer(data=dictionary)
+#     if attachements.is_valid():
+#         attachements.save()
+#         for row in Attachments.objects.all().reverse():
+#             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+#                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
+#                 row.delete()
+#         return Response(attachements.data, status=status.HTTP_200_OK)
+#     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -1004,6 +1058,9 @@ def Attcahmentupdate(request, pk):
     AttachmentType = request.data['AttachmentType']
     Attachment = request.FILES['Attachment']
     filename = request.data['filename']
+    migration_typeid = feature.Migration_TypeId
+    object_type = feature.Object_Type
+    featurename = feature.Feature_Name
     project_id = feature.Project_Version_Id
     feature_version_id = feature.Feature_Version_Id
     dictionary = {"Feature_Id": feature, 'Project_Version_Id': project_id, 'Feature_Version_Id': feature_version_id,
@@ -1012,6 +1069,18 @@ def Attcahmentupdate(request, pk):
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
         attachements.save()
+        connstr = fileshare_connectionString
+        container = container_name_var
+        blob_service_client = BlobServiceClient.from_connection_string(connstr)
+        container_client = blob_service_client.get_container_client(container)
+        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        file_path = 'media/' + migration_typeid + '/' + 'Project_V' + str(
+            project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
+            feature_version_id) + '/' + AttachmentType + '/' + str(filename)
+        local_path = path + '/' + file_path
+        blob_client = container_client.get_blob_client(blob=file_path)
+        with open(local_path, "rb") as data:
+            blob_client.upload_blob(data, overwrite=True)
         for row in Attachments.objects.all().reverse():
             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
@@ -1032,18 +1101,49 @@ def Attcahmentupdate(request, pk):
 #     return Response('Deleted')
 
 
+# @api_view(['DELETE', 'POST'])
+# def featuredelete(request, feature_name):
+#     Project_Version_Id = request.data['Project_Version_Id']
+#     migration_typeid = request.data['Migration_TypeId']
+#     object_type = request.data['Object_Type']
+#
+#     features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Feature_Name=feature_name)
+#     feature_id_list = []
+#     for dict in features.values():
+#         feature_id_list.append(dict['Feature_Id'])
+#     for id in feature_id_list:
+#         att_data = Attachments.objects.filter(Project_Version_Id=Project_Version_Id, Feature_Id_id=id)
+#         if att_data:
+#             att_data.delete()
+#     appr_data = Approvals.objects.filter(Feature_Name=feature_name)
+#     perm_data = Permissions.objects.filter(Feature_Name=feature_name)
+#     appr_data.delete()
+#     perm_data.delete()
+#     features.delete()
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     attachments_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
+#         Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
+#
+#     if os.path.exists(attachments_path):
+#         shutil.rmtree(attachments_path)
+#     # modules_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
+#     #     Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
+#     # if os.listdir(modules_path):
+#     #     shutil.rmtree(modules_path)
+#     return Response('Deleted')
+
+
 @api_view(['DELETE','POST'])
 def featuredelete(request, feature_name):
     Project_Version_Id = request.data['Project_Version_Id']
     migration_typeid = request.data['Migration_TypeId']
     object_type = request.data['Object_Type']
-
-    features = Feature.objects.filter(Project_Version_Id=Project_Version_Id,Feature_Name = feature_name)
+    features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Feature_Name=feature_name)
     feature_id_list = []
     for dict in features.values():
         feature_id_list.append(dict['Feature_Id'])
     for id in feature_id_list:
-        att_data = Attachments.objects.filter(Project_Version_Id=Project_Version_Id,Feature_Id_id = id)
+        att_data = Attachments.objects.filter(Project_Version_Id=Project_Version_Id, Feature_Id_id=id)
         if att_data:
             att_data.delete()
     appr_data = Approvals.objects.filter(Feature_Name=feature_name)
@@ -1054,14 +1154,24 @@ def featuredelete(request, feature_name):
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     attachments_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
         Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
-
     if os.path.exists(attachments_path):
         shutil.rmtree(attachments_path)
     # modules_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
     #     Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
     # if os.listdir(modules_path):
     #     shutil.rmtree(modules_path)
+    connstr = fileshare_connectionString
+    container = container_name_var
+    blob_service_client = BlobServiceClient.from_connection_string(connstr)
+    container_client = blob_service_client.get_container_client(container)
+    fileshare_path = 'media/' + migration_typeid + '/' + 'Project_V' + str(
+        Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
+    myblobs = container_client.list_blobs(name_starts_with=str(fileshare_path))
+    if myblobs:
+        for blob in myblobs:
+            container_client.delete_blob(blob)
     return Response('Deleted')
+
 
 @api_view(['POST'])
 def predessors(request):
@@ -1085,6 +1195,24 @@ def predessors(request):
     return Response(final_list, status=status.HTTP_200_OK)
 
 
+# @api_view(['POST'])
+# def download_attachment(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     file_name = body_data['file_name']
+#     attach_type = body_data['AttachmentType']
+#     fid = body_data['feature_id']
+#     filter_files = Attachments.objects.filter(
+#         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
+#     filter_values = list(filter_files.values_list())
+#     file_path = filter_values[0]
+#     fl = open(file_path[6], 'rb')
+#     mime_type, _ = mimetypes.guess_type(file_path[6])
+#     response = HttpResponse(fl, content_type=mime_type)
+#     response['Content-Disposition'] = "attachment; filename=%s" % file_name
+#     return response
+
+
 @api_view(['POST'])
 def download_attachment(request):
     body_unicode = request.body.decode('utf-8')
@@ -1101,6 +1229,19 @@ def download_attachment(request):
     response = HttpResponse(fl, content_type=mime_type)
     response['Content-Disposition'] = "attachment; filename=%s" % file_name
     return response
+    # path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+    # connstr = fileshare_connectionString
+    # container = container_name_var
+    # blob_service_client = BlobServiceClient.from_connection_string(connstr)
+    # container_client = blob_service_client.get_container_client(container)
+    # data = container_client.get_blob_client(file_path[6]).download_blob().readall()
+    # local_path = path + '/Downloads/' + file_path[5]
+    # if not os.path.exists(path + '/Downloads/'):
+    #     os.makedirs(path + '/Downloads/')
+    #
+    # with open(local_path, "wb") as file:
+    #     file.write(data)
+    # return Response(data)
 
 
 # @api_view(['POST'])
@@ -1150,7 +1291,9 @@ def conversion(request):
     schema = ''
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-    conversion_file_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(project_id) + '/' + object_type +'/' + feature_name + '/' + 'Feature_V' + str(feature_version_id) + '/' + 'Conversion/'
+    conversion_file_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
+        project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
+        feature_version_id) + '/' + 'Conversion/'
     conversion_file = None
     if os.path.exists(conversion_file_path):
         conversion_file = os.listdir(conversion_file_path)
@@ -1166,9 +1309,23 @@ def conversion(request):
         sys.path.insert(0, file_path)
         with open(file_path, 'w') as f:
             f.write(python_code)
+
+        connstr = fileshare_connectionString
+        container = container_name_var
+        blob_service_client = BlobServiceClient.from_connection_string(connstr)
+        container_client = blob_service_client.get_container_client(container)
+        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        file_path = 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
+            project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
+            feature_version_id) + '/' + str(feature_name).strip() + '.py'
+        local_path = path + '/' + file_path
+        blob_client = container_client.get_blob_client(blob=file_path)
+        with open(local_path, "rb") as data:
+            blob_client.upload_blob(data, overwrite=True)
+
         module = import_file(file_path)
         data = getattr(module, str(feature_name).strip())
-        executableoutput = data(source_code,schema)
+        executableoutput = data(source_code, schema)
         return Response(executableoutput, status=status.HTTP_200_OK)
     elif conversion_file:
 
@@ -1180,6 +1337,7 @@ def conversion(request):
         return Response(executableoutput, status=status.HTTP_200_OK)
     else:
         return Response('No Conversion Module, please add Conversion Module before Convert')
+
 
 # @api_view(['POST'])
 # def conversion(request):
@@ -1375,6 +1533,94 @@ def create_and_append_sqlfile_single(path_of_file_sql, data):
 #         return Response("Please Add Source Code Attachment")
 
 
+# @api_view(['POST'])
+# def feature_conversion_files(request):
+#     body_unicode = request.body.decode('utf-8')
+#     body_data = json.loads(body_unicode)
+#     feature_id = body_data['Feature_Id']
+#     attach_type = body_data['AttachmentType']
+#     feature = body_data['Feature_Name']
+#     migid = body_data['Migration_TypeId']
+#     objtype = body_data['Object_Type']
+#     conversion_code = body_data['convcode']
+#     project_id = body_data['Project_Version_Id']
+#     feature_version_Id = body_data['Feature_Version_Id']
+#     schema = ''
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
+#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+#         feature_version_Id) + '/' + 'Actualtargetcode' + '/'
+#     if not os.path.exists(output_path):
+#         os.makedirs(output_path)
+#     module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
+#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+#         feature_version_Id) + '/' + 'Conversion' + '/'
+#     if not os.path.exists(module_path):
+#         os.makedirs(module_path)
+#     sys.path.append(module_path)
+#
+#     module_path_files = os.listdir(module_path)
+#     module_path_files = [x for x in module_path_files if x != '__pycache__']
+#
+#     if module_path_files:
+#         module_file = module_path_files[0]
+#         file_path = module_path + '/' + module_file
+#         with open(file_path) as f:
+#             python_code = f.read()
+#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', python_code)
+#         with open(file_path, "w") as f:
+#             f.write(python_code)
+#     else:
+#         if conversion_code != '':
+#             module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
+#                 project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+#                 feature_version_Id) + '/'
+#             if not os.path.exists(module_path_raw):
+#                 os.makedirs(module_path_raw)
+#             conversion_code = conversion_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
+#             conversion_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
+#             file_path = module_path_raw + '/' + str(feature).strip() + '.py'
+#             if os.path.isfile(file_path):
+#                 os.remove(file_path)
+#             with open(file_path, 'w') as f:
+#                 f.write(conversion_code)
+#         else:
+#             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
+#                             status=status.HTTP_400_BAD_REQUEST)
+#     sys.path.insert(0, file_path)
+#
+#     filter_files = Attachments.objects.filter(
+#         Feature_Id=feature_id, AttachmentType=attach_type)
+#     filter_values = list(filter_files.values_list())
+#
+#     if filter_values:
+#         for file in filter_values:
+#             with open(file[6], 'r', encoding='utf-8') as f:
+#                 read_text = f.read()
+#             a = import_file(file_path)
+#             function_call = getattr(a, str(feature).strip())
+#             output = function_call(read_text, schema)
+#             if os.path.isfile(output_path + file[5]):
+#                 os.remove(output_path + file[5])
+#             create_and_append_sqlfile_single(output_path + file[5], output)
+#             target_filename = file[5]
+#             target_filepath = output_path + file[5]
+#             split_media = 'media' + target_filepath.split('media')[1]
+#             target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
+#                                         AttachmentType='Actualtargetcode', filename=target_filename,
+#                                         Attachment=split_media, Feature_Id_id=feature_id)
+#             target_object.save()
+#         for row in Attachments.objects.all().reverse():
+#             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
+#                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
+#                 row.delete()
+#         serializer = ConversionfilesSerializer(filter_files, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+#     else:
+#         return Response("Please Add Source Code Attachment")
+
+
 @api_view(['POST'])
 def feature_conversion_files(request):
     body_unicode = request.body.decode('utf-8')
@@ -1388,6 +1634,8 @@ def feature_conversion_files(request):
     project_id = body_data['Project_Version_Id']
     feature_version_Id = body_data['Feature_Version_Id']
     schema = ''
+    connstr = fileshare_connectionString
+    container = container_name_var
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
@@ -1413,6 +1661,15 @@ def feature_conversion_files(request):
         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', python_code)
         with open(file_path, "w") as f:
             f.write(python_code)
+        blob_service_client = BlobServiceClient.from_connection_string(connstr)
+        container_client = blob_service_client.get_container_client(container)
+        local_path = file_path
+        fileshare_path = 'media/' + migid + '/' + 'Project_V' + str(
+            project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+            feature_version_Id) + '/' + 'Conversion' + '/' + module_file
+        blob_client = container_client.get_blob_client(blob=fileshare_path)
+        with open(local_path, "rb") as data:
+            blob_client.upload_blob(data, overwrite=True)
     else:
         if conversion_code != '':
             module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
@@ -1427,6 +1684,15 @@ def feature_conversion_files(request):
                 os.remove(file_path)
             with open(file_path, 'w') as f:
                 f.write(conversion_code)
+            blob_service_client = BlobServiceClient.from_connection_string(connstr)
+            container_client = blob_service_client.get_container_client(container)
+            fileshare_module_path = 'Modules/' + migid + '/' + 'Project_V' + str(
+                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+                feature_version_Id) + '/' + str(feature).strip() + '.py'
+            local_path = file_path
+            blob_client = container_client.get_blob_client(blob=fileshare_module_path)
+            with open(local_path, "rb") as data:
+                blob_client.upload_blob(data, overwrite=True)
         else:
             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -1442,10 +1708,19 @@ def feature_conversion_files(request):
                 read_text = f.read()
             a = import_file(file_path)
             function_call = getattr(a, str(feature).strip())
-            output = function_call(read_text,schema)
+            output = function_call(read_text, schema)
             if os.path.isfile(output_path + file[5]):
                 os.remove(output_path + file[5])
             create_and_append_sqlfile_single(output_path + file[5], output)
+            blob_service_client = BlobServiceClient.from_connection_string(connstr)
+            container_client = blob_service_client.get_container_client(container)
+            fileshare_target_path = 'media/' + migid + '/' + 'Project_V' + str(
+                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+                feature_version_Id) + '/' + 'Actualtargetcode' + '/' + file[5]
+            local_path = output_path + file[5]
+            blob_client = container_client.get_blob_client(blob=fileshare_target_path)
+            with open(local_path, "rb") as data:
+                blob_client.upload_blob(data, overwrite=True)
             target_filename = file[5]
             target_filepath = output_path + file[5]
             split_media = 'media' + target_filepath.split('media')[1]
@@ -1461,6 +1736,7 @@ def feature_conversion_files(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     else:
         return Response("Please Add Source Code Attachment")
+
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
@@ -4123,7 +4399,7 @@ def remove_user_admin_permissions(request):
 #         return Response("Please Select Migration Type for Deploy")
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def get_latest_feature_version_modules(request):
     migration = request.data['Migration_TypeId']
     if migration != 'undefined':
@@ -4145,14 +4421,15 @@ def get_latest_feature_version_modules(request):
             for object_i in object_types_old_list:
                 feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
                     'Feature_Name').distinct()
-                feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
+                feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if
+                                          dict['Feature_Name'] != '']
 
                 worksheet = workbook.add_worksheet(object_i)
                 f_names_list = []
                 keywords_list = []
                 level_list = []
                 predecessor_list = []
-                estimation_list =[]
+                estimation_list = []
                 for feature in feature_names_old_list:
                     feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
                                                                   Feature_Name=feature,
@@ -4188,7 +4465,8 @@ def get_latest_feature_version_modules(request):
                         module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
                         if not os.path.exists(module_approved_path):
                             os.makedirs(module_approved_path)
-                        attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,AttachmentType='Conversion')
+                        attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
+                                                                      AttachmentType='Conversion')
                         if attachments_data:
                             attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
                             attachment_module = os.listdir(attachment_module_path)[0]
@@ -4229,6 +4507,7 @@ def get_latest_feature_version_modules(request):
     else:
         return Response("Please Select Migration Type for Deploy")
 
+
 @api_view(['GET'])
 def deploy_table(request):
     deploy_data = Deploy.objects.all()
@@ -4244,6 +4523,7 @@ def create_deploy_record(request):
         Deploy.objects.create(Migration_TypeId=migration, Deploy_Start_Time=deploy_start_time)
     return Response("Record created in deploy table")
 
+
 @api_view(['POST'])
 def permission_edit_remove(request):
     action = request.data['Action']
@@ -4255,11 +4535,11 @@ def permission_edit_remove(request):
     new_expiry_date = request.data['New_Expiry_Date']
     new_access_type = request.data['New_Access_Type']
     if action == 'Edit':
-        if new_access_type in ('',None) or new_expiry_date in ('',None) :
+        if new_access_type in ('', None) or new_expiry_date in ('', None):
             return Response("Please input access type or expiry date")
         else:
             appr_data = Approvals.objects.get(User_Email=email, Migration_TypeId=mig_type, Object_Type=object_type,
-                                                Feature_Name=feature_name, Access_Type=access_type)
+                                              Feature_Name=feature_name, Access_Type=access_type)
             appr_data.Access_Type = new_access_type
             appr_data.Expiry_date = new_expiry_date
             appr_data.save()
@@ -4273,6 +4553,7 @@ def permission_edit_remove(request):
         appr_data = Approvals.objects.get(User_Email=email, Migration_TypeId=mig_type, Object_Type=object_type,
                                           Feature_Name=feature_name, Access_Type=access_type)
         appr_data.delete()
-        perm_data = Permissions.objects.get(User_Email=email, Migration_TypeId=mig_type, Object_Type = object_type,Feature_Name = feature_name,Access_Type=access_type)
+        perm_data = Permissions.objects.get(User_Email=email, Migration_TypeId=mig_type, Object_Type=object_type,
+                                            Feature_Name=feature_name, Access_Type=access_type)
         perm_data.delete()
         return Response("Permission deleted successfully")
