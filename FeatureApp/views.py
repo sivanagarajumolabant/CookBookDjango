@@ -91,7 +91,7 @@ def feature_version_list(request):
                                       Object_Type=obj_type, Feature_Name=feature_name)
     for dict in features.values():
         version_list.append(dict['Feature_Version_Id'])
-
+    version_list = sorted(version_list)
     for ver in version_list:
         inter_dict['title'] = str(ver)
         inter_dict['code'] = ver
