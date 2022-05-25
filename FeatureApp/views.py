@@ -3464,6 +3464,141 @@ def project_versions_list(request):
     return Response(final_list)
 
 
+# @api_view(['POST'])
+# def create_project_version(request):
+#     migration = request.data['Migration_TypeId']
+#     # prev_project_version = request.data['Project_Version_Id']
+#     mig_data = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values('Project_Version_Id')
+#     mig_project_versions_list = [dict['Project_Version_Id'] for dict in mig_data if dict['Project_Version_Id'] != '']
+#     max_value = max(mig_project_versions_list)
+#     prev_project_version = max_value
+#     current_project_version = int(max_value) + 1
+#
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#
+#     object_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version,
+#                                                  Migration_TypeId=migration).values('Object_Type').distinct()
+#     object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
+#
+#     migration_path = path + '/media/' + migration + '/' + 'Project_V' + str(current_project_version)
+#     if not os.path.exists(migration_path):
+#         os.makedirs(migration_path)
+#
+#     project_version_limit = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values()[0][
+#         'Project_Version_limit']
+#     n = int(project_version_limit)
+#
+#     project_versions_list = []
+#     mig_copy_data = migrations.objects.filter(Migration_TypeId=migration)
+#     project_versions = mig_copy_data.values('Project_Version_Id')
+#     for i in project_versions:
+#         project_versions_list.append(int(i['Project_Version_Id']))
+#     project_versions_list = list(set(project_versions_list))
+#     max_version = max(project_versions_list)
+#     project_versions_list.append(int(max_version + 1))
+#
+#     mig_copy_project_version_data = migrations.objects.filter(Project_Version_Id=prev_project_version,
+#                                                               Migration_TypeId=migration)
+#
+#     for dict in mig_copy_project_version_data.values():
+#         migrations.objects.create(Project_Version_Id=current_project_version,
+#                                   Migration_TypeId=dict['Migration_TypeId'],
+#                                   Object_Type=dict['Object_Type'], Code=dict['Code'],
+#                                   Project_Version_limit=dict['Project_Version_limit'],
+#                                   Feature_Version_Limit=dict['Feature_Version_Limit'])
+#     if len(project_versions_list) > int(project_version_limit):
+#         project_versions_list_del = project_versions_list[:-n or None]
+#         for version in project_versions_list_del:
+#             mig_del_data = migrations.objects.filter(Project_Version_Id=int(version), Migration_TypeId=migration)
+#             mig_del_data.delete()
+#
+#             feature_del_data = Feature.objects.filter(Project_Version_Id=int(version), Migration_TypeId=migration)
+#             feature_del_data.delete()
+#
+#             attachments_del_data = Attachments.objects.filter(Project_Version_Id=int(version),
+#                                                               Attachment__contains=str(migration))
+#             attachments_del_data.delete()
+#
+#             folder_path_del = path + '/media/' + migration + '/' + 'Project_V' + str(version)
+#             shutil.rmtree(folder_path_del)
+#
+#     for object_i in object_types_old_list:
+#         feature_names_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
+#                                                    Migration_TypeId=migration, Object_Type=object_i).values(
+#             'Feature_Name').distinct()
+#         feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
+#
+#         for feature in feature_names_old_list:
+#             feature_versions_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
+#                                                           Migration_TypeId=migration,
+#                                                           Object_Type=object_i, Feature_Name=feature).values(
+#                 'Feature_Version_Id').distinct()
+#             feature_versions_old_list = [dict['Feature_Version_Id'] for dict in feature_versions_old if
+#                                          dict['Feature_Version_Id'] != '']
+#             if feature_versions_old_list:
+#                 latest_version = max(feature_versions_old_list)
+#
+#                 feature_data2 = Feature.objects.filter(Project_Version_Id=prev_project_version,
+#                                                        Migration_TypeId=migration, Object_Type=object_i,
+#                                                        Feature_Name=feature,
+#                                                        Feature_Version_Id=latest_version).last()
+#                 attachment_feature_id_progress_old = feature_data2.Feature_Id
+#
+#                 feature_data2.Feature_Id = None
+#                 feature_data2.Project_Version_Id = current_project_version
+#                 feature_data2.Feature_Version_Id = 1
+#                 feature_data2.Feature_Approval_Date = None
+#                 feature_data2.save()
+#
+#                 latest_version_source = path + '/media/' + migration + '/' + 'Project_V' + str(
+#                     prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
+#                     latest_version) + '/'
+#                 if not os.path.exists(latest_version_source):
+#                     os.makedirs(latest_version_source)
+#                 latest_version_target = path + '/media/' + migration + '/' + 'Project_V' + str(
+#                     current_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V1'
+#                 if not os.path.exists(latest_version_target):
+#                     os.makedirs(latest_version_target)
+#                 shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
+#
+#                 feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
+#                                                                Migration_TypeId=migration, Object_Type=object_i,
+#                                                                Feature_Name=feature,
+#                                                                Feature_Version_Id=1)
+#                 attachment_feature_id_progress_new = feature_data_progress[0].Feature_Id
+#
+#                 attachment_data_progress = Attachments.objects.filter(
+#                     Feature_Id_id=attachment_feature_id_progress_old)
+#                 for dict in attachment_data_progress.values():
+#                     att_type = dict['AttachmentType']
+#                     filename = dict['filename']
+#                     feature_version_id = 1
+#                     attachment = dict['Attachment']
+#                     attachment = attachment.replace('Project_V' + str(prev_project_version),
+#                                                     'Project_V' + str(current_project_version))
+#                     att_object2 = Attachments(Project_Version_Id=current_project_version,
+#                                               Feature_Version_Id=feature_version_id,
+#                                               AttachmentType=att_type, filename=filename,
+#                                               Attachment=attachment,
+#                                               Feature_Id_id=attachment_feature_id_progress_new)
+#                     att_object2.save()
+#
+#                 if len(feature_versions_old_list) > 1:
+#                     version_del = max(feature_versions_old_list)
+#                     del_feature = Feature.objects.get(Migration_TypeId=migration, Object_Type=object_i,
+#                                                       Feature_Name=feature, Project_Version_Id=prev_project_version,
+#                                                       Feature_Version_Id=version_del)
+#                     feature_id = del_feature.Feature_Id
+#                     del_feature.delete()
+#                     attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
+#                     attachments_data.delete()
+#                     folder_path = path + '/media/' + migration + '/' + 'Project_V' + str(
+#                         prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
+#                         version_del)
+#                     shutil.rmtree(folder_path)
+#     return Response("New Project Version Created Successfully")
+
+
 @api_view(['POST'])
 def create_project_version(request):
     migration = request.data['Migration_TypeId']
@@ -3473,6 +3608,9 @@ def create_project_version(request):
     max_value = max(mig_project_versions_list)
     prev_project_version = max_value
     current_project_version = int(max_value) + 1
+
+    connect_str = fileshare_connectionString
+    container_name = container_name_var
 
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -3561,6 +3699,19 @@ def create_project_version(request):
                     os.makedirs(latest_version_target)
                 shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
 
+                blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+                container_client = blob_service_client.get_container_client(container_name)
+                local_path = latest_version_target
+                path_remove = path + '/'
+                for r, d, f in os.walk(local_path):
+                    if f:
+                        for file in f:
+                            file_path_on_azure = os.path.join(r, file).replace(path_remove, "")
+                            file_path_on_local = os.path.join(r, file)
+                            blob_client = container_client.get_blob_client(file_path_on_azure)
+                            with open(file_path_on_local, 'rb') as data:
+                                blob_client.upload_blob(data)
+
                 feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
                                                                Migration_TypeId=migration, Object_Type=object_i,
                                                                Feature_Name=feature,
@@ -3596,8 +3747,16 @@ def create_project_version(request):
                         prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
                         version_del)
                     shutil.rmtree(folder_path)
+                    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+                    container_client = blob_service_client.get_container_client(container_name)
+                    fileshare_path = 'media/' + migration + '/' + 'Project_V' + str(
+                        prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
+                        version_del)
+                    myblobs = container_client.list_blobs(name_starts_with=str(fileshare_path))
+                    if myblobs:
+                        for blob in myblobs:
+                            container_client.delete_blob(blob)
     return Response("New Project Version Created Successfully")
-
 
 @api_view(['POST'])
 def create_user_admin(request):
@@ -4020,10 +4179,78 @@ def export_to_fileshare(request):
 #     return Response("New Migration type created successfully based on given old migration type")
 
 
+# @api_view(['GET', 'POST'])
+# def migration_type_creation_based_on_old(request):
+#     old_migration_type = request.data['Migration_TypeId']
+#     new_migration_type = request.data['New_Migration_Type']
+#     mig_data_old = migrations.objects.filter(Migration_TypeId=old_migration_type)
+#     for dict in mig_data_old.values():
+#         migrations.objects.create(Project_Version_Id=dict['Project_Version_Id'],
+#                                   Migration_TypeId=new_migration_type,
+#                                   Object_Type=dict['Object_Type'], Code=new_migration_type.replace(' ', '_'),
+#                                   Project_Version_limit=dict['Project_Version_limit'],
+#                                   Feature_Version_Limit=dict['Feature_Version_Limit'])
+#     features_data_old = Feature.objects.filter(Migration_TypeId=old_migration_type)
+#     for dict in features_data_old.values():
+#         Feature.objects.create(Migration_TypeId=new_migration_type, Feature_Id=None,
+#                                Project_Version_Id=dict['Project_Version_Id'],
+#                                Feature_Version_Id=dict['Feature_Version_Id'],
+#                                Object_Type=dict['Object_Type'], Feature_Name=dict['Feature_Name'],
+#                                Feature_version_approval_status=dict['Feature_version_approval_status'],
+#                                Level=dict['Level'], Keywords=dict['Keywords'], Estimations=dict['Estimations'],
+#                                Sequence=dict['Sequence'], Source_FeatureDescription=dict['Source_FeatureDescription'],
+#                                Source_Code=dict['Source_Code'], Conversion_Code=dict['Conversion_Code'],
+#                                Target_FeatureDescription=dict['Target_FeatureDescription'],
+#                                Target_Expected_Output=dict['Target_Expected_Output'],
+#                                Target_ActualCode=dict['Target_ActualCode'],
+#                                Feature_Approval_Date=dict['Feature_Approval_Date'])
+#     attachment_data_old = Attachments.objects.filter(Attachment__contains=str(old_migration_type))
+#     attachment_data_old_values = attachment_data_old.values()
+#     data = []
+#     for x in attachment_data_old_values:
+#         data.append(x['Attachment'])
+#     print(data)
+#     data1 = []
+#     for y in data:
+#         my_regex = r"\b(?=\w)" + re.escape(old_migration_type) + r"\b(?!\w)"
+#         if re.search(my_regex, y, re.IGNORECASE):
+#             data1.append(y)
+#
+#     for z in data1:
+#         attachment_data_old = Attachments.objects.filter(Attachment=str(z))
+#         print(attachment_data_old)
+#         for dict in attachment_data_old.values():
+#             print(dict)
+#             object_type = dict['Attachment'].split('/')[3]
+#             print(object_type)
+#             feature_name = dict['Attachment'].split('/')[4]
+#             print(feature_name)
+#             Attachments.objects.create(Project_Version_Id=dict['Project_Version_Id'],
+#                                        Feature_Version_Id=dict['Feature_Version_Id'],
+#                                        AttachmentType=dict['AttachmentType'], filename=dict['filename'],
+#                                        Attachment=dict['Attachment'].replace(old_migration_type, new_migration_type),
+#                                        Feature_Id=Feature.objects.get(Migration_TypeId=new_migration_type,
+#                                                                       Project_Version_Id=dict['Project_Version_Id'],
+#                                                                       Feature_Version_Id=dict['Feature_Version_Id'],
+#                                                                       Object_Type=object_type,
+#                                                                       Feature_Name=feature_name))
+#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+#     source_path = path + '/media/' + old_migration_type + '/'
+#     target_path = path + '/media/' + new_migration_type + '/'
+#     if not os.path.exists(target_path):
+#         os.makedirs(target_path)
+#     shutil.copytree(source_path, target_path, dirs_exist_ok=True)
+#     return Response("New Migration type created successfully based on given old migration type")
+
+
 @api_view(['GET', 'POST'])
 def migration_type_creation_based_on_old(request):
     old_migration_type = request.data['Migration_TypeId']
     new_migration_type = request.data['New_Migration_Type']
+
+    connect_str = fileshare_connectionString
+    container_name = container_name_var
+
     mig_data_old = migrations.objects.filter(Migration_TypeId=old_migration_type)
     for dict in mig_data_old.values():
         migrations.objects.create(Project_Version_Id=dict['Project_Version_Id'],
@@ -4050,22 +4277,16 @@ def migration_type_creation_based_on_old(request):
     data = []
     for x in attachment_data_old_values:
         data.append(x['Attachment'])
-    print(data)
     data1 = []
     for y in data:
         my_regex = r"\b(?=\w)" + re.escape(old_migration_type) + r"\b(?!\w)"
         if re.search(my_regex, y, re.IGNORECASE):
             data1.append(y)
-
     for z in data1:
         attachment_data_old = Attachments.objects.filter(Attachment=str(z))
-        print(attachment_data_old)
         for dict in attachment_data_old.values():
-            print(dict)
             object_type = dict['Attachment'].split('/')[3]
-            print(object_type)
             feature_name = dict['Attachment'].split('/')[4]
-            print(feature_name)
             Attachments.objects.create(Project_Version_Id=dict['Project_Version_Id'],
                                        Feature_Version_Id=dict['Feature_Version_Id'],
                                        AttachmentType=dict['AttachmentType'], filename=dict['filename'],
@@ -4081,7 +4302,20 @@ def migration_type_creation_based_on_old(request):
     if not os.path.exists(target_path):
         os.makedirs(target_path)
     shutil.copytree(source_path, target_path, dirs_exist_ok=True)
+    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+    container_client = blob_service_client.get_container_client(container_name)
+    local_path = source_path
+    path_remove = path + '/'
+    for r, d, f in os.walk(local_path):
+        if f:
+            for file in f:
+                file_path_on_azure = os.path.join(r, file).replace(path_remove, "").replace(old_migration_type,new_migration_type)
+                file_path_on_local = os.path.join(r, file)
+                blob_client = container_client.get_blob_client(file_path_on_azure)
+                with open(file_path_on_local, 'rb') as data:
+                    blob_client.upload_blob(data)
     return Response("New Migration type created successfully based on given old migration type")
+
 
 
 # @api_view(['GET'])
