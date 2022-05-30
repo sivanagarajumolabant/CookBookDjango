@@ -4124,6 +4124,45 @@ def delete_folders_fromfileshare(request):
 #                     blob_client.upload_blob(data)
 #     return Response("Folders exported successfully to azure fileshare")
 
+#
+# @api_view(['GET'])
+# def export_to_fileshare(request):
+#     connect_str = fileshare_connectionString
+#     container_name = container_name_var
+#     local_path_media = 'media'
+#     local_path_module = 'Modules'
+#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#     container_client = blob_service_client.get_container_client(container_name)
+#     myblobs_media = container_client.list_blobs(name_starts_with='media')
+#     if myblobs_media:
+#         for blob in myblobs_media:
+#             container_client.delete_blob(blob)
+#     for r, d, f in os.walk(local_path_media):
+#         if f:
+#             for file in f:
+#                 file_path_on_azure = os.path.join(r, file)
+#                 file_path_on_local = os.path.join(r, file)
+#                 blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#                 container_client = blob_service_client.get_container_client(container_name)
+#                 blob_client = container_client.get_blob_client(container=container_name, blob=file_path_on_azure)
+#                 with open(file_path_on_local, "rb") as data:
+#                     blob_client.upload_blob(data)
+#     myblobs_module = container_client.list_blobs(name_starts_with='Modules')
+#     if myblobs_module:
+#         for blob in myblobs_module:
+#             container_client.delete_blob(blob)
+#     for r, d, f in os.walk(local_path_module):
+#         if f:
+#             for file in f:
+#                 file_path_on_azure = os.path.join(r, file)
+#                 file_path_on_local = os.path.join(r, file)
+#                 blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+#                 container_client = blob_service_client.get_container_client(container_name)
+#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
+#                 with open(file_path_on_local, "rb") as data:
+#                     blob_client.upload_blob(data)
+#     return Response("Folders exported successfully to azure fileshare")
+
 
 @api_view(['GET'])
 def export_to_fileshare(request):
@@ -4142,6 +4181,8 @@ def export_to_fileshare(request):
             for file in f:
                 file_path_on_azure = os.path.join(r, file)
                 file_path_on_local = os.path.join(r, file)
+                blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+                container_client = blob_service_client.get_container_client(container_name)
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
                 with open(file_path_on_local, "rb") as data:
                     blob_client.upload_blob(data)
@@ -4154,11 +4195,12 @@ def export_to_fileshare(request):
             for file in f:
                 file_path_on_azure = os.path.join(r, file)
                 file_path_on_local = os.path.join(r, file)
+                blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+                container_client = blob_service_client.get_container_client(container_name)
                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
                 with open(file_path_on_local, "rb") as data:
                     blob_client.upload_blob(data)
     return Response("Folders exported successfully to azure fileshare")
-
 
 # @api_view(['GET', 'POST'])
 # def migration_type_creation_based_on_old(request):
