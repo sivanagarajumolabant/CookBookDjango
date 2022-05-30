@@ -1896,12 +1896,12 @@ def create_tablepage_featuresdata(request):
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
     Project_Version_Id = request.data['Project_Version_Id']
-    feature_names = Feature.objects.values('Feature_Name').distinct()
+    feature_names = Feature.objects.filter(Migration_TypeId=Migration_TypeId,Object_Type=Object_Type,Project_Version_Id=Project_Version_Id).values('Feature_Name').distinct()
     features = []
     if feature_names:
         for dict in feature_names:
             features.append(dict['Feature_Name'])
-        final_list = []
+    final_list = []
     if features:
         for feature in features:
             feature_versions = Feature.objects.filter(Feature_Name=feature, Project_Version_Id=Project_Version_Id)
@@ -1926,7 +1926,7 @@ def create_tablepage_featuresdata(request):
 def get_Featurenames(request):
     Migration_TypeId = request.data['Migration_TypeId']
     Object_Type = request.data['Object_Type']
-    Feature_Name = request.data['Feature_Name']
+    # Feature_Name = request.data['Feature_Name']
     Project_Version_Id = request.data['Project_Version_Id']
     final_list = []
     if Object_Type == 'ALL':
@@ -1950,28 +1950,28 @@ def get_Featurenames(request):
                     Feature_Version_Id=max_version)
                 serializer = migrationlevelfeatures(data, many=True)
                 final_list.append(serializer.data)
-    elif Feature_Name == 'ALL':
-        features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Migration_TypeId=Migration_TypeId,
-                                          Object_Type=Object_Type)
-        feature_names = features.values('Feature_Name').distinct()
-        features = []
-        for dict in feature_names:
-            features.append(dict['Feature_Name'])
-        for feature in features:
-            feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
-                                                      Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-                                                      Feature_Name=feature)
-            version_list = []
-            for dict1 in feature_versions.values():
-                version_list.append(dict1['Feature_Version_Id'])
-            max_version = max(version_list)
-            data = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
-                                          Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-                                          Feature_Name=feature,
-                                          Feature_Version_Id=max_version)
-            if data:
-                serializer = migrationlevelfeatures(data, many=True)
-                final_list.append(serializer.data)
+    # elif Feature_Name == 'ALL':
+    #     features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Migration_TypeId=Migration_TypeId,
+    #                                       Object_Type=Object_Type)
+    #     feature_names = features.values('Feature_Name').distinct()
+    #     features = []
+    #     for dict in feature_names:
+    #         features.append(dict['Feature_Name'])
+    #     for feature in features:
+    #         feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
+    #                                                   Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
+    #                                                   Feature_Name=feature)
+    #         version_list = []
+    #         for dict1 in feature_versions.values():
+    #             version_list.append(dict1['Feature_Version_Id'])
+    #         max_version = max(version_list)
+    #         data = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
+    #                                       Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
+    #                                       Feature_Name=feature,
+    #                                       Feature_Version_Id=max_version)
+    #         if data:
+    #             serializer = migrationlevelfeatures(data, many=True)
+    #             final_list.append(serializer.data)
     else:
         features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Migration_TypeId=Migration_TypeId,
                                           Object_Type=Object_Type)
@@ -2707,7 +2707,35 @@ def migration_user_view(request):
                         label_dict['Admin_Flag'] = 1
                         final_list.append(label_dict.copy())
                 else:
-                    if object_name in object_values_list:
+                    if 'ALL' in object_values_list:
+                        perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
+                                                               Object_Type='ALL')
+                        feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
+                        if 'ALL' in feature_names_list:
+                            features_data = Feature.objects.filter(Project_Version_Id=project_version,
+                                                                   Migration_TypeId=mig_type, Object_Type=object_name)
+                            feature_values = [obj['Feature_Name'] for obj in features_data.values()]
+                            if feature_values:
+                                for feature_name in feature_values:
+                                    inter_dict = {}
+                                    inter_dict["Feature_Name"] = feature_name
+                                    inter_list.append(inter_dict)
+                                label_dict['SubMenu'] = inter_list
+                                label_dict['Admin_Flag'] = 0
+                                final_list.append(label_dict.copy())
+                            else:
+                                label_dict['SubMenu'] = []
+                                label_dict['Admin_Flag'] = 0
+                                final_list.append(label_dict.copy())
+                        else:
+                            for feature_i in feature_names_list:
+                                inter_dict = {}
+                                inter_dict["Feature_Name"] = feature_i
+                                inter_list.append(inter_dict)
+                            label_dict['SubMenu'] = inter_list
+                            label_dict['Admin_Flag'] = 0
+                            final_list.append(label_dict.copy())
+                    elif object_name in object_values_list:
                         perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
                                                                Object_Type=object_name)
                         feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
