@@ -3436,7 +3436,7 @@ def approval_featurecreate(request):
                         if os.path.exists(folder_path):
                             shutil.rmtree(folder_path)
             for row in Feature.objects.all().reverse():
-                if Feature.objects.filter(Migration_TypeId=row.Migration_TypeId, Feature_Name=row.Feature_Name,
+                if Feature.objects.filter(Migration_TypeId=row.Migration_TypeId,Object_Type = row.Object_Type, Feature_Name=row.Feature_Name,
                                           Project_Version_Id=row.Project_Version_Id,
                                           Feature_Version_Id=row.Feature_Version_Id).count() > 1:
                     row.delete()
