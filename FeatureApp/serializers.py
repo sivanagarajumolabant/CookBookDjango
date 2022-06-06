@@ -170,11 +170,13 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         for dict in permission_data:
             end_date = dict['Expiry_date']
             if end_date < today:
-                record = Permissions.objects.get(User_Email=dict['User_Email'], Expiry_date=end_date,
+                record = Permissions.objects.get(User_Email=dict['User_Email'],
+                                                 Migration_TypeId=dict['Migration_TypeId'], Expiry_date=end_date,
                                                  Feature_Name=dict['Feature_Name'], Access_Type=dict['Access_Type'],
                                                  Object_Type=dict['Object_Type'])
                 record.delete()
                 approval_record = Approvals.objects.get(User_Email=dict['User_Email'],
+                                                        Migration_TypeId=dict['Migration_TypeId'],
                                                         Feature_Name=dict['Feature_Name'],
                                                         Access_Type=dict['Access_Type'],
                                                         Object_Type=dict['Object_Type'])
