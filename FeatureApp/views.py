@@ -3412,6 +3412,56 @@ def approval_featurecreate(request):
         serializer = FeatureSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(Feature_Version_Id=max_version + 1)
+
+            """
+            Adding attachments for the feature versions 
+            """
+            #==============================================================================
+            max_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
+                                              Feature_Name=feature_name,
+                                              Project_Version_Id=project_version,
+                                              Feature_Version_Id=max_version)
+            max_feature_id = max_feature.Feature_Id
+            max_feature_attachments_data = Attachments.objects.filter(Feature_Id_id=max_feature_id)
+            creating_feature_version = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
+                                                           Feature_Name=feature_name,
+                                                           Project_Version_Id=project_version,
+                                                           Feature_Version_Id=max_version + 1)
+            creating_version_feature_id = creating_feature_version.Feature_Id
+
+            for dict in max_feature_attachments_data.values():
+                att_object2 = Attachments(Project_Version_Id=dict['Project_Version_Id'],
+                                          Feature_Version_Id=max_version + 1,
+                                          AttachmentType=dict['AttachmentType'], filename=dict['filename'],
+                                          Attachment=dict['Attachment'],
+                                          Feature_Id_id=creating_version_feature_id)
+                att_object2.save()
+
+            latest_version_source = path + '/media/' + migration_type + '/' + 'Project_V' + str(
+                project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
+                max_version) + '/'
+            if not os.path.exists(latest_version_source):
+                os.makedirs(latest_version_source)
+            latest_version_target = path + '/media/' + migration_type + '/' + 'Project_V' + str(
+                project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
+                max_version + 1) + '/'
+            if not os.path.exists(latest_version_target):
+                os.makedirs(latest_version_target)
+            shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
+            blob_service_client = BlobServiceClient.from_connection_string(fileshare_connectionString)
+            container_client = blob_service_client.get_container_client(container_name_var)
+            local_path = latest_version_target
+            path_remove = path + '/'
+            for r, d, f in os.walk(local_path):
+                if f:
+                    for file in f:
+                        file_path_on_azure = os.path.join(r, file).replace(path_remove, "")
+                        file_path_on_local = os.path.join(r, file)
+                        blob_client = container_client.get_blob_client(file_path_on_azure)
+                        with open(file_path_on_local, 'rb') as data:
+                            blob_client.upload_blob(data)
+            #==============================================================================
+
             version_list.append(int(max_version + 1))
             feature_versions_list_all.append(str(project_version) + '.' + str(max_version + 1))
             feature_versions_list_all = sorted(feature_versions_list_all, key=float)
