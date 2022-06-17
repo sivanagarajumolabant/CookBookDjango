@@ -1,41 +1,23 @@
-from azure.storage.blob import BlobServiceClient
-from django.shortcuts import render
-from rest_framework import viewsets, status
-import xlsxwriter
-import shutil
-from django.utils.encoding import force_text, smart_str
-from wsgiref.util import FileWrapper
+import mimetypes,json,re,sys,jwt,xlsxwriter,shutil
+from azure.storage.blob import BlobServiceClient,ResourceTypes,AccountSasPermissions,generate_account_sas
+from rest_framework import status,generics
 from .serializers import *
 from datetime import *
-from config.config import frontend_url, fileshare_connectionString, container_name_var
+from config.config import frontend_url, fileshare_connectionString, container_name_var,account_name,account_key
+from .backend.custom_azure import azure_connection
 from .models import *
 from rest_framework.decorators import api_view
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-import mimetypes
-import json
-import os
 from django.http import HttpResponse
 from import_file import import_file
-import re
-import sys
 from django.core import mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from Features.settings import EMAIL_HOST_USER
-from django.contrib.auth.decorators import permission_required
-from Features.settings import BASE_DIR, MEDIA_ROOT
-
-import jwt
-from django.urls import reverse
-from rest_framework import generics
 from django.conf import settings
-from django.contrib.sites.shortcuts import get_current_site
 from rest_framework_simplejwt.tokens import RefreshToken
-from .utils import Util
-from rest_framework.decorators import permission_classes
-from rest_framework.permissions import IsAuthenticated
 
 
 @api_view(['GET'])
@@ -99,437 +81,8 @@ def feature_version_list(request):
     return Response(final_list)
 
 
-# @api_view(['POST'])
-# def featuredetail(request, feature_name):
-#     email = request.data['User_Email']
-#     mig_type = request.data['Migration_Type']
-#     obj_type = request.data['Object_Type']
-#     Project_Version_Id = request.data['Project_Version_Id']
-#     user = Users.objects.filter(email=email)
-#
-#     user_values = list(user.values())
-#     admin_access = user_values[0]['admin_migrations']
-#     if admin_access == '' or admin_access == None:
-#         admin_access_dict = {}
-#     else:
-#         admin_access = admin_access.replace("\'", "\"")
-#         admin_access_dict = json.loads(admin_access)
-#
-#     final_list = []
-#     version_list = []
-#     features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name,
-#                                       Project_Version_Id=Project_Version_Id)
-#     for dict in features.values():
-#         version_list.append(dict['Feature_Version_Id'])
-#     max_version = max(version_list)
-#
-#     for obj in features:
-#         mig_type = obj.Migration_TypeId
-#         obj_type = obj.Object_Type
-#         feature_name = obj.Feature_Name
-#         feature_id = obj.Feature_Id
-#         feature_version_id = obj.Feature_Version_Id
-#         f_approval = obj.Feature_version_approval_status
-#         EDIT = 0
-#         latest_flag = 0
-#         if mig_type in admin_access_dict.keys():
-#             if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                 EDIT = 1
-#             else:
-#
-#                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#                 if perm_data3:
-#                     data3_access = perm_data3.values()[0]['Access_Type']
-#                     if data3_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#
-#                 perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type, Feature_Name='ALL')
-#                 if perm_data2:
-#                     data2_access = perm_data2.values()[0]['Access_Type']
-#                     if data2_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type, Feature_Name=feature_name)
-#                 if perm_data1:
-#                     data1_access = perm_data1.values()[0]['Access_Type']
-#                     if data1_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#
-#                 if not perm_data1 and perm_data2 and perm_data3:
-#                     EDIT = 0
-#             if feature_version_id < max_version and f_approval == 'Approved':
-#                 latest_flag = 0
-#             elif feature_version_id == max_version and f_approval == 'Approved':
-#                 latest_flag = 0
-#             else:
-#                 latest_flag = 1
-#         else:
-#
-#             perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#             if perm_data3:
-#                 data3_access = perm_data3.values()[0]['Access_Type']
-#                 if data3_access in ('Edit', 'ALL'):
-#                     EDIT = 1
-#             perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                     Feature_Name='ALL')
-#             if perm_data2:
-#                 data2_access = perm_data2.values()[0]['Access_Type']
-#                 if data2_access in ('Edit', 'ALL'):
-#                     EDIT = 1
-#             perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                     Feature_Name=feature_name)
-#             if perm_data1:
-#                 data1_access = perm_data1.values()[0]['Access_Type']
-#                 if data1_access in ('Edit', 'ALL'):
-#                     EDIT = 1
-#             if not perm_data1 and perm_data2 and perm_data3:
-#                 EDIT = 0
-#         if feature_version_id < max_version and f_approval == 'Approved':
-#             latest_flag = 0
-#             max_flag = 0
-#         elif feature_version_id == max_version and f_approval == 'Approved':
-#             latest_flag = 0
-#             max_flag = 1
-#         elif feature_version_id == max_version:
-#             if f_approval == 'In Progress' or f_approval == 'Awaiting Approval':
-#                 latest_flag = 1
-#                 max_flag = 1
-#         else:
-#             latest_flag = 1
-#             max_flag = 0
-#
-#         feature = Feature.objects.get(Feature_Id=feature_id)
-#         serializer = FeatureSerializer(feature, many=False)
-#         response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag, 'serializer': serializer.data}
-#         final_list.append(response)
-#
-#     return Response(final_list)
-
-# @api_view(['POST'])
-# def featuredetail(request, feature_name):
-#     email = request.data['User_Email']
-#     mig_type = request.data['Migration_Type']
-#     obj_type = request.data['Object_Type']
-#     Project_Version_Id = request.data['Project_Version_Id']
-#     mig_data = migrations.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type)
-#     project_versions_list = []
-#     for dict in mig_data.values():
-#         project_versions_list.append(dict['Project_Version_Id'])
-#     max_project_version = max(project_versions_list)
-#     user = Users.objects.filter(email=email)
-#
-#     user_values = list(user.values())
-#     admin_access = user_values[0]['admin_migrations']
-#     if admin_access == '' or admin_access == None:
-#         admin_access_dict = {}
-#     else:
-#         admin_access = admin_access.replace("\'", "\"")
-#         admin_access_dict = json.loads(admin_access)
-#
-#     final_list = []
-#     version_list = []
-#     features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name,
-#                                       Project_Version_Id=Project_Version_Id)
-#     for dict in features.values():
-#         version_list.append(dict['Feature_Version_Id'])
-#     max_version = max(version_list)
-#
-#     for obj in features:
-#         mig_type = obj.Migration_TypeId
-#         obj_type = obj.Object_Type
-#         feature_name = obj.Feature_Name
-#         feature_id = obj.Feature_Id
-#         feature_version_id = obj.Feature_Version_Id
-#         f_approval = obj.Feature_version_approval_status
-#         f_project_version = obj.Project_Version_Id
-#         EDIT = 0
-#         latest_flag = 0
-#         if int(f_project_version) < int(max_project_version):
-#             if mig_type in admin_access_dict.keys():
-#                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                     EDIT = 1
-#                 else:
-#
-#                     perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type='ALL')
-#                     if perm_data3:
-#                         data3_access = perm_data3.values()[0]['Access_Type']
-#                         if data3_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#                     perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name='ALL')
-#                     if perm_data2:
-#                         data2_access = perm_data2.values()[0]['Access_Type']
-#                         if data2_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#                     perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name=feature_name)
-#                     if perm_data1:
-#                         data1_access = perm_data1.values()[0]['Access_Type']
-#                         if data1_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#                     if not perm_data1 and perm_data2 and perm_data3:
-#                         EDIT = 0
-#             latest_flag = 1
-#         elif int(f_project_version) == int(max_project_version) :
-#             if mig_type in admin_access_dict.keys():
-#                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                     EDIT = 1
-#                 else:
-#
-#                     perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#                     if perm_data3:
-#                         data3_access = perm_data3.values()[0]['Access_Type']
-#                         if data3_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#
-#                     perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name='ALL')
-#                     if perm_data2:
-#                         data2_access = perm_data2.values()[0]['Access_Type']
-#                         if data2_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#                     perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name=feature_name)
-#                     if perm_data1:
-#                         data1_access = perm_data1.values()[0]['Access_Type']
-#                         if data1_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#
-#                     if not perm_data1 and perm_data2 and perm_data3:
-#                         EDIT = 0
-#                 if feature_version_id < max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 elif feature_version_id == max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 else:
-#                     latest_flag = 1
-#             else:
-#
-#                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#                 if perm_data3:
-#                     data3_access = perm_data3.values()[0]['Access_Type']
-#                     if data3_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                         Feature_Name='ALL')
-#                 if perm_data2:
-#                     data2_access = perm_data2.values()[0]['Access_Type']
-#                     if data2_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                         Feature_Name=feature_name)
-#                 if perm_data1:
-#                     data1_access = perm_data1.values()[0]['Access_Type']
-#                     if data1_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 if not perm_data1 and perm_data2 and perm_data3:
-#                     EDIT = 0
-#
-#         if feature_version_id < max_version and f_approval == 'Approved':
-#             latest_flag = 0
-#             max_flag = 0
-#         elif feature_version_id == max_version and f_approval == 'Approved':
-#             latest_flag = 0
-#             max_flag = 1
-#         elif feature_version_id == max_version:
-#             if f_approval == 'In Progress' or f_approval == 'Awaiting Approval':
-#                 latest_flag = 1
-#                 max_flag = 1
-#         else:
-#             latest_flag = 1
-#             max_flag = 0
-#
-#         feature = Feature.objects.get(Feature_Id=feature_id)
-#         serializer = FeatureSerializer(feature, many=False)
-#         response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag, 'serializer': serializer.data}
-#         final_list.append(response)
-#     return Response(final_list)
-
-# @api_view(['POST'])
-# def featuredetail(request, feature_name):
-#     email = request.data['User_Email']
-#     mig_type = request.data['Migration_Type']
-#     obj_type = request.data['Object_Type']
-#     Project_Version_Id = request.data['Project_Version_Id']
-#     mig_data = migrations.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type)
-#     project_versions_list = []
-#     for dict in mig_data.values():
-#         project_versions_list.append(dict['Project_Version_Id'])
-#     max_project_version = max(project_versions_list)
-#     user = Users.objects.filter(email=email)
-#
-#     user_values = list(user.values())
-#     admin_access = user_values[0]['admin_migrations']
-#     if admin_access == '' or admin_access == None:
-#         admin_access_dict = {}
-#     else:
-#         admin_access = admin_access.replace("\'", "\"")
-#         admin_access_dict = json.loads(admin_access)
-#
-#     final_list = []
-#     version_list = []
-#     features = Feature.objects.filter(Migration_TypeId=mig_type, Object_Type=obj_type, Feature_Name=feature_name,
-#                                       Project_Version_Id=Project_Version_Id)
-#     for dict in features.values():
-#         version_list.append(dict['Feature_Version_Id'])
-#     max_version = max(version_list)
-#
-#     for obj in features:
-#         mig_type = obj.Migration_TypeId
-#         obj_type = obj.Object_Type
-#         feature_name = obj.Feature_Name
-#         feature_id = obj.Feature_Id
-#         feature_version_id = obj.Feature_Version_Id
-#         f_approval = obj.Feature_version_approval_status
-#         f_project_version = obj.Project_Version_Id
-#         EDIT = 0
-#         latest_flag = 0
-#         if int(f_project_version) < int(max_project_version):
-#             if mig_type in admin_access_dict.keys():
-#                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                     EDIT = 1
-#                 else:
-#
-#                     perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type='ALL')
-#                     if perm_data3:
-#                         data3_access = perm_data3.values()[0]['Access_Type']
-#                         if data3_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#
-#                     perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name='ALL')
-#                     if perm_data2:
-#                         data2_access = perm_data2.values()[0]['Access_Type']
-#                         if data2_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#                     perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name=feature_name)
-#                     if perm_data1:
-#                         data1_access = perm_data1.values()[0]['Access_Type']
-#                         if data1_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#
-#                     if not perm_data1 and perm_data2 and perm_data3:
-#                         EDIT = 0
-#                 if feature_version_id < max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 elif feature_version_id == max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 else:
-#                     latest_flag = 1
-#             else:
-#                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#                 if perm_data3:
-#                     data3_access = perm_data3.values()[0]['Access_Type']
-#                     if data3_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type,
-#                                                         Feature_Name='ALL')
-#                 if perm_data2:
-#                     data2_access = perm_data2.values()[0]['Access_Type']
-#                     if data2_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                         Object_Type=obj_type,
-#                                                         Feature_Name=feature_name)
-#                 if perm_data1:
-#                     data1_access = perm_data1.values()[0]['Access_Type']
-#                     if data1_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 if not perm_data1 and perm_data2 and perm_data3:
-#                     EDIT = 0
-#                 if feature_version_id < max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 elif feature_version_id == max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 else:
-#                     latest_flag = 1
-#
-#         elif int(f_project_version) == int(max_project_version) :
-#             if mig_type in admin_access_dict.keys():
-#                 if obj_type in admin_access_dict[mig_type] or 'ALL' in admin_access_dict[mig_type]:
-#                     EDIT = 1
-#                 else:
-#
-#                     perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#                     if perm_data3:
-#                         data3_access = perm_data3.values()[0]['Access_Type']
-#                         if data3_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#
-#                     perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name='ALL')
-#                     if perm_data2:
-#                         data2_access = perm_data2.values()[0]['Access_Type']
-#                         if data2_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#                     perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                             Object_Type=obj_type, Feature_Name=feature_name)
-#                     if perm_data1:
-#                         data1_access = perm_data1.values()[0]['Access_Type']
-#                         if data1_access in ('Edit', 'ALL'):
-#                             EDIT = 1
-#
-#                     if not perm_data1 and perm_data2 and perm_data3:
-#                         EDIT = 0
-#                 if feature_version_id < max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 elif feature_version_id == max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 else:
-#                     latest_flag = 1
-#             else:
-#                 perm_data3 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type='ALL')
-#                 if perm_data3:
-#                     data3_access = perm_data3.values()[0]['Access_Type']
-#                     if data3_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data2 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                         Feature_Name='ALL')
-#                 if perm_data2:
-#                     data2_access = perm_data2.values()[0]['Access_Type']
-#                     if data2_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 perm_data1 = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type, Object_Type=obj_type,
-#                                                         Feature_Name=feature_name)
-#                 if perm_data1:
-#                     data1_access = perm_data1.values()[0]['Access_Type']
-#                     if data1_access in ('Edit', 'ALL'):
-#                         EDIT = 1
-#                 if not perm_data1 and perm_data2 and perm_data3:
-#                     EDIT = 0
-#
-#                 if feature_version_id < max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 elif feature_version_id == max_version and f_approval == 'Approved':
-#                     latest_flag = 0
-#                 else:
-#                     latest_flag = 1
-#
-#         if feature_version_id < max_version and f_approval == 'Approved':
-#             max_flag = 0
-#         elif feature_version_id == max_version and f_approval == 'Approved':
-#             max_flag = 1
-#         elif feature_version_id == max_version:
-#             if f_approval == 'In Progress' or f_approval == 'Awaiting Approval':
-#                 max_flag = 1
-#         else:
-#             max_flag = 0
-#
-#         feature = Feature.objects.get(Feature_Id=feature_id)
-#         serializer = FeatureSerializer(feature, many=False)
-#         response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag, 'serializer': serializer.data}
-#         final_list.append(response)
-#     return Response(final_list)
-
-
 @api_view(['POST'])
 def featuredetail(request, feature_name):
-    print(request.data)
     email = request.data['User_Email']
     mig_type = request.data['Migration_Type']
     obj_type = request.data['Object_Type']
@@ -710,7 +263,6 @@ def featuredetail(request, feature_name):
         response = {'edit': EDIT, 'Latest_Flag': latest_flag, 'Max_Flag': max_flag,
                     'Max_Project_Flag': max_project_flag, 'serializer': serializer.data}
         final_list.append(response)
-    print(final_list)
     return Response(final_list)
 
 
@@ -983,74 +535,18 @@ def Conversion(request, id):
     return Response(serializer.data)
 
 
-# @api_view(['POST'])
-# def attachment_delete(request):
-#     file_name = request.data['file_name']
-#     migration_typeid = request.data['migration_typeid']
-#     object_type = request.data['object_type']
-#     AttachmentType = request.data['AttachmentType']
-#     id = request.data['id']
-#     featurename = request.data['fname']
-#     attachment = Attachments.objects.get(id=id)
-#     project_id = attachment.Project_Version_Id
-#     feature_version_id = attachment.Feature_Version_Id
-#     attachment.delete()
-#     fl_path = MEDIA_ROOT + '/media/' + migration_typeid + '/' + 'Project_V' + str(
-#         project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
-#         feature_version_id) + '/' + AttachmentType + '/'
-#     filename = fl_path + file_name
-#     os.remove(filename)
-#     return Response('Deleted')
-
 @api_view(['POST'])
 def attachment_delete(request):
-    file_name = request.data['file_name']
-    migration_typeid = request.data['migration_typeid']
-    object_type = request.data['object_type']
-    AttachmentType = request.data['AttachmentType']
     id = request.data['id']
-    featurename = request.data['fname']
     attachment = Attachments.objects.get(id=id)
-    project_id = attachment.Project_Version_Id
-    feature_version_id = attachment.Feature_Version_Id
+    blob_path = attachment.Attachment
+    container_client = azure_connection()
+    blob_check = container_client.list_blobs(name_starts_with=blob_path)
+    if blob_check:
+        for blob in blob_check:
+            container_client.delete_blobs(blob)
     attachment.delete()
-    fl_path = MEDIA_ROOT + '/media/' + migration_typeid + '/' + 'Project_V' + str(
-        project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
-        feature_version_id) + '/' + AttachmentType + '/'
-    filename = fl_path + file_name
-    os.remove(filename)
-    fileshare_path = 'media/' + migration_typeid + '/' + 'Project_V' + str(
-        project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
-        feature_version_id) + '/' + AttachmentType + '/' + str(file_name)
-    connstr = fileshare_connectionString
-    container = container_name_var
-    blob_service_client = BlobServiceClient.from_connection_string(connstr)
-    my_container = blob_service_client.get_container_client(container)
-    my_container.delete_blobs(fileshare_path)
     return Response('Deleted')
-
-
-# @api_view(['POST'])
-# def Attcahmentupdate(request, pk):
-#     feature = Feature.objects.get(Feature_Id=pk)
-#     AttachmentType = request.data['AttachmentType']
-#     Attachment = request.FILES['Attachment']
-#     filename = request.data['filename']
-#     project_id = feature.Project_Version_Id
-#     feature_version_id = feature.Feature_Version_Id
-#     dictionary = {"Feature_Id": feature, 'Project_Version_Id': project_id, 'Feature_Version_Id': feature_version_id,
-#                   'AttachmentType': AttachmentType, "filename": filename,
-#                   "Attachment": Attachment}
-#     attachements = AttachementSerializer(data=dictionary)
-#     if attachements.is_valid():
-#         attachements.save()
-#         for row in Attachments.objects.all().reverse():
-#             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
-#                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
-#                 row.delete()
-#         return Response(attachements.data, status=status.HTTP_200_OK)
-#     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 def Attcahmentupdate(request, pk):
@@ -1058,9 +554,6 @@ def Attcahmentupdate(request, pk):
     AttachmentType = request.data['AttachmentType']
     Attachment = request.FILES['Attachment']
     filename = request.data['filename']
-    migration_typeid = feature.Migration_TypeId
-    object_type = feature.Object_Type
-    featurename = feature.Feature_Name
     project_id = feature.Project_Version_Id
     feature_version_id = feature.Feature_Version_Id
     dictionary = {"Feature_Id": feature, 'Project_Version_Id': project_id, 'Feature_Version_Id': feature_version_id,
@@ -1069,68 +562,12 @@ def Attcahmentupdate(request, pk):
     attachements = AttachementSerializer(data=dictionary)
     if attachements.is_valid():
         attachements.save()
-        connstr = fileshare_connectionString
-        container = container_name_var
-        blob_service_client = BlobServiceClient.from_connection_string(connstr)
-        container_client = blob_service_client.get_container_client(container)
-        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        file_path = 'media/' + migration_typeid + '/' + 'Project_V' + str(
-            project_id) + '/' + object_type + '/' + featurename + '/' + 'Feature_V' + str(
-            feature_version_id) + '/' + AttachmentType + '/' + str(filename)
-        local_path = path + '/' + file_path
-        blob_client = container_client.get_blob_client(blob=file_path)
-        with open(local_path, "rb") as data:
-            blob_client.upload_blob(data, overwrite=True)
         for row in Attachments.objects.all().reverse():
             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
                 row.delete()
         return Response(attachements.data, status=status.HTTP_200_OK)
     return Response(attachements.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# @api_view(['DELETE'])
-# def featuredelete(request, pk):
-#     features = Feature.objects.filter(Feature_Id=pk)
-#     feature_name = features.values('Feature_Name')[0]['Feature_Name']
-#     appr_data = Approvals.objects.filter(Feature_Name=feature_name)
-#     perm_data = Permissions.objects.filter(Feature_Name=feature_name)
-#     appr_data.delete()
-#     perm_data.delete()
-#     features.delete()
-#     return Response('Deleted')
-
-
-# @api_view(['DELETE', 'POST'])
-# def featuredelete(request, feature_name):
-#     Project_Version_Id = request.data['Project_Version_Id']
-#     migration_typeid = request.data['Migration_TypeId']
-#     object_type = request.data['Object_Type']
-#
-#     features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Feature_Name=feature_name)
-#     feature_id_list = []
-#     for dict in features.values():
-#         feature_id_list.append(dict['Feature_Id'])
-#     for id in feature_id_list:
-#         att_data = Attachments.objects.filter(Project_Version_Id=Project_Version_Id, Feature_Id_id=id)
-#         if att_data:
-#             att_data.delete()
-#     appr_data = Approvals.objects.filter(Feature_Name=feature_name)
-#     perm_data = Permissions.objects.filter(Feature_Name=feature_name)
-#     appr_data.delete()
-#     perm_data.delete()
-#     features.delete()
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     attachments_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
-#         Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
-#
-#     if os.path.exists(attachments_path):
-#         shutil.rmtree(attachments_path)
-#     # modules_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
-#     #     Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
-#     # if os.listdir(modules_path):
-#     #     shutil.rmtree(modules_path)
-#     return Response('Deleted')
 
 
 @api_view(['DELETE','POST'])
@@ -1151,25 +588,13 @@ def featuredelete(request, feature_name):
     appr_data.delete()
     perm_data.delete()
     features.delete()
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    attachments_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
-        Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
-    if os.path.exists(attachments_path):
-        shutil.rmtree(attachments_path)
-    # modules_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
-    #     Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
-    # if os.listdir(modules_path):
-    #     shutil.rmtree(modules_path)
-    connstr = fileshare_connectionString
-    container = container_name_var
-    blob_service_client = BlobServiceClient.from_connection_string(connstr)
-    container_client = blob_service_client.get_container_client(container)
     fileshare_path = 'media/' + migration_typeid + '/' + 'Project_V' + str(
         Project_Version_Id) + '/' + object_type + '/' + feature_name + '/'
-    myblobs = container_client.list_blobs(name_starts_with=str(fileshare_path))
-    if myblobs:
-        for blob in myblobs:
-            container_client.delete_blob(blob)
+    container_client = azure_connection()
+    del_blobs = container_client.list_blobs(name_starts_with=fileshare_path)
+    if del_blobs:
+        for blob in del_blobs:
+            container_client.delete_blobs(blob)
     return Response('Deleted')
 
 
@@ -1195,24 +620,6 @@ def predessors(request):
     return Response(final_list, status=status.HTTP_200_OK)
 
 
-# @api_view(['POST'])
-# def download_attachment(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body_data = json.loads(body_unicode)
-#     file_name = body_data['file_name']
-#     attach_type = body_data['AttachmentType']
-#     fid = body_data['feature_id']
-#     filter_files = Attachments.objects.filter(
-#         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
-#     filter_values = list(filter_files.values_list())
-#     file_path = filter_values[0]
-#     fl = open(file_path[6], 'rb')
-#     mime_type, _ = mimetypes.guess_type(file_path[6])
-#     response = HttpResponse(fl, content_type=mime_type)
-#     response['Content-Disposition'] = "attachment; filename=%s" % file_name
-#     return response
-
-
 @api_view(['POST'])
 def download_attachment(request):
     body_unicode = request.body.decode('utf-8')
@@ -1224,57 +631,10 @@ def download_attachment(request):
         Feature_Id=fid, AttachmentType=attach_type, filename=file_name)
     filter_values = list(filter_files.values_list())
     file_path = filter_values[0]
-    fl = open(file_path[6], 'rb')
-    mime_type, _ = mimetypes.guess_type(file_path[6])
-    response = HttpResponse(fl, content_type=mime_type)
-    response['Content-Disposition'] = "attachment; filename=%s" % file_name
-    return response
-    # path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-    # connstr = fileshare_connectionString
-    # container = container_name_var
-    # blob_service_client = BlobServiceClient.from_connection_string(connstr)
-    # container_client = blob_service_client.get_container_client(container)
-    # data = container_client.get_blob_client(file_path[6]).download_blob().readall()
-    # local_path = path + '/Downloads/' + file_path[5]
-    # if not os.path.exists(path + '/Downloads/'):
-    #     os.makedirs(path + '/Downloads/')
-    #
-    # with open(local_path, "wb") as file:
-    #     file.write(data)
-    # return Response(data)
-
-
-# @api_view(['POST'])
-# def conversion(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body_data = json.loads(body_unicode)
-#     feature_name = body_data['featurename']
-#     python_code = body_data['convcode']
-#     source_code = body_data['sourcecode']
-#     migration_typeid = body_data['migration_typeid']
-#     object_type = body_data['object_type']
-#     project_id = body_data['Project_Version_Id']
-#     feature_version_id = body_data['Feature_Version_Id']
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#
-#     if python_code != '':
-#         module_path = path + '/' + 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
-#             project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
-#         sys.path.append(module_path)
-#         if not os.path.exists(module_path):
-#             os.makedirs(module_path)
-#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
-#         file_path = module_path + '/' + str(feature_name).strip() + '.py'
-#         sys.path.insert(0, file_path)
-#         with open(file_path, 'w') as f:
-#             f.write(python_code)
-#         module = import_file(file_path)
-#         data = getattr(module, str(feature_name).strip())
-#         executableoutput = data(source_code)
-#         return Response(executableoutput, status=status.HTTP_200_OK)
-#     else:
-#         return Response('Please add the conversion code in conversion module')
+    container_client = azure_connection()
+    data = container_client.get_blob_client(file_path[6]).download_blob().readall()
+    data = data.decode()
+    return HttpResponse(data)
 
 
 @api_view(['POST'])
@@ -1291,86 +651,52 @@ def conversion(request):
     schema = ''
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-    conversion_file_path = path + '/media/' + migration_typeid + '/' + 'Project_V' + str(
+    conversion_path = 'media/' + migration_typeid + '/' + 'Project_V' + str(
         project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
         feature_version_id) + '/' + 'Conversion/'
-    conversion_file = None
-    if os.path.exists(conversion_file_path):
-        conversion_file = os.listdir(conversion_file_path)
+    container_client = azure_connection()
+    conversion_file_blob = container_client.list_blobs(name_starts_with=conversion_path)
     if python_code != 'r@rawstringstart\'\'@rawstringend':
-        module_path = path + '/' + 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
+        module_path = 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
             project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
-        sys.path.append(module_path)
-        if not os.path.exists(module_path):
-            os.makedirs(module_path)
+        local_module_path = path + '/Modules/' + migration_typeid + '/' + 'Project_V' + str(
+            project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
+        sys.path.append(local_module_path)
+        if not os.path.exists(local_module_path):
+            os.makedirs(local_module_path)
         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
         file_path = module_path + '/' + str(feature_name).strip() + '.py'
-        sys.path.insert(0, file_path)
-        with open(file_path, 'w') as f:
+        local_path = local_module_path + '/' + str(feature_name).strip() + '.py'
+        with open(local_path, 'w') as f:
             f.write(python_code)
-
-        connstr = fileshare_connectionString
-        container = container_name_var
-        blob_service_client = BlobServiceClient.from_connection_string(connstr)
-        container_client = blob_service_client.get_container_client(container)
-        path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        file_path = 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
-            project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
-            feature_version_id) + '/' + str(feature_name).strip() + '.py'
-        local_path = path + '/' + file_path
         blob_client = container_client.get_blob_client(blob=file_path)
-        with open(local_path, "rb") as data:
-            blob_client.upload_blob(data, overwrite=True)
-
-        module = import_file(file_path)
+        blob_client.upload_blob(python_code, overwrite=True)
+        module = import_file(local_path)
         data = getattr(module, str(feature_name).strip())
         executableoutput = data(source_code, schema)
+        shutil.rmtree(path + '/Modules')
         return Response(executableoutput, status=status.HTTP_200_OK)
-    elif conversion_file:
-
-        file_path = conversion_file_path + '/' + conversion_file[0]
-        sys.path.insert(0, file_path)
-        module = import_file(file_path)
+    elif conversion_file_blob:
+        file_data = ''
+        for blob in conversion_file_blob:
+            file_data = container_client.get_blob_client(blob).download_blob().readall()
+            file_data = file_data.decode()
+        local_module_path = path + '/Modules/' + migration_typeid + '/' + 'Project_V' + str(
+            project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
+        sys.path.append(local_module_path)
+        if not os.path.exists(local_module_path):
+            os.makedirs(local_module_path)
+        local_path = local_module_path + '/' + str(feature_name).strip() + '.py'
+        with open(local_path, 'w') as f:
+            f.write(file_data)
+        module = import_file(local_path)
         data = getattr(module, str(feature_name).strip())
         executableoutput = data(source_code, schema)
+        shutil.rmtree(path + '/Modules')
         return Response(executableoutput, status=status.HTTP_200_OK)
     else:
         return Response('No Conversion Module, please add Conversion Module before Convert')
-
-
-# @api_view(['POST'])
-# def conversion(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body_data = json.loads(body_unicode)
-#     feature_name = body_data['featurename']
-#     python_code = body_data['convcode']
-#     source_code = body_data['sourcecode']
-#     migration_typeid = body_data['migration_typeid']
-#     object_type = body_data['object_type']
-#     project_id = body_data['Project_Version_Id']
-#     feature_version_id = body_data['Feature_Version_Id']
-#     schema = ''
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#
-#     if python_code != '':
-#         module_path = path + '/' + 'Modules/' + migration_typeid + '/' + 'Project_V' + str(
-#             project_id) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(feature_version_id)
-#         sys.path.append(module_path)
-#         if not os.path.exists(module_path):
-#             os.makedirs(module_path)
-#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature_name.strip() + '(', python_code)
-#         file_path = module_path + '/' + str(feature_name).strip() + '.py'
-#         sys.path.insert(0, file_path)
-#         with open(file_path, 'w') as f:
-#             f.write(python_code)
-#         module = import_file(file_path)
-#         data = getattr(module, str(feature_name).strip())
-#         executableoutput = data(source_code,schema)
-#         return Response(executableoutput, status=status.HTTP_200_OK)
-#     else:
-#         return Response('Please add the conversion code in conversion module')
 
 
 @api_view(['GET'])
@@ -1439,188 +765,6 @@ def attachentsqlcodefiles(request, id):
     return Response(result)
 
 
-def create_and_append_sqlfile_single(path_of_file_sql, data):
-    with open(path_of_file_sql, 'a') as f:
-        f.write("{}\n\n\n\n".format(data))
-
-
-# @api_view(['POST'])
-# def feature_conversion_files(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body_data = json.loads(body_unicode)
-#     feature_id = body_data['Feature_Id']
-#     attach_type = body_data['AttachmentType']
-#     feature = body_data['Feature_Name']
-#     migid = body_data['Migration_TypeId']
-#     objtype = body_data['Object_Type']
-#     conversion_code = body_data['convcode']
-#     project_id = body_data['Project_Version_Id']
-#     feature_version_Id = body_data['Feature_Version_Id']
-#
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
-#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-#         feature_version_Id) + '/' + 'Actualtargetcode' + '/'
-#     if not os.path.exists(output_path):
-#         os.makedirs(output_path)
-#     module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
-#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-#         feature_version_Id) + '/' + 'Conversion' + '/'
-#
-#     if not os.path.exists(module_path):
-#         os.makedirs(module_path)
-#     sys.path.append(module_path)
-#
-#     module_path_files = os.listdir(module_path)
-#     module_path_files = [x for x in module_path_files if x != '__pycache__']
-#
-#     if module_path_files:
-#         module_file = module_path_files[0]
-#         file_path = module_path + '/' + module_file
-#         with open(file_path) as f:
-#             python_code = f.read()
-#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', python_code)
-#         with open(file_path, "w") as f:
-#             f.write(python_code)
-#     else:
-#         if conversion_code != '':
-#             module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
-#                 project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-#                 feature_version_Id) + '/'
-#             if not os.path.exists(module_path_raw):
-#                 os.makedirs(module_path_raw)
-#             conversion_code = conversion_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-#             conversion_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
-#             file_path = module_path_raw + '/' + str(feature).strip() + '.py'
-#             if os.path.isfile(file_path):
-#                 os.remove(file_path)
-#             with open(file_path, 'w') as f:
-#                 f.write(conversion_code)
-#         else:
-#             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#     sys.path.insert(0, file_path)
-#
-#     filter_files = Attachments.objects.filter(
-#         Feature_Id=feature_id, AttachmentType=attach_type)
-#     filter_values = list(filter_files.values_list())
-#
-#     if filter_values:
-#         for file in filter_values:
-#             with open(file[6], 'r', encoding='utf-8') as f:
-#                 read_text = f.read()
-#             a = import_file(file_path)
-#             function_call = getattr(a, str(feature).strip())
-#             output = function_call(read_text)
-#             if os.path.isfile(output_path + file[5]):
-#                 os.remove(output_path + file[5])
-#             create_and_append_sqlfile_single(output_path + file[5], output)
-#             target_filename = file[5]
-#             target_filepath = output_path + file[5]
-#             split_media = 'media' + target_filepath.split('media')[1]
-#             target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
-#                                         AttachmentType='Actualtargetcode', filename=target_filename,
-#                                         Attachment=split_media, Feature_Id_id=feature_id)
-#             target_object.save()
-#         for row in Attachments.objects.all().reverse():
-#             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
-#                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
-#                 row.delete()
-#         serializer = ConversionfilesSerializer(filter_files, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#     else:
-#         return Response("Please Add Source Code Attachment")
-
-
-# @api_view(['POST'])
-# def feature_conversion_files(request):
-#     body_unicode = request.body.decode('utf-8')
-#     body_data = json.loads(body_unicode)
-#     feature_id = body_data['Feature_Id']
-#     attach_type = body_data['AttachmentType']
-#     feature = body_data['Feature_Name']
-#     migid = body_data['Migration_TypeId']
-#     objtype = body_data['Object_Type']
-#     conversion_code = body_data['convcode']
-#     project_id = body_data['Project_Version_Id']
-#     feature_version_Id = body_data['Feature_Version_Id']
-#     schema = ''
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
-#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-#         feature_version_Id) + '/' + 'Actualtargetcode' + '/'
-#     if not os.path.exists(output_path):
-#         os.makedirs(output_path)
-#     module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
-#         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-#         feature_version_Id) + '/' + 'Conversion' + '/'
-#     if not os.path.exists(module_path):
-#         os.makedirs(module_path)
-#     sys.path.append(module_path)
-#
-#     module_path_files = os.listdir(module_path)
-#     module_path_files = [x for x in module_path_files if x != '__pycache__']
-#
-#     if module_path_files:
-#         module_file = module_path_files[0]
-#         file_path = module_path + '/' + module_file
-#         with open(file_path) as f:
-#             python_code = f.read()
-#         python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-#         python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', python_code)
-#         with open(file_path, "w") as f:
-#             f.write(python_code)
-#     else:
-#         if conversion_code != '':
-#             module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
-#                 project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-#                 feature_version_Id) + '/'
-#             if not os.path.exists(module_path_raw):
-#                 os.makedirs(module_path_raw)
-#             conversion_code = conversion_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-#             conversion_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
-#             file_path = module_path_raw + '/' + str(feature).strip() + '.py'
-#             if os.path.isfile(file_path):
-#                 os.remove(file_path)
-#             with open(file_path, 'w') as f:
-#                 f.write(conversion_code)
-#         else:
-#             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
-#                             status=status.HTTP_400_BAD_REQUEST)
-#     sys.path.insert(0, file_path)
-#
-#     filter_files = Attachments.objects.filter(
-#         Feature_Id=feature_id, AttachmentType=attach_type)
-#     filter_values = list(filter_files.values_list())
-#
-#     if filter_values:
-#         for file in filter_values:
-#             with open(file[6], 'r', encoding='utf-8') as f:
-#                 read_text = f.read()
-#             a = import_file(file_path)
-#             function_call = getattr(a, str(feature).strip())
-#             output = function_call(read_text, schema)
-#             if os.path.isfile(output_path + file[5]):
-#                 os.remove(output_path + file[5])
-#             create_and_append_sqlfile_single(output_path + file[5], output)
-#             target_filename = file[5]
-#             target_filepath = output_path + file[5]
-#             split_media = 'media' + target_filepath.split('media')[1]
-#             target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
-#                                         AttachmentType='Actualtargetcode', filename=target_filename,
-#                                         Attachment=split_media, Feature_Id_id=feature_id)
-#             target_object.save()
-#         for row in Attachments.objects.all().reverse():
-#             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
-#                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
-#                 row.delete()
-#         serializer = ConversionfilesSerializer(filter_files, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-#     else:
-#         return Response("Please Add Source Code Attachment")
-
-
 @api_view(['POST'])
 def feature_conversion_files(request):
     body_unicode = request.body.decode('utf-8')
@@ -1634,104 +778,76 @@ def feature_conversion_files(request):
     project_id = body_data['Project_Version_Id']
     feature_version_Id = body_data['Feature_Version_Id']
     schema = ''
-    connstr = fileshare_connectionString
-    container = container_name_var
     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    output_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
-        project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-        feature_version_Id) + '/' + 'Actualtargetcode' + '/'
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    module_path = path + '/' + 'media/' + migid + '/' + 'Project_V' + str(
+    module_path = 'media/' + migid + '/' + 'Project_V' + str(
         project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
         feature_version_Id) + '/' + 'Conversion' + '/'
-    if not os.path.exists(module_path):
-        os.makedirs(module_path)
-    sys.path.append(module_path)
-
-    module_path_files = os.listdir(module_path)
-    module_path_files = [x for x in module_path_files if x != '__pycache__']
-
-    if module_path_files:
-        module_file = module_path_files[0]
-        file_path = module_path + '/' + module_file
-        with open(file_path) as f:
-            python_code = f.read()
-        python_code = python_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-        python_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', python_code)
-        with open(file_path, "w") as f:
-            f.write(python_code)
-        blob_service_client = BlobServiceClient.from_connection_string(connstr)
-        container_client = blob_service_client.get_container_client(container)
-        local_path = file_path
-        fileshare_path = 'media/' + migid + '/' + 'Project_V' + str(
-            project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-            feature_version_Id) + '/' + 'Conversion' + '/' + module_file
-        blob_client = container_client.get_blob_client(blob=fileshare_path)
-        with open(local_path, "rb") as data:
-            blob_client.upload_blob(data, overwrite=True)
+    container_client = azure_connection()
+    conversion_file_blob = container_client.list_blobs(name_starts_with=module_path)
+    if conversion_file_blob:
+        file_data = ''
+        for blob in conversion_file_blob:
+            file_data = container_client.get_blob_client(blob).download_blob().readall()
+            file_data = file_data.decode()
+        local_module_path = path + '/Modules/' + migid + '/' + 'Project_V' + str(
+            project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(feature_version_Id)
+        if not os.path.exists(local_module_path):
+            os.makedirs(local_module_path)
+        local_path = local_module_path + '/' + str(feature).strip() + '.py'
+        with open(local_path, 'w') as f:
+            f.write(file_data)
     else:
-        if conversion_code != '':
-            module_path_raw = path + '/' + 'Modules' + '/' + migid + '/' + 'Project_V' + str(
-                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-                feature_version_Id) + '/'
-            if not os.path.exists(module_path_raw):
-                os.makedirs(module_path_raw)
+        if conversion_code != 'r@rawstringstart\'\'@rawstringend':
+            module_path = 'Modules/' + migid + '/' + 'Project_V' + str(
+                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(feature_version_Id)
+            local_module_path = path + '/Modules/' + migid + '/' + 'Project_V' + str(
+                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(feature_version_Id)
+            sys.path.append(local_module_path)
+            if not os.path.exists(local_module_path):
+                os.makedirs(local_module_path)
             conversion_code = conversion_code.replace("r@rawstringstart'", '').replace("'@rawstringend", '')
-            conversion_code = re.sub(r'def(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
-            file_path = module_path_raw + '/' + str(feature).strip() + '.py'
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-            with open(file_path, 'w') as f:
+            conversion_code = re.sub(r'\bdef\s(.*?)\(', 'def ' + feature.strip() + '(', conversion_code)
+            file_path = module_path + '/' + str(feature).strip() + '.py'
+            local_path = local_module_path + '/' + str(feature).strip() + '.py'
+            if os.path.isfile(local_path):
+                os.remove(local_path)
+            with open(local_path, 'w') as f:
                 f.write(conversion_code)
-            blob_service_client = BlobServiceClient.from_connection_string(connstr)
-            container_client = blob_service_client.get_container_client(container)
-            fileshare_module_path = 'Modules/' + migid + '/' + 'Project_V' + str(
-                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-                feature_version_Id) + '/' + str(feature).strip() + '.py'
-            local_path = file_path
-            blob_client = container_client.get_blob_client(blob=fileshare_module_path)
-            with open(local_path, "rb") as data:
-                blob_client.upload_blob(data, overwrite=True)
+            blob_client = container_client.get_blob_client(blob=file_path)
+            blob_client.upload_blob(conversion_code, overwrite=True)
         else:
             return Response({"error": "Please upload Conversion Attachment before Converting into Files"},
                             status=status.HTTP_400_BAD_REQUEST)
-    sys.path.insert(0, file_path)
-
-    filter_files = Attachments.objects.filter(
-        Feature_Id=feature_id, AttachmentType=attach_type)
-    filter_values = list(filter_files.values_list())
-
+    sys.path.insert(0, local_path)
+    filter_files = Attachments.objects.filter(Feature_Id=feature_id, AttachmentType=attach_type)
+    filter_values = filter_files.values_list()
     if filter_values:
-        for file in filter_values:
-            with open(file[6], 'r', encoding='utf-8') as f:
-                read_text = f.read()
-            a = import_file(file_path)
-            function_call = getattr(a, str(feature).strip())
-            output = function_call(read_text, schema)
-            if os.path.isfile(output_path + file[5]):
-                os.remove(output_path + file[5])
-            create_and_append_sqlfile_single(output_path + file[5], output)
-            blob_service_client = BlobServiceClient.from_connection_string(connstr)
-            container_client = blob_service_client.get_container_client(container)
-            fileshare_target_path = 'media/' + migid + '/' + 'Project_V' + str(
-                project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
-                feature_version_Id) + '/' + 'Actualtargetcode' + '/' + file[5]
-            local_path = output_path + file[5]
-            blob_client = container_client.get_blob_client(blob=fileshare_target_path)
-            with open(local_path, "rb") as data:
-                blob_client.upload_blob(data, overwrite=True)
-            target_filename = file[5]
-            target_filepath = output_path + file[5]
-            split_media = 'media' + target_filepath.split('media')[1]
-            target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
-                                        AttachmentType='Actualtargetcode', filename=target_filename,
-                                        Attachment=split_media, Feature_Id_id=feature_id)
-            target_object.save()
+        for record in filter_values:
+            source_path = record[6]
+            source_file = record[5]
+            source_file_blob = container_client.list_blobs(name_starts_with=source_path)
+            if source_file_blob:
+                source_data = ''
+                for blob in conversion_file_blob:
+                    source_data = container_client.get_blob_client(blob).download_blob().readall()
+                    source_data = source_data.decode()
+                a = import_file(local_path)
+                function_call = getattr(a, str(feature).strip())
+                output = function_call(source_data, schema)
+                output_path = 'media/' + migid + '/' + 'Project_V' + str(
+                    project_id) + '/' + objtype + '/' + feature + '/' + 'Feature_V' + str(
+                    feature_version_Id) + '/' + 'Actualtargetcode' + '/' + source_file
+                blob_client = container_client.get_blob_client(blob=output_path)
+                blob_client.upload_blob(output, overwrite=True)
+                target_object = Attachments(Project_Version_Id=project_id, Feature_Version_Id=feature_version_Id,
+                                            AttachmentType='Actualtargetcode', filename=source_file,
+                                            Attachment=output_path, Feature_Id_id=feature_id)
+                target_object.save()
         for row in Attachments.objects.all().reverse():
             if Attachments.objects.filter(filename=row.filename, AttachmentType=row.AttachmentType,
                                           Feature_Id_id=row.Feature_Id_id).count() > 1:
                 row.delete()
+        shutil.rmtree(path + '/Modules')
         serializer = ConversionfilesSerializer(filter_files, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     else:
@@ -1752,7 +868,6 @@ class RegisterView(generics.GenericAPIView):
 
 class ResendVerifyEmail(generics.GenericAPIView):
     serializer_class = resendemailserializer
-
     def post(self, request):
         user = request.data
         email = user['email']
@@ -1864,33 +979,6 @@ def featurelistperuser(request):
     return Response(data2)
 
 
-# @api_view(['POST'])
-# def create_tablepage_featuresdata(request):
-#     Migration_TypeId = request.data['Migration_TypeId']
-#     Object_Type = request.data['Object_Type']
-#     Project_Version_Id = request.data['Project_Version_Id']
-#     feature_names = Feature.objects.values('Feature_Name').distinct()
-#     features = []
-#     for dict in feature_names:
-#         features.append(dict['Feature_Name'])
-#     final_list = []
-#     for feature in features:
-#         feature_versions = Feature.objects.filter(Feature_Name=feature, Project_Version_Id=Project_Version_Id)
-#         version_list = []
-#         for dict1 in feature_versions.values():
-#             version_list.append(dict1['Feature_Version_Id'])
-#         max_version = max(version_list)
-#         data = Feature.objects.filter(
-#             Migration_TypeId=Migration_TypeId, Object_Type=Object_Type, Feature_Name=feature,
-#             Feature_Version_Id=max_version, Project_Version_Id=Project_Version_Id)
-#         serializer = FeatureSerializer(data, many=True)
-#         final_list.append(serializer.data)
-#     final_output_list = []
-#     for final_dict in final_list:
-#         if final_dict:
-#             final_output_list.append(final_dict[0])
-#     return Response(final_output_list)
-
 @api_view(['POST'])
 def create_tablepage_featuresdata(request):
     Migration_TypeId = request.data['Migration_TypeId']
@@ -1950,28 +1038,6 @@ def get_Featurenames(request):
                     Feature_Version_Id=max_version)
                 serializer = migrationlevelfeatures(data, many=True)
                 final_list.append(serializer.data)
-    # elif Feature_Name == 'ALL':
-    #     features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Migration_TypeId=Migration_TypeId,
-    #                                       Object_Type=Object_Type)
-    #     feature_names = features.values('Feature_Name').distinct()
-    #     features = []
-    #     for dict in feature_names:
-    #         features.append(dict['Feature_Name'])
-    #     for feature in features:
-    #         feature_versions = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
-    #                                                   Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-    #                                                   Feature_Name=feature)
-    #         version_list = []
-    #         for dict1 in feature_versions.values():
-    #             version_list.append(dict1['Feature_Version_Id'])
-    #         max_version = max(version_list)
-    #         data = Feature.objects.filter(Project_Version_Id=Project_Version_Id,
-    #                                       Migration_TypeId=Migration_TypeId, Object_Type=Object_Type,
-    #                                       Feature_Name=feature,
-    #                                       Feature_Version_Id=max_version)
-    #         if data:
-    #             serializer = migrationlevelfeatures(data, many=True)
-    #             final_list.append(serializer.data)
     else:
         features = Feature.objects.filter(Project_Version_Id=Project_Version_Id, Migration_TypeId=Migration_TypeId,
                                           Object_Type=Object_Type)
@@ -2243,291 +1309,6 @@ def create_check_list(request):
                 inter_dict['Create_Flag'] = 0
                 final_list.append(inter_dict.copy())
     return Response(final_list)
-
-
-# @api_view(['POST'])
-# def migration_user_view(request):
-#     email = request.data['User_Email']
-#     mig_type = request.data['Migration_TypeId']
-#     project_version = request.data['Project_Version_Id']
-#
-#     user = Users.objects.get(email=email)
-#     user_is_superuser = user.is_superuser
-#     admin_access = user.admin_migrations
-#     if admin_access == '' or admin_access == None:
-#         admin_access_dict = {}
-#     else:
-#         admin_access = admin_access.replace("\'", "\"")
-#         admin_access_dict = json.loads(admin_access)
-#
-#     mig_data = migrations.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type).exclude(
-#         Object_Type='')
-#     object_names = [obj['Object_Type'] for obj in mig_data.values()]
-#
-#     perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type)
-#     object_values_list = [obj['Object_Type'] for obj in perm_data.values()]
-#
-#     label_dict = {}
-#     final_list = []
-#     if user_is_superuser == True:
-#         if mig_type in admin_access_dict.keys():
-#             if 'ALL' in admin_access_dict[mig_type]:
-#                 for object_name in object_names:
-#                     inter_list = []
-#                     label_dict['Label'] = object_name
-#                     features_data = Feature.objects.filter(Project_Version_Id=project_version,
-#                                                            Migration_TypeId=mig_type, Object_Type=object_name)
-#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                     if feature_values:
-#                         for feature_name in feature_values:
-#                             inter_dict = {}
-#                             inter_dict["Feature_Name"] = feature_name
-#                             inter_list.append(inter_dict)
-#                         label_dict['SubMenu'] = inter_list
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#             else:
-#                 for object_name in object_names:
-#                     inter_list = []
-#                     label_dict['Label'] = object_name
-#                     if object_name in admin_access_dict[mig_type]:
-#                         features_data = Feature.objects.filter(Project_Version_Id=project_version,
-#                                                                Migration_TypeId=mig_type, Object_Type=object_name)
-#                         feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                         if feature_values:
-#                             for feature_name in feature_values:
-#                                 inter_dict = {}
-#                                 inter_dict["Feature_Name"] = feature_name
-#                                 inter_list.append(inter_dict)
-#                             label_dict['SubMenu'] = inter_list
-#                             label_dict['Admin_Flag'] = 1
-#                             final_list.append(label_dict.copy())
-#                         else:
-#                             label_dict['SubMenu'] = []
-#                             label_dict['Admin_Flag'] = 1
-#                             final_list.append(label_dict.copy())
-#                     else:
-#                         if object_name in object_values_list:
-#                             perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                                    Object_Type=object_name)
-#                             feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
-#                             if 'ALL' in feature_names_list:
-#                                 features_data = Feature.objects.filter(Project_Version_Id=project_version,
-#                                                                        Migration_TypeId=mig_type,
-#                                                                        Object_Type=object_name)
-#                                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                                 if feature_values:
-#                                     for feature_name in feature_values:
-#                                         inter_dict = {}
-#                                         inter_dict["Feature_Name"] = feature_name
-#                                         inter_list.append(inter_dict)
-#                                     label_dict['SubMenu'] = inter_list
-#                                     label_dict['Admin_Flag'] = 0
-#                                     final_list.append(label_dict.copy())
-#                                 else:
-#                                     label_dict['SubMenu'] = []
-#                                     label_dict['Admin_Flag'] = 0
-#                                     final_list.append(label_dict.copy())
-#                             else:
-#                                 for feature_i in feature_names_list:
-#                                     inter_dict = {}
-#                                     inter_dict["Feature_Name"] = feature_i
-#                                     inter_list.append(inter_dict)
-#                                 label_dict['SubMenu'] = inter_list
-#                                 label_dict['Admin_Flag'] = 0
-#                                 final_list.append(label_dict.copy())
-#                         else:
-#                             label_dict['SubMenu'] = []
-#                             label_dict['Admin_Flag'] = 0
-#                             final_list.append(label_dict.copy())
-#         else:
-#             for object_name in object_names:
-#                 inter_list = []
-#                 label_dict['Label'] = object_name
-#                 if object_name in object_values_list:
-#                     perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                            Object_Type=object_name)
-#                     feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
-#                     if 'ALL' in feature_names_list:
-#                         features_data = Feature.objects.filter(Project_Version_Id=project_version,
-#                                                                Migration_TypeId=mig_type,
-#                                                                Object_Type=object_name)
-#                         feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                         if feature_values:
-#                             for feature_name in feature_values:
-#                                 inter_dict = {}
-#                                 inter_dict["Feature_Name"] = feature_name
-#                                 inter_list.append(inter_dict)
-#                             label_dict['SubMenu'] = inter_list
-#                             label_dict['Admin_Flag'] = 0
-#                             final_list.append(label_dict.copy())
-#                         else:
-#                             label_dict['SubMenu'] = []
-#                             label_dict['Admin_Flag'] = 0
-#                             final_list.append(label_dict.copy())
-#                     else:
-#                         for feature_i in feature_names_list:
-#                             inter_dict = {}
-#                             inter_dict["Feature_Name"] = feature_i
-#                             inter_list.append(inter_dict)
-#                         label_dict['SubMenu'] = inter_list
-#                         label_dict['Admin_Flag'] = 0
-#                         final_list.append(label_dict.copy())
-#                 else:
-#                     label_dict['SubMenu'] = []
-#                     label_dict['Admin_Flag'] = 0
-#                     final_list.append(label_dict.copy())
-#     elif 'ALL' in object_values_list:
-#         for object_name in object_names:
-#             inter_list = []
-#             label_dict['Label'] = object_name
-#             features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
-#                                                    Object_Type=object_name)
-#             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#             if feature_values:
-#                 for feature_name in feature_values:
-#                     inter_dict = {}
-#                     inter_dict["Feature_Name"] = feature_name
-#                     inter_list.append(inter_dict)
-#                 label_dict['SubMenu'] = inter_list
-#                 if len(admin_access_dict) != 0:
-#                     if mig_type in admin_access_dict.keys():
-#                         if object_name in admin_access_dict[mig_type]:
-#                             label_dict['Admin_Flag'] = 1
-#                         else:
-#                             label_dict['Admin_Flag'] = 0
-#                 else:
-#                     label_dict['Admin_Flag'] = 0
-#                 final_list.append(label_dict.copy())
-#             else:
-#                 label_dict['SubMenu'] = []
-#                 if len(admin_access_dict) != 0:
-#                     if mig_type in admin_access_dict.keys():
-#                         if object_name in admin_access_dict[mig_type]:
-#                             label_dict['Admin_Flag'] = 1
-#                         else:
-#                             label_dict['Admin_Flag'] = 0
-#                 else:
-#                     label_dict['Admin_Flag'] = 0
-#                 final_list.append(label_dict.copy())
-#     elif mig_type in admin_access_dict.keys():
-#         if 'ALL' in admin_access_dict[mig_type]:
-#             for object_name in object_names:
-#                 inter_list = []
-#                 label_dict['Label'] = object_name
-#                 features_data = Feature.objects.filter(Project_Version_Id=project_version, Migration_TypeId=mig_type,
-#                                                        Object_Type=object_name)
-#                 feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                 if feature_values:
-#                     for feature_name in feature_values:
-#                         inter_dict = {}
-#                         inter_dict["Feature_Name"] = feature_name
-#                         inter_list.append(inter_dict)
-#                     label_dict['SubMenu'] = inter_list
-#                     label_dict['Admin_Flag'] = 1
-#                     final_list.append(label_dict.copy())
-#                 else:
-#                     label_dict['SubMenu'] = []
-#                     label_dict['Admin_Flag'] = 1
-#                     final_list.append(label_dict.copy())
-#         else:
-#             for object_name in object_names:
-#                 inter_list = []
-#                 label_dict['Label'] = object_name
-#                 if object_name in admin_access_dict[mig_type]:
-#                     features_data = Feature.objects.filter(Project_Version_Id=project_version,
-#                                                            Migration_TypeId=mig_type, Object_Type=object_name)
-#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                     if feature_values:
-#                         for feature_name in feature_values:
-#                             inter_dict = {}
-#                             inter_dict["Feature_Name"] = feature_name
-#                             inter_list.append(inter_dict)
-#                         label_dict['SubMenu'] = inter_list
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 1
-#                         final_list.append(label_dict.copy())
-#                 else:
-#                     if object_name in object_values_list:
-#                         perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                                Object_Type=object_name)
-#                         feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
-#                         if 'ALL' in feature_names_list:
-#                             features_data = Feature.objects.filter(Project_Version_Id=project_version,
-#                                                                    Migration_TypeId=mig_type, Object_Type=object_name)
-#                             feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                             if feature_values:
-#                                 for feature_name in feature_values:
-#                                     inter_dict = {}
-#                                     inter_dict["Feature_Name"] = feature_name
-#                                     inter_list.append(inter_dict)
-#                                 label_dict['SubMenu'] = inter_list
-#                                 label_dict['Admin_Flag'] = 0
-#                                 final_list.append(label_dict.copy())
-#                             else:
-#                                 label_dict['SubMenu'] = []
-#                                 label_dict['Admin_Flag'] = 0
-#                                 final_list.append(label_dict.copy())
-#                         else:
-#                             for feature_i in feature_names_list:
-#                                 inter_dict = {}
-#                                 inter_dict["Feature_Name"] = feature_i
-#                                 inter_list.append(inter_dict)
-#                             label_dict['SubMenu'] = inter_list
-#                             label_dict['Admin_Flag'] = 0
-#                             final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 0
-#                         final_list.append(label_dict.copy())
-#     else:
-#         for object_name in object_names:
-#             inter_list = []
-#             label_dict['Label'] = object_name
-#             if object_name in object_values_list:
-#                 perm_data = Permissions.objects.filter(User_Email=email, Migration_TypeId=mig_type,
-#                                                        Object_Type=object_name)
-#                 feature_names_list = [obj['Feature_Name'] for obj in perm_data.values()]
-#                 if 'ALL' in feature_names_list:
-#                     features_data = Feature.objects.filter(Project_Version_Id=project_version,
-#                                                            Migration_TypeId=mig_type, Object_Type=object_name)
-#                     feature_values = [obj['Feature_Name'] for obj in features_data.values()]
-#                     if feature_values:
-#                         for feature_name in feature_values:
-#                             inter_dict = {}
-#                             inter_dict["Feature_Name"] = feature_name
-#                             inter_list.append(inter_dict)
-#                         label_dict['SubMenu'] = inter_list
-#                         label_dict['Admin_Flag'] = 0
-#                         final_list.append(label_dict.copy())
-#                     else:
-#                         label_dict['SubMenu'] = []
-#                         label_dict['Admin_Flag'] = 0
-#                         final_list.append(label_dict.copy())
-#                 else:
-#                     for feature_i in feature_names_list:
-#                         inter_dict = {}
-#                         inter_dict["Feature_Name"] = feature_i
-#                         inter_list.append(inter_dict)
-#                     label_dict['SubMenu'] = inter_list
-#                     label_dict['Admin_Flag'] = 0
-#                     final_list.append(label_dict.copy())
-#             else:
-#                 label_dict['SubMenu'] = []
-#                 label_dict['Admin_Flag'] = 0
-#                 final_list.append(label_dict.copy())
-#     for final_dict in final_list:
-#         submenu_list = final_dict['SubMenu']
-#         submenu_list_new = [i for n, i in enumerate(submenu_list) if i not in submenu_list[n + 1:]]
-#         final_dict['SubMenu'] = submenu_list_new
-#     return Response(final_list)
 
 
 @api_view(['POST'])
@@ -3257,19 +2038,9 @@ def createsuperadmin(request):
     return Response('super admin created successfully')
 
 
-# @api_view(['POST'])
-# def removesuperadmin(request):
-#     email = request.data['email']
-#     features = Users.objects.get(email=email)
-#     features.is_superuser = False
-#     features.save()
-#     return Response('super admin removed successfully')
-
 @api_view(['GET', 'POST'])
 def migrationlistperuser(request):
     email = request.data['email']
-    # project_version = request.data["Project_Version_Id"]
-
     project_version_mig_types = migrations.objects.values(
         'Migration_TypeId').distinct()
 
@@ -3399,8 +2170,6 @@ def approval_featurecreate(request):
                     str(project_version_i) + '.' + str(max_in_f_versions_list_without_prefix))
             for f_version in f_versions_list_without_prefix:
                 feature_versions_list_all.append(str(project_version_i) + '.' + str(f_version))
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
     feature_data = Feature.objects.filter(Migration_TypeId=migration_type, Object_Type=object_type,
                                           Feature_Name=feature_name, Project_Version_Id=project_version,
                                           Feature_version_approval_status='Approved')
@@ -3412,11 +2181,6 @@ def approval_featurecreate(request):
         serializer = FeatureSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(Feature_Version_Id=max_version + 1)
-
-            """
-            Adding attachments for the feature versions 
-            """
-            #==============================================================================
             max_feature = Feature.objects.get(Migration_TypeId=migration_type, Object_Type=object_type,
                                               Feature_Name=feature_name,
                                               Project_Version_Id=project_version,
@@ -3436,31 +2200,27 @@ def approval_featurecreate(request):
                                           Attachment=dict['Attachment'],
                                           Feature_Id_id=creating_version_feature_id)
                 att_object2.save()
-
-            latest_version_source = path + '/media/' + migration_type + '/' + 'Project_V' + str(
+            latest_version_source = 'media/' + migration_type + '/' + 'Project_V' + str(
                 project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
                 max_version) + '/'
-            if not os.path.exists(latest_version_source):
-                os.makedirs(latest_version_source)
-            latest_version_target = path + '/media/' + migration_type + '/' + 'Project_V' + str(
-                project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
-                max_version + 1) + '/'
-            if not os.path.exists(latest_version_target):
-                os.makedirs(latest_version_target)
-            shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
-            blob_service_client = BlobServiceClient.from_connection_string(fileshare_connectionString)
-            container_client = blob_service_client.get_container_client(container_name_var)
-            local_path = latest_version_target
-            path_remove = path + '/'
-            for r, d, f in os.walk(local_path):
-                if f:
-                    for file in f:
-                        file_path_on_azure = os.path.join(r, file).replace(path_remove, "")
-                        file_path_on_local = os.path.join(r, file)
-                        blob_client = container_client.get_blob_client(file_path_on_azure)
-                        with open(file_path_on_local, 'rb') as data:
-                            blob_client.upload_blob(data)
-            #==============================================================================
+            sas_token = generate_account_sas(account_name=account_name, account_key=account_key,
+                                             resource_types=ResourceTypes(
+                                                 service=True, container=True, object=True),
+                                             permission=AccountSasPermissions(read=True),
+                                             expiry=datetime.utcnow() + timedelta(hours=1))
+            source_blob_service_client = BlobServiceClient(
+                account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+            des_blob_service_client = BlobServiceClient(
+                account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+
+            source_container_client = source_blob_service_client.get_container_client(container_name_var)
+            blob_list = source_container_client.list_blobs(name_starts_with=latest_version_source)
+            if blob_list:
+                for blob in blob_list:
+                    source_blob = source_container_client.get_blob_client(blob)
+                    source_url = source_blob.url + '?' + sas_token
+                    des_blob_service_client.get_blob_client(
+                        container_name_var, source_blob.blob_name.replace('Feature_V' + str(max_version),'Feature_V' + str(max_version + 1))).start_copy_from_url(source_url)
 
             version_list.append(int(max_version + 1))
             feature_versions_list_all.append(str(project_version) + '.' + str(max_version + 1))
@@ -3480,11 +2240,13 @@ def approval_featurecreate(request):
                         min_feature.delete()
                         attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
                         attachments_data.delete()
-                        folder_path = path + '/media/' + migration_type + '/' + 'Project_V' + str(
+                        folder_path = 'media/' + migration_type + '/' + 'Project_V' + str(
                             del_project_version) + '/' + object_type + '/' + feature_name + '/' + 'Feature_V' + str(
                             del_feature_version)
-                        if os.path.exists(folder_path):
-                            shutil.rmtree(folder_path)
+                        del_blobs = source_container_client.list_blobs(name_starts_with=folder_path)
+                        if del_blobs:
+                            for blob in del_blobs:
+                                source_container_client.delete_blobs(blob)
             for row in Feature.objects.all().reverse():
                 if Feature.objects.filter(Migration_TypeId=row.Migration_TypeId,Object_Type = row.Object_Type, Feature_Name=row.Feature_Name,
                                           Project_Version_Id=row.Project_Version_Id,
@@ -3494,27 +2256,6 @@ def approval_featurecreate(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
         return Response("New versions won't be created until it has a previous version approved")
-
-
-# @api_view(['GET'])
-# def project_versions_list(request):
-#     project_versions = migrations.objects.values('Project_Version_Id').distinct()
-#     final_list = []
-#     version_list = []
-#     if project_versions:
-#         for dict in project_versions:
-#             version_list.append(dict['Project_Version_Id'])
-#         inter_dict = {}
-#         for i in version_list:
-#             inter_dict['title'] = 'V' + str(i)
-#             inter_dict['code'] = int(i)
-#             final_list.append(inter_dict.copy())
-#     else:
-#         inter_dict = {}
-#         inter_dict['title'] = 'V1'
-#         inter_dict['code'] = 1
-#         final_list.append(inter_dict.copy())
-#     return Response(final_list)
 
 
 @api_view(['GET', 'POST'])
@@ -3530,175 +2271,24 @@ def project_versions_list(request):
         inter_dict = {}
         version_list = [i for i in version_list if i != 'null']
         for i in version_list:
-            print(i, type(i))
             inter_dict['title'] = 'V' + str(i)
             inter_dict['code'] = int(i)
             final_list.append(inter_dict.copy())
-    # else:
-    #     inter_dict = {}
-    #     inter_dict['title'] = 'V1'
-    #     inter_dict['code'] = 1
-    #     final_list.append(inter_dict.copy())
     return Response(final_list)
-
-
-# @api_view(['POST'])
-# def create_project_version(request):
-#     migration = request.data['Migration_TypeId']
-#     # prev_project_version = request.data['Project_Version_Id']
-#     mig_data = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values('Project_Version_Id')
-#     mig_project_versions_list = [dict['Project_Version_Id'] for dict in mig_data if dict['Project_Version_Id'] != '']
-#     max_value = max(mig_project_versions_list)
-#     prev_project_version = max_value
-#     current_project_version = int(max_value) + 1
-#
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#
-#     object_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version,
-#                                                  Migration_TypeId=migration).values('Object_Type').distinct()
-#     object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-#
-#     migration_path = path + '/media/' + migration + '/' + 'Project_V' + str(current_project_version)
-#     if not os.path.exists(migration_path):
-#         os.makedirs(migration_path)
-#
-#     project_version_limit = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values()[0][
-#         'Project_Version_limit']
-#     n = int(project_version_limit)
-#
-#     project_versions_list = []
-#     mig_copy_data = migrations.objects.filter(Migration_TypeId=migration)
-#     project_versions = mig_copy_data.values('Project_Version_Id')
-#     for i in project_versions:
-#         project_versions_list.append(int(i['Project_Version_Id']))
-#     project_versions_list = list(set(project_versions_list))
-#     max_version = max(project_versions_list)
-#     project_versions_list.append(int(max_version + 1))
-#
-#     mig_copy_project_version_data = migrations.objects.filter(Project_Version_Id=prev_project_version,
-#                                                               Migration_TypeId=migration)
-#
-#     for dict in mig_copy_project_version_data.values():
-#         migrations.objects.create(Project_Version_Id=current_project_version,
-#                                   Migration_TypeId=dict['Migration_TypeId'],
-#                                   Object_Type=dict['Object_Type'], Code=dict['Code'],
-#                                   Project_Version_limit=dict['Project_Version_limit'],
-#                                   Feature_Version_Limit=dict['Feature_Version_Limit'])
-#     if len(project_versions_list) > int(project_version_limit):
-#         project_versions_list_del = project_versions_list[:-n or None]
-#         for version in project_versions_list_del:
-#             mig_del_data = migrations.objects.filter(Project_Version_Id=int(version), Migration_TypeId=migration)
-#             mig_del_data.delete()
-#
-#             feature_del_data = Feature.objects.filter(Project_Version_Id=int(version), Migration_TypeId=migration)
-#             feature_del_data.delete()
-#
-#             attachments_del_data = Attachments.objects.filter(Project_Version_Id=int(version),
-#                                                               Attachment__contains=str(migration))
-#             attachments_del_data.delete()
-#
-#             folder_path_del = path + '/media/' + migration + '/' + 'Project_V' + str(version)
-#             shutil.rmtree(folder_path_del)
-#
-#     for object_i in object_types_old_list:
-#         feature_names_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
-#                                                    Migration_TypeId=migration, Object_Type=object_i).values(
-#             'Feature_Name').distinct()
-#         feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
-#
-#         for feature in feature_names_old_list:
-#             feature_versions_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
-#                                                           Migration_TypeId=migration,
-#                                                           Object_Type=object_i, Feature_Name=feature).values(
-#                 'Feature_Version_Id').distinct()
-#             feature_versions_old_list = [dict['Feature_Version_Id'] for dict in feature_versions_old if
-#                                          dict['Feature_Version_Id'] != '']
-#             if feature_versions_old_list:
-#                 latest_version = max(feature_versions_old_list)
-#
-#                 feature_data2 = Feature.objects.filter(Project_Version_Id=prev_project_version,
-#                                                        Migration_TypeId=migration, Object_Type=object_i,
-#                                                        Feature_Name=feature,
-#                                                        Feature_Version_Id=latest_version).last()
-#                 attachment_feature_id_progress_old = feature_data2.Feature_Id
-#
-#                 feature_data2.Feature_Id = None
-#                 feature_data2.Project_Version_Id = current_project_version
-#                 feature_data2.Feature_Version_Id = 1
-#                 feature_data2.Feature_Approval_Date = None
-#                 feature_data2.save()
-#
-#                 latest_version_source = path + '/media/' + migration + '/' + 'Project_V' + str(
-#                     prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
-#                     latest_version) + '/'
-#                 if not os.path.exists(latest_version_source):
-#                     os.makedirs(latest_version_source)
-#                 latest_version_target = path + '/media/' + migration + '/' + 'Project_V' + str(
-#                     current_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V1'
-#                 if not os.path.exists(latest_version_target):
-#                     os.makedirs(latest_version_target)
-#                 shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
-#
-#                 feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
-#                                                                Migration_TypeId=migration, Object_Type=object_i,
-#                                                                Feature_Name=feature,
-#                                                                Feature_Version_Id=1)
-#                 attachment_feature_id_progress_new = feature_data_progress[0].Feature_Id
-#
-#                 attachment_data_progress = Attachments.objects.filter(
-#                     Feature_Id_id=attachment_feature_id_progress_old)
-#                 for dict in attachment_data_progress.values():
-#                     att_type = dict['AttachmentType']
-#                     filename = dict['filename']
-#                     feature_version_id = 1
-#                     attachment = dict['Attachment']
-#                     attachment = attachment.replace('Project_V' + str(prev_project_version),
-#                                                     'Project_V' + str(current_project_version))
-#                     att_object2 = Attachments(Project_Version_Id=current_project_version,
-#                                               Feature_Version_Id=feature_version_id,
-#                                               AttachmentType=att_type, filename=filename,
-#                                               Attachment=attachment,
-#                                               Feature_Id_id=attachment_feature_id_progress_new)
-#                     att_object2.save()
-#
-#                 if len(feature_versions_old_list) > 1:
-#                     version_del = max(feature_versions_old_list)
-#                     del_feature = Feature.objects.get(Migration_TypeId=migration, Object_Type=object_i,
-#                                                       Feature_Name=feature, Project_Version_Id=prev_project_version,
-#                                                       Feature_Version_Id=version_del)
-#                     feature_id = del_feature.Feature_Id
-#                     del_feature.delete()
-#                     attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
-#                     attachments_data.delete()
-#                     folder_path = path + '/media/' + migration + '/' + 'Project_V' + str(
-#                         prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
-#                         version_del)
-#                     shutil.rmtree(folder_path)
-#     return Response("New Project Version Created Successfully")
 
 
 @api_view(['POST'])
 def create_project_version(request):
     migration = request.data['Migration_TypeId']
-    # prev_project_version = request.data['Project_Version_Id']
     mig_data = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values('Project_Version_Id')
     mig_project_versions_list = [dict['Project_Version_Id'] for dict in mig_data if dict['Project_Version_Id'] != '']
     max_value = max(mig_project_versions_list)
     prev_project_version = max_value
     current_project_version = int(max_value) + 1
 
-    connect_str = fileshare_connectionString
-    container_name = container_name_var
-
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
     object_types_old = migrations.objects.filter(Project_Version_Id=prev_project_version,
                                                  Migration_TypeId=migration).values('Object_Type').distinct()
     object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-
-    migration_path = path + '/media/' + migration + '/' + 'Project_V' + str(current_project_version)
-    if not os.path.exists(migration_path):
-        os.makedirs(migration_path)
 
     project_version_limit = migrations.objects.filter(Migration_TypeId=migration, Object_Type='').values()[0][
         'Project_Version_limit']
@@ -3722,6 +2312,7 @@ def create_project_version(request):
                                   Object_Type=dict['Object_Type'], Code=dict['Code'],
                                   Project_Version_limit=dict['Project_Version_limit'],
                                   Feature_Version_Limit=dict['Feature_Version_Limit'])
+    container_client = azure_connection()
     if len(project_versions_list) > int(project_version_limit):
         project_versions_list_del = project_versions_list[:-n or None]
         for version in project_versions_list_del:
@@ -3734,9 +2325,11 @@ def create_project_version(request):
             attachments_del_data = Attachments.objects.filter(Project_Version_Id=int(version),
                                                               Attachment__contains=str(migration))
             attachments_del_data.delete()
-
-            folder_path_del = path + '/media/' + migration + '/' + 'Project_V' + str(version)
-            shutil.rmtree(folder_path_del)
+            folder_path_del = 'media/' + migration + '/' + 'Project_V' + str(version)
+            del_blobs = container_client.list_blobs(name_starts_with=folder_path_del)
+            if del_blobs:
+                for blob in del_blobs:
+                    container_client.delete_blobs(blob)
 
     for object_i in object_types_old_list:
         feature_names_old = Feature.objects.filter(Project_Version_Id=prev_project_version,
@@ -3766,29 +2359,29 @@ def create_project_version(request):
                 feature_data2.Feature_Approval_Date = None
                 feature_data2.save()
 
-                latest_version_source = path + '/media/' + migration + '/' + 'Project_V' + str(
+                latest_version_source = 'media/' + migration + '/' + 'Project_V' + str(
                     prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
                     latest_version) + '/'
-                if not os.path.exists(latest_version_source):
-                    os.makedirs(latest_version_source)
-                latest_version_target = path + '/media/' + migration + '/' + 'Project_V' + str(
-                    current_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V1'
-                if not os.path.exists(latest_version_target):
-                    os.makedirs(latest_version_target)
-                shutil.copytree(latest_version_source, latest_version_target, dirs_exist_ok=True)
-
-                blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-                container_client = blob_service_client.get_container_client(container_name)
-                local_path = latest_version_target
-                path_remove = path + '/'
-                for r, d, f in os.walk(local_path):
-                    if f:
-                        for file in f:
-                            file_path_on_azure = os.path.join(r, file).replace(path_remove, "")
-                            file_path_on_local = os.path.join(r, file)
-                            blob_client = container_client.get_blob_client(file_path_on_azure)
-                            with open(file_path_on_local, 'rb') as data:
-                                blob_client.upload_blob(data)
+                sas_token = generate_account_sas(account_name=account_name, account_key=account_key,
+                                                 resource_types=ResourceTypes(
+                                                 service=True, container=True, object=True),
+                                                 permission=AccountSasPermissions(read=True),
+                                                 expiry=datetime.utcnow() + timedelta(hours=1))
+                source_blob_service_client = BlobServiceClient(
+                    account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+                des_blob_service_client = BlobServiceClient(
+                    account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+                source_container_client = source_blob_service_client.get_container_client(container_name_var)
+                blob_list = source_container_client.list_blobs(name_starts_with=latest_version_source)
+                if blob_list:
+                    for blob in blob_list:
+                        source_blob = source_container_client.get_blob_client(blob)
+                        source_url = source_blob.url + '?' + sas_token
+                        source_blob.blob_name = source_blob.blob_name.replace('Project_V' + str(prev_project_version),
+                                                      'Project_V' + str(current_project_version))
+                        source_blob.blob_name = source_blob.blob_name.replace('Feature_V' + str(latest_version), 'Feature_V1')
+                        des_blob_service_client.get_blob_client(
+                            container_name_var, source_blob.blob_name).start_copy_from_url(source_url)
 
                 feature_data_progress = Feature.objects.filter(Project_Version_Id=current_project_version,
                                                                Migration_TypeId=migration, Object_Type=object_i,
@@ -3821,19 +2414,13 @@ def create_project_version(request):
                     del_feature.delete()
                     attachments_data = Attachments.objects.filter(Feature_Id_id=feature_id)
                     attachments_data.delete()
-                    folder_path = path + '/media/' + migration + '/' + 'Project_V' + str(
+                    folder_path = 'media/' + migration + '/' + 'Project_V' + str(
                         prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
                         version_del)
-                    shutil.rmtree(folder_path)
-                    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-                    container_client = blob_service_client.get_container_client(container_name)
-                    fileshare_path = 'media/' + migration + '/' + 'Project_V' + str(
-                        prev_project_version) + '/' + object_i + '/' + feature + '/' + 'Feature_V' + str(
-                        version_del)
-                    myblobs = container_client.list_blobs(name_starts_with=str(fileshare_path))
-                    if myblobs:
-                        for blob in myblobs:
-                            container_client.delete_blob(blob)
+                    del_blobs = container_client.list_blobs(name_starts_with=folder_path)
+                    if del_blobs:
+                        for blob in del_blobs:
+                            source_container_client.delete_blobs(blob)
     return Response("New Project Version Created Successfully")
 
 @api_view(['POST'])
@@ -3952,123 +2539,6 @@ def user_admin_actions(request):
         user_object.save()
         return Response('User has been rejected')
 
-
-#
-# @api_view(['GET', 'POST'])
-# def get_latest_feature_version_modules(request):
-#     migration = request.data['Migration_TypeId']
-#
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     approved_features_path = path + '/' + 'Conversion_Modules'
-#
-#     if not os.path.exists(approved_features_path):
-#         os.makedirs(approved_features_path)
-#     else:
-#         shutil.rmtree(approved_features_path)
-#         os.makedirs(approved_features_path)
-#     object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
-#     object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-#     if object_types_old_list:
-#         excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
-#         workbook = xlsxwriter.Workbook(excel_name)
-#         for object_i in object_types_old_list:
-#             feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
-#                 'Feature_Name').distinct()
-#             feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
-#
-#             worksheet = workbook.add_worksheet(object_i)
-#             f_names_list = []
-#             keywords_list = []
-#             level_list = []
-#             predecessor_list = []
-#             for feature in feature_names_old_list:
-#                 feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-#                                                               Feature_Name=feature,
-#                                                               Feature_version_approval_status='Approved').values(
-#                     'Project_Version_Id', 'Feature_Version_Id')
-#                 feature_versions_old_list = []
-#                 for dict in feature_versions_old:
-#                     feature_versions_old_list.append(
-#                         str(dict['Project_Version_Id']) + '.' + str(dict['Feature_Version_Id']))
-#
-#                 feature_versions_old_list = sorted(feature_versions_old_list, key=float)
-#                 if feature_versions_old_list:
-#                     latest_version = max(feature_versions_old_list)
-#                     prj_ver = latest_version.split('.')[0].strip()
-#                     feat_ver = latest_version.split('.')[1].strip()
-#                     latest_feature_data = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-#                                                                  Feature_Name=feature, Project_Version_Id=prj_ver,
-#                                                                  Feature_Version_Id=feat_ver).values()
-#
-#                     feature_name = latest_feature_data[0]['Feature_Name']
-#                     keywords = latest_feature_data[0]['Keywords']
-#                     level = latest_feature_data[0]['Level']
-#                     predecessor = latest_feature_data[0]['Sequence']
-#
-#                     f_names_list.append(feature_name)
-#                     keywords_list.append(keywords)
-#                     level_list.append(level)
-#                     predecessor_list.append(predecessor)
-#                     latest_version_feature_id = latest_feature_data[0]['Feature_Id']
-#                     module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
-#                     module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
-#                     if not os.path.exists(module_approved_path):
-#                         os.makedirs(module_approved_path)
-#                     attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
-#                                                                   AttachmentType='Conversion')
-#                     if attachments_data:
-#                         attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
-#                         attachment_module = os.listdir(attachment_module_path)[0]
-#                         if attachment_module:
-#                             shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
-#                     elif os.path.isdir(module_path):
-#                         module = os.listdir(module_path)[0]
-#                         if module:
-#                             shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
-#                     else:
-#                         print("No module found")
-#             row_length = len(f_names_list)
-#             serial_list = [i for i in range(1, row_length + 1)]
-#             data_dictionary = {'Serial No.': serial_list,
-#                                'Feature Name': f_names_list,
-#                                'Keywords': keywords_list,
-#                                'Level': level_list,
-#                                'Predecessor': predecessor_list}
-#             col_num = 0
-#             format = workbook.add_format({'bold': True, 'border': 1})
-#             format.set_align('center')
-#             format2 = workbook.add_format({'border': 1})
-#             for key, value in data_dictionary.items():
-#                 worksheet.write(0, col_num, key, format)
-#                 worksheet.write_column(1, col_num, value, format2)
-#                 col_num += 1
-#             worksheet.set_column(1, 4, 35)
-#         workbook.close()
-#     else:
-#         return Response("No Modules Found for given Migration type")
-#     file_share_copy()
-#     return Response("Modules Prepared for given Migration type")
-
-
-# def file_share_copy():
-#     connect_str = fileshare_connectionString
-#     container_name = "modules"
-#     local_path = 'Conversion_Modules'
-#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#     container_client = blob_service_client.get_container_client(container_name)
-#     myblobs = container_client.list_blobs(name_starts_with='Conversion_Modules')
-#     if myblobs:
-#         for blob in myblobs:
-#             container_client.delete_blob(blob)
-#     for r, d, f in os.walk(local_path):
-#         if f:
-#             for file in f:
-#                 file_path_on_azure = os.path.join(r, file)
-#                 file_path_on_local = os.path.join(r, file)
-#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
-#                 with open(file_path_on_local, "rb") as data:
-#                     blob_client.upload_blob(data)
-
 def file_share_copy():
     connect_str = fileshare_connectionString
     container_name = container_name_var
@@ -4091,40 +2561,6 @@ def file_share_copy():
                     blob_client.upload_blob(data)
 
 
-# @api_view(['GET'])
-# def delete_folders_fromfileshare(request):
-#     connect_str = "DefaultEndpointsProtocol=https;AccountName=qmigcommon;AccountKey=4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw==;EndpointSuffix=core.windows.net"
-#     container_name = "modules"
-#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#     container_client = blob_service_client.get_container_client(container_name)
-#     myblobs_conversion = container_client.list_blobs(name_starts_with='Conversion_Modules')
-#     if myblobs_conversion:
-#         for blob in myblobs_conversion:
-#             container_client.delete_blob(blob)
-#     myblobs_media = container_client.list_blobs(name_starts_with='media')
-#     if myblobs_media:
-#         for blob in myblobs_media:
-#             container_client.delete_blob(blob)
-#     myblobs_module = container_client.list_blobs(name_starts_with='Modules')
-#     if myblobs_module:
-#         for blob in myblobs_module:
-#             container_client.delete_blob(blob)
-#     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
-
-#
-# @api_view(['GET'])
-# def delete_folders_fromfileshare(request):
-#     connect_str = fileshare_connectionString
-#     container_name = container_name_var
-#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#     container_client = blob_service_client.get_container_client(container_name)
-#     myblobs = container_client.list_blobs()
-#     if myblobs:
-#         for blob in myblobs:
-#             container_client.delete_blob(blob)
-#     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
-
-
 @api_view(['GET'])
 def delete_folders_fromfileshare(request):
     connect_str = fileshare_connectionString
@@ -4138,80 +2574,6 @@ def delete_folders_fromfileshare(request):
             container_client = blob_service_client.get_container_client(container_name)
             container_client.delete_blob(blob)
     return Response("Conversion Modules,Media and Modules folders are deleted from azure fileshare successfully")
-
-
-# @api_view(['GET'])
-# def export_to_fileshare(request):
-#     connect_str = fileshare_connectionString
-#     container_name = "modules"
-#     local_path_media = 'media'
-#     local_path_module = 'Modules'
-#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#     container_client = blob_service_client.get_container_client(container_name)
-#     myblobs_media = container_client.list_blobs(name_starts_with='media')
-#     if myblobs_media:
-#         for blob in myblobs_media:
-#             container_client.delete_blob(blob)
-#     for r, d, f in os.walk(local_path_media):
-#         if f:
-#             for file in f:
-#                 file_path_on_azure = os.path.join(r, file)
-#                 file_path_on_local = os.path.join(r, file)
-#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
-#                 with open(file_path_on_local, "rb") as data:
-#                     blob_client.upload_blob(data)
-#     myblobs_module = container_client.list_blobs(name_starts_with='Modules')
-#     if myblobs_module:
-#         for blob in myblobs_module:
-#             container_client.delete_blob(blob)
-#     for r, d, f in os.walk(local_path_module):
-#         if f:
-#             for file in f:
-#                 file_path_on_azure = os.path.join(r, file)
-#                 file_path_on_local = os.path.join(r, file)
-#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
-#                 with open(file_path_on_local, "rb") as data:
-#                     blob_client.upload_blob(data)
-#     return Response("Folders exported successfully to azure fileshare")
-
-#
-# @api_view(['GET'])
-# def export_to_fileshare(request):
-#     connect_str = fileshare_connectionString
-#     container_name = container_name_var
-#     local_path_media = 'media'
-#     local_path_module = 'Modules'
-#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#     container_client = blob_service_client.get_container_client(container_name)
-#     myblobs_media = container_client.list_blobs(name_starts_with='media')
-#     if myblobs_media:
-#         for blob in myblobs_media:
-#             container_client.delete_blob(blob)
-#     for r, d, f in os.walk(local_path_media):
-#         if f:
-#             for file in f:
-#                 file_path_on_azure = os.path.join(r, file)
-#                 file_path_on_local = os.path.join(r, file)
-#                 blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#                 container_client = blob_service_client.get_container_client(container_name)
-#                 blob_client = container_client.get_blob_client(container=container_name, blob=file_path_on_azure)
-#                 with open(file_path_on_local, "rb") as data:
-#                     blob_client.upload_blob(data)
-#     myblobs_module = container_client.list_blobs(name_starts_with='Modules')
-#     if myblobs_module:
-#         for blob in myblobs_module:
-#             container_client.delete_blob(blob)
-#     for r, d, f in os.walk(local_path_module):
-#         if f:
-#             for file in f:
-#                 file_path_on_azure = os.path.join(r, file)
-#                 file_path_on_local = os.path.join(r, file)
-#                 blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#                 container_client = blob_service_client.get_container_client(container_name)
-#                 blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_path_on_azure)
-#                 with open(file_path_on_local, "rb") as data:
-#                     blob_client.upload_blob(data)
-#     return Response("Folders exported successfully to azure fileshare")
 
 
 @api_view(['GET'])
@@ -4252,124 +2614,11 @@ def export_to_fileshare(request):
                     blob_client.upload_blob(data)
     return Response("Folders exported successfully to azure fileshare")
 
-# @api_view(['GET', 'POST'])
-# def migration_type_creation_based_on_old(request):
-#     old_migration_type = request.data['Migration_TypeId']
-#     new_migration_type = request.data['New_Migration_Type']
-#     mig_data_old = migrations.objects.filter(Migration_TypeId=old_migration_type)
-#     for dict in mig_data_old.values():
-#         migrations.objects.create(Project_Version_Id=dict['Project_Version_Id'],
-#                                   Migration_TypeId=new_migration_type,
-#                                   Object_Type=dict['Object_Type'], Code=new_migration_type.replace(' ', '_'),
-#                                   Project_Version_limit=dict['Project_Version_limit'],
-#                                   Feature_Version_Limit=dict['Feature_Version_Limit'])
-#     features_data_old = Feature.objects.filter(Migration_TypeId=old_migration_type)
-#     for dict in features_data_old.values():
-#         Feature.objects.create(Migration_TypeId=new_migration_type, Feature_Id=None,
-#                                Project_Version_Id=dict['Project_Version_Id'],
-#                                Feature_Version_Id=dict['Feature_Version_Id'],
-#                                Object_Type=dict['Object_Type'], Feature_Name=dict['Feature_Name'],
-#                                Feature_version_approval_status=dict['Feature_version_approval_status'],
-#                                Level=dict['Level'], Keywords=dict['Keywords'], Estimations=dict['Estimations'],
-#                                Sequence=dict['Sequence'], Source_FeatureDescription=dict['Source_FeatureDescription'],
-#                                Source_Code=dict['Source_Code'], Conversion_Code=dict['Conversion_Code'],
-#                                Target_FeatureDescription=dict['Target_FeatureDescription'],
-#                                Target_Expected_Output=dict['Target_Expected_Output'],
-#                                Target_ActualCode=dict['Target_ActualCode'],
-#                                Feature_Approval_Date=dict['Feature_Approval_Date'])
-#     attachment_data_old = Attachments.objects.filter(Attachment__contains=str(old_migration_type))
-#     for dict in attachment_data_old.values():
-#         object_type = dict['Attachment'].split('/')[3]
-#         feature_name = dict['Attachment'].split('/')[4]
-#         Attachments.objects.create(Project_Version_Id=dict['Project_Version_Id'],
-#                                    Feature_Version_Id=dict['Feature_Version_Id'],
-#                                    AttachmentType=dict['AttachmentType'], filename=dict['filename'],
-#                                    Attachment=dict['Attachment'].replace(old_migration_type, new_migration_type),
-#                                    Feature_Id=Feature.objects.get(Migration_TypeId=new_migration_type,
-#                                                                   Project_Version_Id=dict['Project_Version_Id'],
-#                                                                   Feature_Version_Id=dict['Feature_Version_Id'],
-#                                                                   Object_Type=object_type,
-#                                                                   Feature_Name=feature_name))
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     source_path = path + '/media/' + old_migration_type + '/'
-#     target_path = path + '/media/' + new_migration_type + '/'
-#     if not os.path.exists(target_path):
-#         os.makedirs(target_path)
-#     shutil.copytree(source_path, target_path, dirs_exist_ok=True)
-#     return Response("New Migration type created successfully based on given old migration type")
-
-
-# @api_view(['GET', 'POST'])
-# def migration_type_creation_based_on_old(request):
-#     old_migration_type = request.data['Migration_TypeId']
-#     new_migration_type = request.data['New_Migration_Type']
-#     mig_data_old = migrations.objects.filter(Migration_TypeId=old_migration_type)
-#     for dict in mig_data_old.values():
-#         migrations.objects.create(Project_Version_Id=dict['Project_Version_Id'],
-#                                   Migration_TypeId=new_migration_type,
-#                                   Object_Type=dict['Object_Type'], Code=new_migration_type.replace(' ', '_'),
-#                                   Project_Version_limit=dict['Project_Version_limit'],
-#                                   Feature_Version_Limit=dict['Feature_Version_Limit'])
-#     features_data_old = Feature.objects.filter(Migration_TypeId=old_migration_type)
-#     for dict in features_data_old.values():
-#         Feature.objects.create(Migration_TypeId=new_migration_type, Feature_Id=None,
-#                                Project_Version_Id=dict['Project_Version_Id'],
-#                                Feature_Version_Id=dict['Feature_Version_Id'],
-#                                Object_Type=dict['Object_Type'], Feature_Name=dict['Feature_Name'],
-#                                Feature_version_approval_status=dict['Feature_version_approval_status'],
-#                                Level=dict['Level'], Keywords=dict['Keywords'], Estimations=dict['Estimations'],
-#                                Sequence=dict['Sequence'], Source_FeatureDescription=dict['Source_FeatureDescription'],
-#                                Source_Code=dict['Source_Code'], Conversion_Code=dict['Conversion_Code'],
-#                                Target_FeatureDescription=dict['Target_FeatureDescription'],
-#                                Target_Expected_Output=dict['Target_Expected_Output'],
-#                                Target_ActualCode=dict['Target_ActualCode'],
-#                                Feature_Approval_Date=dict['Feature_Approval_Date'])
-#     attachment_data_old = Attachments.objects.filter(Attachment__contains=str(old_migration_type))
-#     attachment_data_old_values = attachment_data_old.values()
-#     data = []
-#     for x in attachment_data_old_values:
-#         data.append(x['Attachment'])
-#     print(data)
-#     data1 = []
-#     for y in data:
-#         my_regex = r"\b(?=\w)" + re.escape(old_migration_type) + r"\b(?!\w)"
-#         if re.search(my_regex, y, re.IGNORECASE):
-#             data1.append(y)
-#
-#     for z in data1:
-#         attachment_data_old = Attachments.objects.filter(Attachment=str(z))
-#         print(attachment_data_old)
-#         for dict in attachment_data_old.values():
-#             print(dict)
-#             object_type = dict['Attachment'].split('/')[3]
-#             print(object_type)
-#             feature_name = dict['Attachment'].split('/')[4]
-#             print(feature_name)
-#             Attachments.objects.create(Project_Version_Id=dict['Project_Version_Id'],
-#                                        Feature_Version_Id=dict['Feature_Version_Id'],
-#                                        AttachmentType=dict['AttachmentType'], filename=dict['filename'],
-#                                        Attachment=dict['Attachment'].replace(old_migration_type, new_migration_type),
-#                                        Feature_Id=Feature.objects.get(Migration_TypeId=new_migration_type,
-#                                                                       Project_Version_Id=dict['Project_Version_Id'],
-#                                                                       Feature_Version_Id=dict['Feature_Version_Id'],
-#                                                                       Object_Type=object_type,
-#                                                                       Feature_Name=feature_name))
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     source_path = path + '/media/' + old_migration_type + '/'
-#     target_path = path + '/media/' + new_migration_type + '/'
-#     if not os.path.exists(target_path):
-#         os.makedirs(target_path)
-#     shutil.copytree(source_path, target_path, dirs_exist_ok=True)
-#     return Response("New Migration type created successfully based on given old migration type")
-
 
 @api_view(['GET', 'POST'])
 def migration_type_creation_based_on_old(request):
     old_migration_type = request.data['Migration_TypeId']
     new_migration_type = request.data['New_Migration_Type']
-
-    connect_str = fileshare_connectionString
-    container_name = container_name_var
 
     mig_data_old = migrations.objects.filter(Migration_TypeId=old_migration_type)
     for dict in mig_data_old.values():
@@ -4416,59 +2665,28 @@ def migration_type_creation_based_on_old(request):
                                                                       Feature_Version_Id=dict['Feature_Version_Id'],
                                                                       Object_Type=object_type,
                                                                       Feature_Name=feature_name))
-    path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    source_path = path + '/media/' + old_migration_type + '/'
-    target_path = path + '/media/' + new_migration_type + '/'
-    if not os.path.exists(target_path):
-        os.makedirs(target_path)
-    shutil.copytree(source_path, target_path, dirs_exist_ok=True)
-    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-    container_client = blob_service_client.get_container_client(container_name)
-    local_path = source_path
-    path_remove = path + '/'
-    for r, d, f in os.walk(local_path):
-        if f:
-            for file in f:
-                file_path_on_azure = os.path.join(r, file).replace(path_remove, "").replace(old_migration_type,new_migration_type)
-                file_path_on_local = os.path.join(r, file)
-                blob_client = container_client.get_blob_client(file_path_on_azure)
-                with open(file_path_on_local, 'rb') as data:
-                    blob_client.upload_blob(data)
+
+    source_path = 'media/' + old_migration_type + '/'
+    sas_token = generate_account_sas(account_name=account_name, account_key=account_key,
+                                     resource_types=ResourceTypes(service=True, container=True, object=True),
+                                     permission=AccountSasPermissions(read=True),
+                                     expiry=datetime.utcnow() + timedelta(hours=1))
+    source_blob_service_client = BlobServiceClient(
+        account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+    des_blob_service_client = BlobServiceClient(
+        account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+    source_container_client = source_blob_service_client.get_container_client(container_name_var)
+    blob_list = source_container_client.list_blobs(name_starts_with=source_path)
+
+    if blob_list:
+        for blob in blob_list:
+            source_blob = source_container_client.get_blob_client(blob)
+            source_url = source_blob.url + '?' + sas_token
+            source_blob.blob_name = source_blob.blob_name.replace(old_migration_type, new_migration_type)
+            des_blob_service_client.get_blob_client(
+                container_name_var, source_blob.blob_name).start_copy_from_url(source_url)
     return Response("New Migration type created successfully based on given old migration type")
 
-
-
-# @api_view(['GET'])
-# def import_folders_prod(request):
-#     connect_str = fileshare_connectionString
-#     container_name = "modules"
-#     path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     local_path = path
-#     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-#     my_container = blob_service_client.get_container_client(container_name)
-#     my_blobs_media = my_container.list_blobs(name_starts_with='media')
-#     if my_blobs_media:
-#         media_path = path + '/media/'
-#         if os.path.exists(media_path):
-#             shutil.rmtree(media_path)
-#         for blob in my_blobs_media:
-#             bytes = my_container.get_blob_client(blob).download_blob().readall()
-#             download_file_path = os.path.join(local_path, blob.name)
-#             os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
-#             with open(download_file_path, "wb") as file:
-#                 file.write(bytes)
-#     my_blobs_modules = my_container.list_blobs(name_starts_with='Modules')
-#     if my_blobs_modules:
-#         modules_path = path + '/Modules/'
-#         if os.path.exists(modules_path):
-#             shutil.rmtree(modules_path)
-#         for blob in my_blobs_modules:
-#             bytes = my_container.get_blob_client(blob).download_blob().readall()
-#             download_file_path = os.path.join(local_path, blob.name)
-#             os.makedirs(os.path.dirname(download_file_path), exist_ok=True)
-#             with open(download_file_path, "wb") as file:
-#                 file.write(bytes)
-#     return Response("Folders imported successfully to local folder")
 
 @api_view(['GET'])
 def import_folders_prod(request):
@@ -4542,231 +2760,19 @@ def remove_user_admin_permissions(request):
     return Response("Migration Type Removed from User Migrations")
 
 
-# @api_view(['GET','POST'])
-# def get_latest_feature_version_modules(request):
-#     migration = request.data['Migration_TypeId']
-#     if migration != 'undefined':
-#         # deploy_start_time = datetime.now()
-#         # Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
-#
-#         path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#         approved_features_path = path + '/' + 'Conversion_Modules'
-#         if not os.path.exists(approved_features_path):
-#             os.makedirs(approved_features_path)
-#         else:
-#             shutil.rmtree(approved_features_path)
-#             os.makedirs(approved_features_path)
-#         object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
-#         object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-#         if object_types_old_list:
-#             excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
-#             workbook = xlsxwriter.Workbook(excel_name)
-#             for object_i in object_types_old_list:
-#                 feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
-#                     'Feature_Name').distinct()
-#                 feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if dict['Feature_Name'] != '']
-#
-#                 worksheet = workbook.add_worksheet(object_i)
-#                 f_names_list = []
-#                 keywords_list = []
-#                 level_list = []
-#                 predecessor_list = []
-#                 for feature in feature_names_old_list:
-#                     feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-#                                                                   Feature_Name=feature,
-#                                                                   Feature_version_approval_status='Approved').values(
-#                         'Project_Version_Id', 'Feature_Version_Id')
-#                     feature_versions_old_list = []
-#                     for dict in feature_versions_old:
-#                         feature_versions_old_list.append(
-#                             str(dict['Project_Version_Id']) + '.' + str(dict['Feature_Version_Id']))
-#
-#                     feature_versions_old_list = sorted(feature_versions_old_list, key=float)
-#                     if feature_versions_old_list:
-#                         latest_version = max(feature_versions_old_list)
-#                         prj_ver = latest_version.split('.')[0].strip()
-#                         feat_ver = latest_version.split('.')[1].strip()
-#                         latest_feature_data = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-#                                                                      Feature_Name=feature, Project_Version_Id=prj_ver,
-#                                                                      Feature_Version_Id=feat_ver).values()
-#
-#                         feature_name = latest_feature_data[0]['Feature_Name']
-#                         keywords = latest_feature_data[0]['Keywords']
-#                         level = latest_feature_data[0]['Level']
-#                         predecessor = latest_feature_data[0]['Sequence']
-#
-#                         f_names_list.append(feature_name)
-#                         keywords_list.append(keywords)
-#                         level_list.append(level)
-#                         predecessor_list.append(predecessor)
-#                         latest_version_feature_id = latest_feature_data[0]['Feature_Id']
-#                         module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
-#                         module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
-#                         if not os.path.exists(module_approved_path):
-#                             os.makedirs(module_approved_path)
-#                         attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,AttachmentType='Conversion')
-#                         if attachments_data:
-#                             attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
-#                             attachment_module = os.listdir(attachment_module_path)[0]
-#                             if attachment_module:
-#                                 shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
-#                         elif os.path.isdir(module_path):
-#                             module = os.listdir(module_path)[0]
-#                             if module:
-#                                 shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
-#                         else:
-#                             print("No module found")
-#                 row_length = len(f_names_list)
-#                 serial_list = [i for i in range(1, row_length + 1)]
-#                 data_dictionary = {'Serial No.': serial_list,
-#                                    'Feature Name': f_names_list,
-#                                    'Keywords': keywords_list,
-#                                    'Level': level_list,
-#                                    'Predecessor': predecessor_list}
-#                 col_num = 0
-#                 format = workbook.add_format({'bold': True, 'border': 1})
-#                 format.set_align('center')
-#                 format2 = workbook.add_format({'border': 1})
-#                 for key, value in data_dictionary.items():
-#                     worksheet.write(0, col_num, key, format)
-#                     worksheet.write_column(1, col_num, value, format2)
-#                     col_num += 1
-#                 worksheet.set_column(1, 4, 35)
-#             workbook.close()
-#             file_share_copy()
-#         else:
-#             return Response("No Modules Found for given Migration type")
-#         deploy_object = Deploy.objects.get(Migration_TypeId=migration, Deployment_Status='Deploy in Progress')
-#         deploy_object.Deploy_End_Time = datetime.now()
-#         deploy_object.Deployment_Status = 'Completed'
-#         deploy_object.save()
-#         return Response("Modules Prepared for given Migration type")
-#     else:
-#         return Response("Please Select Migration Type for Deploy")
-
-
-# @api_view(['GET', 'POST'])
-# def get_latest_feature_version_modules(request):
-#     migration = request.data['Migration_TypeId']
-#     print(migration, '===============')
-#     if migration != 'undefined':
-#         # deploy_start_time = datetime.now()
-#         # Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
-#
-#         path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#         approved_features_path = path + '/' + 'Conversion_Modules'
-#         if not os.path.exists(approved_features_path):
-#             os.makedirs(approved_features_path)
-#         # else:
-#         # shutil.rmtree(approved_features_path)
-#         # os.makedirs(approved_features_path)
-#         object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
-#         print(object_types_old, '-----------------')
-#         object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
-#         print(object_types_old_list, '=============')
-#         if object_types_old_list:
-#             excel_name = path + '/Conversion_Modules/' + migration + '.xlsx'
-#             workbook = xlsxwriter.Workbook(excel_name)
-#             for object_i in object_types_old_list:
-#                 feature_names_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i).values(
-#                     'Feature_Name').distinct()
-#                 feature_names_old_list = [dict['Feature_Name'] for dict in feature_names_old if
-#                                           dict['Feature_Name'] != '']
-#
-#                 worksheet = workbook.add_worksheet(object_i)
-#                 f_names_list = []
-#                 keywords_list = []
-#                 level_list = []
-#                 predecessor_list = []
-#                 for feature in feature_names_old_list:
-#                     feature_versions_old = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-#                                                                   Feature_Name=feature,
-#                                                                   Feature_version_approval_status='Approved').values(
-#                         'Project_Version_Id', 'Feature_Version_Id')
-#                     feature_versions_old_list = []
-#                     for dict in feature_versions_old:
-#                         feature_versions_old_list.append(
-#                             str(dict['Project_Version_Id']) + '.' + str(dict['Feature_Version_Id']))
-#
-#                     feature_versions_old_list = sorted(feature_versions_old_list, key=float)
-#                     if feature_versions_old_list:
-#                         latest_version = max(feature_versions_old_list)
-#                         prj_ver = latest_version.split('.')[0].strip()
-#                         feat_ver = latest_version.split('.')[1].strip()
-#                         latest_feature_data = Feature.objects.filter(Migration_TypeId=migration, Object_Type=object_i,
-#                                                                      Feature_Name=feature, Project_Version_Id=prj_ver,
-#                                                                      Feature_Version_Id=feat_ver).values()
-#
-#                         feature_name = latest_feature_data[0]['Feature_Name']
-#                         keywords = latest_feature_data[0]['Keywords']
-#                         level = latest_feature_data[0]['Level']
-#                         predecessor = latest_feature_data[0]['Sequence']
-#
-#                         f_names_list.append(feature_name)
-#                         keywords_list.append(keywords)
-#                         level_list.append(level)
-#                         predecessor_list.append(predecessor)
-#                         latest_version_feature_id = latest_feature_data[0]['Feature_Id']
-#                         module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
-#                         module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
-#                         if not os.path.exists(module_approved_path):
-#                             os.makedirs(module_approved_path)
-#                         attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
-#                                                                       AttachmentType='Conversion')
-#                         if attachments_data:
-#                             attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
-#                             attachment_module = os.listdir(attachment_module_path)[0]
-#                             if attachment_module:
-#                                 shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
-#                         elif os.path.isdir(module_path):
-#                             module = os.listdir(module_path)[0]
-#                             if module:
-#                                 shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
-#                         else:
-#                             print("No module found")
-#                 row_length = len(f_names_list)
-#                 serial_list = [i for i in range(1, row_length + 1)]
-#                 data_dictionary = {'Serial No.': serial_list,
-#                                    'Feature Name': f_names_list,
-#                                    'Keywords': keywords_list,
-#                                    'Level': level_list,
-#                                    'Predecessor': predecessor_list}
-#                 col_num = 0
-#                 format = workbook.add_format({'bold': True, 'border': 1})
-#                 format.set_align('center')
-#                 format2 = workbook.add_format({'border': 1})
-#                 for key, value in data_dictionary.items():
-#                     worksheet.write(0, col_num, key, format)
-#                     worksheet.write_column(1, col_num, value, format2)
-#                     col_num += 1
-#                 worksheet.set_column(1, 4, 35)
-#             workbook.close()
-#             file_share_copy()
-#         else:
-#             return Response("No Modules Found for given Migration type")
-#         deploy_object = Deploy.objects.get(Migration_TypeId=migration, Deployment_Status='Deploy in Progress')
-#         deploy_object.Deploy_End_Time = datetime.now()
-#         deploy_object.Deployment_Status = 'Completed'
-#         deploy_object.save()
-#         return Response("Modules Prepared for given Migration type")
-#     else:
-#         return Response("Please Select Migration Type for Deploy")
-
-
 @api_view(['GET', 'POST'])
 def get_latest_feature_version_modules(request):
     migration = request.data['Migration_TypeId']
     if migration != 'undefined':
-        # deploy_start_time = datetime.now()
-        # Deploy.objects.create(Migration_TypeId=migration,Deploy_Start_Time=deploy_start_time)
-
         path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        approved_features_path = path + '/' + 'Conversion_Modules'
-        if not os.path.exists(approved_features_path):
-            os.makedirs(approved_features_path)
-        else:
-            shutil.rmtree(approved_features_path)
-            os.makedirs(approved_features_path)
+        if not os.path.exists(path + '/Conversion_Modules/'):
+            os.makedirs(path + '/Conversion_Modules/')
+        container_client = azure_connection()
+        del_blobs = container_client.list_blobs(name_starts_with='Conversion_Modules')
+        if del_blobs:
+            for blob in del_blobs:
+                container_client.delete_blobs(blob)
+
         object_types_old = migrations.objects.filter(Migration_TypeId=migration).values('Object_Type').distinct()
         object_types_old_list = [dict['Object_Type'] for dict in object_types_old if dict['Object_Type'] != '']
         if object_types_old_list:
@@ -4815,23 +2821,40 @@ def get_latest_feature_version_modules(request):
                         predecessor_list.append(predecessor)
                         estimation_list.append(int(estimation))
                         latest_version_feature_id = latest_feature_data[0]['Feature_Id']
-                        module_path = path + '/Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
-                        module_approved_path = approved_features_path + '/' + migration + '/' + object_i + '/'
-                        if not os.path.exists(module_approved_path):
-                            os.makedirs(module_approved_path)
+                        module_path = 'Modules/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/'
+                        conversion_module_path = 'Conversion_Modules/'+ migration + '/' + object_i + '/'
+                        sas_token = generate_account_sas(account_name=account_name, account_key=account_key,
+                                                         resource_types=ResourceTypes(service=True, container=True,object=True),
+                                                         permission=AccountSasPermissions(read=True),
+                                                         expiry=datetime.utcnow() + timedelta(hours=1))
+                        source_blob_service_client = BlobServiceClient(
+                            account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+                        des_blob_service_client = BlobServiceClient(
+                            account_url=f'https://{account_name}.blob.core.windows.net/', credential=account_key)
+
                         attachments_data = Attachments.objects.filter(Feature_Id=latest_version_feature_id,
                                                                       AttachmentType='Conversion')
                         if attachments_data:
-                            attachment_module_path = path + '/media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
-                            attachment_module = os.listdir(attachment_module_path)[0]
-                            if attachment_module:
-                                shutil.copytree(attachment_module_path, module_approved_path, dirs_exist_ok=True)
-                        elif os.path.isdir(module_path):
-                            module = os.listdir(module_path)[0]
-                            if module:
-                                shutil.copytree(module_path, module_approved_path, dirs_exist_ok=True)
+                            attachment_module_path = 'media/' + migration + '/' + 'Project_V' + prj_ver + '/' + object_i + '/' + feature + '/' + 'Feature_V' + feat_ver + '/Conversion/'
+                            source_container_client = source_blob_service_client.get_container_client(container_name_var)
+                            blob_list = source_container_client.list_blobs(name_starts_with=attachment_module_path)
+                            if blob_list:
+                                for blob in blob_list:
+                                    source_blob = source_container_client.get_blob_client(blob)
+                                    source_url = source_blob.url + '?' + sas_token
+                                    des_blob_service_client.get_blob_client(
+                                        container_name_var, conversion_module_path + feature_name + '.py').start_copy_from_url(source_url)
                         else:
-                            print("No module found")
+                            source_container_client = source_blob_service_client.get_container_client(container_name_var)
+                            blob_list = source_container_client.list_blobs(name_starts_with=module_path)
+                            if blob_list:
+                                for blob in blob_list:
+                                    source_blob = source_container_client.get_blob_client(blob)
+                                    source_url = source_blob.url + '?' + sas_token
+                                    des_blob_service_client.get_blob_client(
+                                        container_name_var, conversion_module_path + feature_name + '.py').start_copy_from_url(source_url)
+                            else:
+                                print("No module found")
                 row_length = len(f_names_list)
                 serial_list = [i for i in range(1, row_length + 1)]
                 data_dictionary = {'Serial No.': serial_list,
@@ -4850,7 +2873,13 @@ def get_latest_feature_version_modules(request):
                     col_num += 1
                 worksheet.set_column(1, 4, 35)
             workbook.close()
-            file_share_copy()
+            file_path_on_azure = 'Conversion_Modules/' + migration + '.xlsx'
+            file_path_on_local = path + '/Conversion_Modules/' + migration + '.xlsx'
+            blob_client = container_client.get_blob_client(file_path_on_azure)
+            with open(file_path_on_local, 'rb') as data:
+                blob_client.upload_blob(data)
+            os.remove(file_path_on_local)
+            shutil.rmtree(path + '/Conversion_Modules/')
         else:
             return Response("No Modules Found for given Migration type")
         deploy_object = Deploy.objects.get(Migration_TypeId=migration, Deployment_Status='Deploy in Progress')

@@ -1,7 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, AbstractUser
+from django.contrib.auth.models import AbstractUser
 import os
-from FeatureApp.storage import CleanFileNameStorage
+from .backend.custom_azure import AzureMediaStorage as AMS
 
 
 class Users(AbstractUser):
@@ -87,12 +87,10 @@ class Attachments(models.Model):
     Feature_Id = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True)
     AttachmentType = models.CharField(max_length=50, blank=True, null=True, choices=choices)
     filename = models.CharField(max_length=100, blank=True, null=True)
-    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True, storage=CleanFileNameStorage(),
+    Attachment = models.FileField(upload_to=user_directory_path, blank=True, null=True, storage=AMS,
                                   max_length=500)
-
     def __int__(self):
         return self.Feature_Id.Feature_Id
-
 
 class Approvals(models.Model):
     User_Email = models.CharField(max_length=100)

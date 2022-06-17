@@ -123,6 +123,18 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_ROOT = os.path.join(BASE_DIR)
 
+DEFAULT_FILE_STORAGE = 'backend.custom_azure.AzureMediaStorage'
+STATICFILES_STORAGE = 'backend.custom_azure.AzureStaticStorage'
+STATIC_LOCATION = "static"
+AZURE_ACCOUNT_NAME = 'qmigcommon'
+AZURE_ACCOUNT_KEY = '4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw=='
+MEDIA_LOCATION = f"http://{AZURE_ACCOUNT_NAME}.blob.core.windows.net/media"
+MEDIA_ROOT = f'http://{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
+AZURE_CUSTOM_DOMAIN = f'{AZURE_ACCOUNT_NAME}.blob.core.windows.net'
+STATIC_URL = f'https://{AZURE_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+MEDIA_URL = f'https://{AZURE_CUSTOM_DOMAIN}/{MEDIA_LOCATION}/'
+AZURE_OVERWRITE_FILES = True
+
 CSRF_COOKIE_SECURE = True
 CORS_ALLOW_CREDENTIALS = True
 # CSRF_TRUSTED_ORIGINS = [
@@ -136,15 +148,6 @@ CORS_ALLOW_CREDENTIALS = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'FeatureApp.Users'
-
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp-mail.outlook.com'
-# EMAIL_USE_TLS = True
-# EMAIL_PORT = 25
-# EMAIL_HOST_USER = 'cookbook@quadrantresource.com'
-# # EMAIL_HOST_USER = 'perniteja95@gmail.com'
-# # EMAIL_HOST_PASSWORD = '9701323166'
-# EMAIL_HOST_PASSWORD = 'P@ssw0r$!@#'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
