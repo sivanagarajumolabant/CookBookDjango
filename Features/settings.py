@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
-    'corsheaders'
+    'corsheaders',
+    'storages'
 ]
 
 MIDDLEWARE = [
@@ -123,8 +124,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_ROOT = os.path.join(BASE_DIR)
 
-DEFAULT_FILE_STORAGE = 'backend.custom_azure.AzureMediaStorage'
-STATICFILES_STORAGE = 'backend.custom_azure.AzureStaticStorage'
+DEFAULT_FILE_STORAGE = 'FeatureApp.backend.custom_azure.AzureMediaStorage'
+STATICFILES_STORAGE = 'FeatureApp.backend.custom_azure.AzureStaticStorage'
 STATIC_LOCATION = "static"
 AZURE_ACCOUNT_NAME = 'qmigcommon'
 AZURE_ACCOUNT_KEY = '4jOx0APuVtAXDOrb7YjLMAYjXVPW3gzbUrp81YnqCF9mi5a2ajS6SfDwnBomDNCkjZz7NZmrPeJWHWcpqr8bhw=='
