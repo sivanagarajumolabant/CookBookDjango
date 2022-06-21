@@ -18,6 +18,7 @@ from django.utils.html import strip_tags
 from Features.settings import EMAIL_HOST_USER
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Q
 
 
 @api_view(['GET'])
@@ -92,10 +93,19 @@ def featuredetail(request, feature_name):
     for dict in mig_data.values():
         project_versions_list.append(dict['Project_Version_Id'])
     max_project_version = max(project_versions_list)
-    user = Users.objects.filter(email=email)
+    # user = Users.objects.filter(email=email)
+    #
+    # user_values = list(user.values())
+    # admin_access = user_values[0]['admin_migrations']
+    # if admin_access == '' or admin_access == None:
+    #     admin_access_dict = {}
+    # else:
+    #     admin_access = admin_access.replace("\'", "\"")
+    #     admin_access_dict = json.loads(admin_access)
 
-    user_values = list(user.values())
-    admin_access = user_values[0]['admin_migrations']
+    user = Users.objects.get(email=email)
+
+    admin_access = user.admin_migrations
     if admin_access == '' or admin_access == None:
         admin_access_dict = {}
     else:
@@ -274,10 +284,19 @@ def feature_catalog_access_check(request):
     feature_name = request.data['Feature_Name']
     Project_Version_Id = request.data['Project_Version_Id']
 
-    user = Users.objects.filter(email=user_email)
+    # user = Users.objects.filter(email=user_email)
+    #
+    # user_values = list(user.values())
+    # admin_access = user_values[0]['admin_migrations']
+    # if admin_access == '' or admin_access == None:
+    #     admin_access_dict = {}
+    # else:
+    #     admin_access = admin_access.replace("\'", "\"")
+    #     admin_access_dict = json.loads(admin_access)
 
-    user_values = list(user.values())
-    admin_access = user_values[0]['admin_migrations']
+    user = Users.objects.get(email=user_email)
+
+    admin_access = user.admin_migrations
     if admin_access == '' or admin_access == None:
         admin_access_dict = {}
     else:
@@ -722,48 +741,87 @@ def miglevelobjects(request, migtypeid):
     return Response(datavalues, status=status.HTTP_200_OK)
 
 
+# @api_view(['GET'])
+# def attachentsqlcodefiles(request, id):
+#     data = Attachments.objects.all()
+#     serializer = AttachementSerializer(data, many=True)
+#     filenames = []
+#     result = []
+#     for x in serializer.data:
+#         filenames.append(x['filename'])
+#     filenames = list(set(filenames))
+#     for x in filenames:
+#         temp = {}
+#         temp['filename'] = x
+#         data1 = Attachments.objects.filter(
+#             Feature_Id=id, filename=x, AttachmentType='Sourcecode')
+#
+#         a = list(data1.values_list())
+#         if len(a) == 0:
+#             temp['Sourcecode'] = 'N'
+#         else:
+#             temp['Sourcecode'] = 'Y'
+#             temp['sid'] = a[0][0]
+#         data1 = Attachments.objects.filter(
+#             Feature_Id=id, filename=x, AttachmentType='Actualtargetcode')
+#         a = list(data1.values_list())
+#         if len(a) == 0:
+#             temp['Actualtargetcode'] = 'N'
+#         else:
+#             temp['Actualtargetcode'] = 'Y'
+#             temp['atid'] = a[0][0]
+#         data1 = Attachments.objects.filter(
+#             Feature_Id=id, filename=x, AttachmentType='Expectedconversion')
+#         a = list(data1.values_list())
+#         if len(a) == 0:
+#             temp['Expectedconversion'] = 'N'
+#         else:
+#             temp['Expectedconversion'] = 'Y'
+#             temp['etid'] = a[0][0]
+#
+#         if temp['Sourcecode'] == 'Y' or temp['Expectedconversion'] == 'Y' or temp['Actualtargetcode'] == 'Y':
+#             result.append(temp)
+#     return Response(result)
+
 @api_view(['GET'])
 def attachentsqlcodefiles(request, id):
-    data = Attachments.objects.all()
+    data = Attachments.objects.filter(Q(Feature_Id_id = id) & ~Q(AttachmentType ='Conversion'))
     serializer = AttachementSerializer(data, many=True)
     filenames = []
     result = []
-    for x in serializer.data:
-        filenames.append(x['filename'])
+    for dict in serializer.data:
+        filenames.append(dict['filename'])
     filenames = list(set(filenames))
-    for x in filenames:
+    for filename in filenames:
         temp = {}
-        temp['filename'] = x
+        temp['filename'] = filename
         data1 = Attachments.objects.filter(
-            Feature_Id=id, filename=x, AttachmentType='Sourcecode')
-
-        a = list(data1.values_list())
-        if len(a) == 0:
-            temp['Sourcecode'] = 'N'
-        else:
+            Feature_Id=id, filename=filename, AttachmentType='Sourcecode')
+        data_list = data1.values()
+        if data1:
             temp['Sourcecode'] = 'Y'
-            temp['sid'] = a[0][0]
-        data1 = Attachments.objects.filter(
-            Feature_Id=id, filename=x, AttachmentType='Actualtargetcode')
-        a = list(data1.values_list())
-        if len(a) == 0:
-            temp['Actualtargetcode'] = 'N'
+            temp['sid'] = data_list[0]['id']
         else:
+            temp['Sourcecode'] = 'N'
+        data1 = Attachments.objects.filter(
+            Feature_Id_id=id, filename=filename, AttachmentType='Actualtargetcode')
+        data_list = data1.values()
+        if data1:
             temp['Actualtargetcode'] = 'Y'
-            temp['atid'] = a[0][0]
-        data1 = Attachments.objects.filter(
-            Feature_Id=id, filename=x, AttachmentType='Expectedconversion')
-        a = list(data1.values_list())
-        if len(a) == 0:
-            temp['Expectedconversion'] = 'N'
+            temp['atid'] = data_list[0]['id']
         else:
+            temp['Actualtargetcode'] = 'N'
+        data1 = Attachments.objects.filter(
+            Feature_Id=id, filename=filename, AttachmentType='Expectedconversion')
+        data_list = data1.values()
+        if data1:
             temp['Expectedconversion'] = 'Y'
-            temp['etid'] = a[0][0]
-
+            temp['etid'] = data_list[0]['id']
+        else:
+            temp['Expectedconversion'] = 'N'
         if temp['Sourcecode'] == 'Y' or temp['Expectedconversion'] == 'Y' or temp['Actualtargetcode'] == 'Y':
             result.append(temp)
     return Response(result)
-
 
 @api_view(['POST'])
 def feature_conversion_files(request):
