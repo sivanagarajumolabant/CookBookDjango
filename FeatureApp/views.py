@@ -886,7 +886,7 @@ def feature_conversion_files(request):
             source_file_blob = container_client.list_blobs(name_starts_with=source_path)
             if source_file_blob:
                 source_data = ''
-                for blob in conversion_file_blob:
+                for blob in source_file_blob:
                     source_data = container_client.get_blob_client(blob).download_blob().readall()
                     source_data = source_data.decode()
                 a = import_file(local_path)
