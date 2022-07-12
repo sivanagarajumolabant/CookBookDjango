@@ -2933,6 +2933,7 @@ def get_latest_feature_version_modules(request):
             workbook.close()
             file_path_on_azure = 'Conversion_Modules/' + migration + '.xlsx'
             file_path_on_local = path + '/Conversion_Modules/' + migration + '.xlsx'
+            container_client = azure_connection()
             blob_client = container_client.get_blob_client(file_path_on_azure)
             with open(file_path_on_local, 'rb') as data:
                 blob_client.upload_blob(data)
